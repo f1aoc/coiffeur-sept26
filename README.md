@@ -1,45 +1,67 @@
 # L'Hair d'Aujourd'hui — site vitrine
 
-Site vitrine animé pour **L'Hair d'Aujourd'hui**, salon de coiffure mixte à
-L'Isle-sur-la-Sorgue (84800), spécialisé dans les produits naturels et végétaux.
+Refonte du site [coiffure-hairdaujourdhui.fr](https://coiffure-hairdaujourdhui.fr/),
+salon de coiffure mixte à L'Isle-sur-la-Sorgue (84800), spécialisé dans les
+produits naturels et végétaux **Végétalement Provence**.
 
-Page unique, sans framework ni dépendance : trois fichiers suffisent à la mise
-en ligne (`index.html`, `assets/css/style.css`, `assets/js/main.js`).
+Six pages statiques, sans framework ni dépendance : HTML, une feuille de style,
+un petit script. Les noms de fichiers reprennent ceux du site actuel, donc la
+mise en ligne se fait en remplacement direct sans casser le référencement.
+
+| Fichier                  | Page                  |
+|--------------------------|-----------------------|
+| `index.html`             | Le salon (accueil)    |
+| `produits-naturels.html` | Produits naturels     |
+| `spa-cheveu.html`        | Spa du cheveu         |
+| `tarifs.html`            | Prestations & tarifs  |
+| `contact.html`           | Contact               |
+| `mentions.html`          | Mentions légales      |
 
 ## Direction artistique
 
-Style « carnet de studio » : papier crème, encre vert forêt, surligneur jaune.
+**Le nuancier végétal.** Une coloration aux plantes, c'est du pigment extrait de
+feuilles et de racines : le site est donc construit autour du nuancier des
+plantes tinctoriales, présenté en échantillons sur la page d'accueil. C'est le
+seul endroit où le site hausse la voix ; tout le reste est tenu au calme et à la
+lisibilité, parce que le premier travail de ce site est de faire décrocher le
+téléphone.
 
-| Rôle              | Valeur    |
-|-------------------|-----------|
-| Texte & aplats    | `#1a3300` |
-| Fond              | `#fcfaf5` |
-| Surligneur        | `#ffe95c` |
-| Menthe            | `#d5f5c2` |
-| Bleu pastel       | `#a8e5e5` |
-| Rose pastel       | `#f6d0ff` |
-| Terracotta        | `#cb5521` |
+| Rôle                  | Valeur    | Plante          |
+|-----------------------|-----------|-----------------|
+| Encre principale      | `#24374e` | indigo          |
+| Accent, liens, appel  | `#a6431e` | henné           |
+| Profond               | `#7e2b38` | garance         |
+| Or                    | `#c9a227` | cassia          |
+| Végétal               | `#5e7b6b` | Sorgue          |
+| Brun                  | `#4a3527` | brou de noix    |
+| Doré clair            | `#d2b14e` | camomille       |
+| Fond                  | `#e9ede6` | papier minéral  |
 
-Typographies (Google Fonts) : **Bricolage Grotesque 800** pour les titres,
-**Inter** pour le texte courant, **Roboto Mono** pour les micro-étiquettes.
+Typographies (Google Fonts) : **Fraunces** pour les titres, **Karla** pour le
+texte courant. Le logo reste typographique, comme sur le site actuel.
 
-## Animations
+## Photos
 
-Rideau d'ouverture · barre de progression de lecture · curseur personnalisé
-(anneau magnétique + libellé « voir » sur la galerie) · titres découpés mot à
-mot qui montent · surligneur jaune qui se trace au passage · apparitions en
-cascade au scroll · bandeau défilant sensible à la vitesse de défilement ·
-parallaxe sur le tracé du héros · galerie horizontale pilotée par le scroll
-vertical · cartes inclinables au survol · boutons magnétiques · compteurs
-animés · accordéon des prestations · SVG qui se dessine au trait.
+Les photos sont celles du site existant, servies depuis le compte Cloudinary
+`res.cloudinary.com/ddpeetkek/` et appelées par leur URL d'origine — rien à
+téléverser, rien à recompresser.
 
-Tout est désactivé automatiquement si le visiteur a activé
-« réduire les animations » dans son système (`prefers-reduced-motion`).
+Pour remplacer une photo : téléversez la nouvelle sur Cloudinary et changez
+l'URL dans le `src` correspondant. Chaque image a un `width`/`height` et un
+cadrage `object-fit: cover`, donc le format exact du fichier n'a pas
+d'importance pour la mise en page.
+
+## Accessibilité
+
+Contrastes vérifiés au niveau AA (le plus faible mesuré est de 4,53:1), lien
+d'évitement, focus visible, navigation au clavier, `prefers-reduced-motion`
+respecté. Une seule animation sur le site : les échantillons du nuancier se
+déploient quand la section arrive à l'écran.
 
 ## Mise en ligne
 
-Hébergement statique : déposez le dossier tel quel (Netlify, Vercel, GitHub
-Pages, ou un simple FTP vers `public_html/`). Aucune compilation.
+Hébergement statique, aucune compilation. Déposez le dossier tel quel (GitHub
+Pages, Netlify, Vercel, ou FTP vers `public_html/`).
 
 Test en local :
 
@@ -47,23 +69,18 @@ Test en local :
 python3 -m http.server 8000   # puis http://localhost:8000
 ```
 
-## À compléter avant publication
+## À relire avant publication
 
-- **Photos** : voir `assets/img/README.md` (les visuels actuels sont des
-  illustrations d'attente).
-- **Tarifs** : chaque prestation affiche `sur devis` dans
-  `<span class="prix">` — remplacez par vos montants si vous souhaitez les
-  afficher.
-- **Textes** : les informations pratiques (adresse, téléphone, horaires)
-  proviennent des annuaires publics ; relisez-les et ajustez les descriptions
-  de prestations à votre façon de travailler.
-- **Avis clients** : la page renvoie vers Planity, PagesJaunes et Facebook
-  plutôt que d'afficher des témoignages recopiés. Pour citer un avis, ajoutez-le
-  avec l'accord de la cliente.
-- **Mentions légales / RGPD** : à ajouter (page ou section) avant mise en ligne.
+- **Adresse** : le site actuel indique le 82 chemin des Espélugues, les
+  annuaires publics le 80. C'est le 82 qui a été repris ici — à confirmer.
+- **Horaires** : mardi–vendredi 9h–19h, samedi 9h–17h, fermé lundi et dimanche.
+- **Tarifs** : repris à l'identique de la page actuelle. À vérifier s'ils ont
+  bougé depuis.
+- **Mentions légales** : l'hébergeur indiqué est GitHub ; à corriger si le site
+  est déposé ailleurs.
+- **Photos de personnes reconnaissables** : pensez à l'accord écrit.
 
 ## Informations utilisées
 
-80 chemin des Espélugues, centre commercial Super U, 84800 L'Isle-sur-la-Sorgue ·
-04 90 38 67 34 · mardi–vendredi 9h–19h, samedi 9h–18h, fermé lundi et dimanche ·
-réservation Planity.
+82 chemin des Espélugues, centre commercial Super U, 84800 L'Isle-sur-la-Sorgue ·
+04 90 38 67 34 · mardi–vendredi 9h–19h, samedi 9h–17h · fermé lundi et dimanche.
