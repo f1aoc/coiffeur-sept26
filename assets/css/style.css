@@ -297,6 +297,14 @@ a { color: inherit; }
   object-fit: cover;
 }
 
+/* Variante : l'image s'affiche entière, à son format d'origine, sans
+   recadrage. Utilisée pour la photo d'ouverture de l'accueil. */
+.heros__image--entier img {
+  aspect-ratio: auto;
+  height: auto;
+  object-fit: fill;
+}
+
 .heros__faits {
   list-style: none;
   margin: 2rem 0 0;
