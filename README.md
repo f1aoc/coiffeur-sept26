@@ -71,8 +71,6 @@ python3 -m http.server 8000   # puis http://localhost:8000
 
 ## À relire avant publication
 
-- **Adresse** : le site actuel indique le 82 chemin des Espélugues, les
-  annuaires publics le 80. C'est le 82 qui a été repris ici — à confirmer.
 - **Horaires** : mardi–vendredi 9h–19h, samedi 9h–17h, fermé lundi et dimanche.
 - **Tarifs** : repris à l'identique de la page actuelle. À vérifier s'ils ont
   bougé depuis.
@@ -84,3 +82,7 @@ python3 -m http.server 8000   # puis http://localhost:8000
 
 82 chemin des Espélugues, centre commercial Super U, 84800 L'Isle-sur-la-Sorgue ·
 04 90 38 67 34 · mardi–vendredi 9h–19h, samedi 9h–17h · fermé lundi et dimanche.
+
+Note : plusieurs annuaires publics (PagesJaunes, Mappy) indiquent encore le
+**80** chemin des Espélugues. Le numéro exact est le **82**, confirmé par le
+salon — ne pas « corriger » d'après les annuaires.
