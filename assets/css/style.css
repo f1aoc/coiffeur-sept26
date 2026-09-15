@@ -105,6 +105,15 @@ a { color: inherit; }
 }
 .saut-contenu:focus { left: 0.5rem; top: 0.5rem; }
 
+.hors-ecran {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 /* --- 3. Structure -------------------------------------------------------- */
 
 .enveloppe {
@@ -665,6 +674,38 @@ a { color: inherit; }
 .horaires dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
 .horaires .ferme { font-weight: 500; color: var(--encre-douce); font-style: italic; }
 
+/* --- 15b. Carte ---------------------------------------------------------- */
+
+.carte {
+  border-top: var(--trait);
+  background: var(--papier-fonce);
+}
+
+.carte iframe {
+  display: block;
+  width: 100%;
+  height: clamp(17rem, 45vw, 26rem);
+  border: 0;
+}
+
+.carte__pied {
+  max-width: var(--large);
+  margin-inline: auto;
+  padding: 1rem var(--gouttiere);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1.5rem;
+  font-size: var(--t--1);
+  color: var(--encre-douce);
+}
+.carte__pied a {
+  color: var(--henne);
+  font-weight: 700;
+  text-underline-offset: 0.3em;
+}
+
 /* --- 15. Pied de page ---------------------------------------------------- */
 
 .pied {
@@ -705,6 +746,13 @@ a { color: inherit; }
 }
 .texte-long h2:first-of-type { margin-top: 0; }
 .texte-long p { color: var(--encre-douce); }
+.texte-long ul {
+  color: var(--encre-douce);
+  margin: 0 0 1em;
+  padding-left: 1.2em;
+}
+.texte-long li { margin-bottom: 0.5em; }
+.texte-long strong { color: var(--encre); }
 
 /* --- 17. Mouvement ------------------------------------------------------- */
 /* Un seul moment orchestré : les pigments se déploient à l'arrivée. */
