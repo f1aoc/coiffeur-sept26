@@ -2,7 +2,7 @@
 """Lead Finder — desktop app to find local businesses without a website.
 
 Pick an occupation and one or more cities, click Search, then export the
-results to CSV. Double-click a row to open the business on Google Maps.
+results to Excel. Double-click a row to open the business on Google Maps.
 
     python3 lead_finder_app.pyw     (or double-click the file on Windows)
 """
@@ -18,7 +18,7 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from find_no_website import PlacesError, clean_api_key, find_leads, write_csv  # noqa: E402
+from find_no_website import PlacesError, clean_api_key, find_leads, write_xlsx  # noqa: E402
 
 CONFIG_PATH = Path.home() / ".lead_finder.json"
 
@@ -113,7 +113,7 @@ class App(tk.Tk):
         actions.grid(row=4, column=0, columnspan=2, sticky="ew", pady=(10, 0))
         self.search_btn = ttk.Button(actions, text="Search", command=self.start_search)
         self.search_btn.pack(side="left")
-        self.export_btn = ttk.Button(actions, text="Export CSV…", command=self.export_csv, state="disabled")
+        self.export_btn = ttk.Button(actions, text="Exporter Excel…", command=self.export_xlsx, state="disabled")
         self.export_btn.pack(side="left", padx=8)
         self.progress = ttk.Progressbar(actions, mode="indeterminate", length=140)
         self.progress.pack(side="left", padx=8)
@@ -226,14 +226,14 @@ class App(tk.Tk):
         if sel and self.leads[int(sel)]["maps_url"]:
             webbrowser.open(self.leads[int(sel)]["maps_url"])
 
-    def export_csv(self):
-        default = f"leads_{self.occupation.get().strip().replace(' ', '_') or 'export'}.csv"
-        path = filedialog.asksaveasfilename(defaultextension=".csv", initialfile=default,
-                                            filetypes=[("CSV", "*.csv")])
+    def export_xlsx(self):
+        default = f"leads_{self.occupation.get().strip().replace(' ', '_') or 'export'}.xlsx"
+        path = filedialog.asksaveasfilename(defaultextension=".xlsx", initialfile=default,
+                                            filetypes=[("Excel", "*.xlsx")])
         if not path:
             return
         try:
-            write_csv(self.leads, path)
+            write_xlsx(self.leads, path)
         except OSError as e:
             messagebox.showerror("Export failed", str(e))
             return

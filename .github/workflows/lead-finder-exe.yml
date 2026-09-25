@@ -21,12 +21,12 @@ jobs:
           python-version: "3.12"
 
       - name: Install PyInstaller
-        run: pip install pyinstaller
+        run: pip install pyinstaller openpyxl
 
       - name: Build LeadFinder.exe
         run: >
           pyinstaller --onefile --windowed --name LeadFinder
-          --paths tools/prospection --hidden-import find_no_website
+          --paths tools/prospection --hidden-import find_no_website --hidden-import openpyxl
           tools/prospection/lead_finder_app.pyw
 
       - name: Smoke test (CLI module imports in the build env)

@@ -215,12 +215,80 @@ def write_csv(leads, path):
         w.writerows(leads)
 
 
+XLSX_COLUMNS = [
+    # (key, French heading, column width)
+    ("name", "Nom", 32),
+    ("status", "Site web", 22),
+    ("website", "Page actuelle", 30),
+    ("phone", "Téléphone", 18),
+    ("address", "Adresse", 45),
+    ("category", "Catégorie", 20),
+    ("rating", "Note", 7),
+    ("reviews", "Avis", 7),
+    ("maps_url", "Google Maps", 16),
+    ("query", "Recherche", 25),
+]
+
+
+def status_label(status):
+    if status == "none":
+        return "Aucun"
+    if status.startswith("social_or_directory:"):
+        return status.split(":", 1)[1] + " seulement"
+    return status
+
+
+def write_xlsx(leads, path):
+    """Excel file with French headers, filters, frozen header and clickable Maps links."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Prospects"
+    ws.append([heading for _, heading, _ in XLSX_COLUMNS])
+    for cell in ws[1]:
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill("solid", fgColor="1A3300")
+    for i, (_, _, width) in enumerate(XLSX_COLUMNS, start=1):
+        ws.column_dimensions[ws.cell(row=1, column=i).column_letter].width = width
+
+    maps_col = [k for k, _, _ in XLSX_COLUMNS].index("maps_url") + 1
+    for lead in leads:
+        row = []
+        for key, _, _ in XLSX_COLUMNS:
+            value = lead.get(key, "")
+            if key == "status":
+                value = status_label(value)
+            elif key == "maps_url" and value:
+                value = "Ouvrir"
+            row.append(value)
+        ws.append(row)
+        if lead.get("maps_url"):
+            cell = ws.cell(row=ws.max_row, column=maps_col)
+            cell.hyperlink = lead["maps_url"]
+            cell.font = Font(color="0563C1", underline="single")
+
+    ws.freeze_panes = "A2"
+    ws.auto_filter.ref = ws.dimensions
+    wb.save(path)
+
+
+def write_leads(leads, path):
+    """Write .xlsx or .csv depending on the file extension."""
+    if path.lower().endswith(".xlsx"):
+        write_xlsx(leads, path)
+    else:
+        write_csv(leads, path)
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("keyword", help='business type to search, e.g. "coiffeur", "plombier"')
     p.add_argument("--city", action="append", default=[], help="city to search in (repeatable)")
     p.add_argument("--cities-file", help="text file with one city per line")
-    p.add_argument("-o", "--output", default="leads.csv", help="CSV output path (default: leads.csv)")
+    p.add_argument("-o", "--output", default="leads.xlsx",
+                   help="output file, .xlsx (Excel, needs openpyxl) or .csv (default: leads.xlsx)")
     p.add_argument("--strict", action="store_true", help="only businesses with no website field at all")
     p.add_argument("--include-closed", action="store_true", help="keep temporarily/permanently closed businesses")
     p.add_argument("--language", default="fr")
@@ -246,7 +314,7 @@ def main():
         )
     except PlacesError as e:
         sys.exit(str(e))
-    write_csv(leads, args.output)
+    write_leads(leads, args.output)
     print(f"{len(leads)} lead(s) out of {total} businesses -> {args.output}", file=sys.stderr)
 
 
