@@ -58,6 +58,10 @@ CSV_COLUMNS = [
 ]
 
 
+class PlacesError(Exception):
+    pass
+
+
 def classify_website(url):
     """Return 'none', 'social_or_directory:<host>' or 'real'."""
     if not url:
@@ -87,7 +91,9 @@ def search(api_key, query, language, region, max_pages):
             with urllib.request.urlopen(req, timeout=30) as resp:
                 data = json.load(resp)
         except urllib.error.HTTPError as e:
-            sys.exit(f"Places API error {e.code} for {query!r}: {e.read().decode(errors='replace')}")
+            raise PlacesError(f"Places API error {e.code} for {query!r}: {e.read().decode(errors='replace')}")
+        except urllib.error.URLError as e:
+            raise PlacesError(f"Network error for {query!r}: {e.reason}")
         yield from data.get("places", [])
         token = data.get("nextPageToken")
         if not token:
@@ -110,6 +116,38 @@ def to_row(place, query):
         "place_id": place.get("id", ""),
         "query": query,
     }
+
+
+def find_leads(api_key, queries, strict=False, include_closed=False,
+               language="fr", region="FR", max_pages=3, progress=None):
+    """Run every query and return (leads sorted by review count, businesses seen)."""
+    seen, leads, total = set(), [], 0
+    for q in queries:
+        found = 0
+        for place in search(api_key, q, language, region, max_pages):
+            if place.get("id") in seen:
+                continue
+            seen.add(place.get("id"))
+            total += 1
+            if not include_closed and place.get("businessStatus", "OPERATIONAL") != "OPERATIONAL":
+                continue
+            row = to_row(place, q)
+            if row["status"] == "real" or (strict and row["status"] != "none"):
+                continue
+            leads.append(row)
+            found += 1
+        if progress:
+            progress(q, found)
+    # Most-reviewed first: established businesses that are easier to pitch.
+    leads.sort(key=lambda r: r["reviews"] or 0, reverse=True)
+    return leads, total
+
+
+def write_csv(leads, path):
+    with open(path, "w", newline="", encoding="utf-8-sig") as f:
+        w = csv.DictWriter(f, fieldnames=CSV_COLUMNS)
+        w.writeheader()
+        w.writerows(leads)
 
 
 def main():
@@ -135,29 +173,15 @@ def main():
             cities += [line.strip() for line in f if line.strip() and not line.startswith("#")]
     queries = [f"{args.keyword} {c}" for c in cities] or [args.keyword]
 
-    seen, leads, total = set(), [], 0
-    for q in queries:
-        found = 0
-        for place in search(api_key, q, args.language, args.region, args.max_pages):
-            if place.get("id") in seen:
-                continue
-            seen.add(place.get("id"))
-            total += 1
-            if not args.include_closed and place.get("businessStatus", "OPERATIONAL") != "OPERATIONAL":
-                continue
-            row = to_row(place, q)
-            if row["status"] == "real" or (args.strict and row["status"] != "none"):
-                continue
-            leads.append(row)
-            found += 1
-        print(f"{q!r}: {found} lead(s)", file=sys.stderr)
-
-    # Most-reviewed first: established businesses that are easier to pitch.
-    leads.sort(key=lambda r: r["reviews"] or 0, reverse=True)
-    with open(args.output, "w", newline="", encoding="utf-8-sig") as f:
-        w = csv.DictWriter(f, fieldnames=CSV_COLUMNS)
-        w.writeheader()
-        w.writerows(leads)
+    try:
+        leads, total = find_leads(
+            api_key, queries, strict=args.strict, include_closed=args.include_closed,
+            language=args.language, region=args.region, max_pages=args.max_pages,
+            progress=lambda q, n: print(f"{q!r}: {n} lead(s)", file=sys.stderr),
+        )
+    except PlacesError as e:
+        sys.exit(str(e))
+    write_csv(leads, args.output)
     print(f"{len(leads)} lead(s) out of {total} businesses -> {args.output}", file=sys.stderr)
 
 

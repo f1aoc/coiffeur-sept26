@@ -12,7 +12,19 @@ Planity / Treatwell page) to a CSV, most-reviewed first.
 
 No dependencies — Python 3.9+ standard library only.
 
-## Usage
+## Desktop app (easiest)
+
+```bash
+python3 tools/prospection/lead_finder_app.pyw
+```
+
+On Windows you can also just double-click `lead_finder_app.pyw` (with Python
+installed from python.org). Paste your API key, pick an occupation from the
+list (or type any), enter cities one per line, click **Search**. Double-click
+a result to open it on Google Maps; **Export CSV…** saves the list.
+"Remember" stores the key in `~/.lead_finder.json` on your computer.
+
+## Command line
 
 ```bash
 python3 find_no_website.py "coiffeur" --city "L'Isle-sur-la-Sorgue" --city Cavaillon --city Avignon
