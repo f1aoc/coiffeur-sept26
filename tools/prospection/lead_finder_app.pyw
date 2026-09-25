@@ -18,7 +18,7 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from find_no_website import PlacesError, find_leads, write_csv  # noqa: E402
+from find_no_website import PlacesError, clean_api_key, find_leads, write_csv  # noqa: E402
 
 CONFIG_PATH = Path.home() / ".lead_finder.json"
 
@@ -138,7 +138,7 @@ class App(tk.Tk):
     # ---------- Actions ----------
 
     def start_search(self):
-        key = self.api_key.get().strip()
+        key = clean_api_key(self.api_key.get())
         occupation = self.occupation.get().strip()
         cities = [c.strip() for c in self.cities.get("1.0", "end").replace(",", "\n").splitlines() if c.strip()]
         if not key:

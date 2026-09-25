@@ -62,6 +62,71 @@ class PlacesError(Exception):
     pass
 
 
+# Google error reason -> what to do about it (French: the app's users are in France).
+ERROR_HINTS = {
+    "SERVICE_DISABLED": "L'API « Places API (New) » n'est pas activée sur ce projet.\n"
+        "Google Cloud → API et services → Bibliothèque → cherchez « Places API (New) » "
+        "(avec « New ») → Activer. Attendez 2-3 minutes puis réessayez.",
+    "BILLING_DISABLED": "La facturation n'est pas activée sur ce projet Google Cloud.\n"
+        "Google Cloud → Facturation → associez un compte de facturation (carte bancaire). "
+        "C'est obligatoire même pour le quota gratuit.",
+    "API_KEY_INVALID": "La clé API n'est pas valide. Vérifiez que vous l'avez copiée en entier "
+        "(elle commence par « AIza »), sans espace ni guillemet.",
+    "API_KEY_SERVICE_BLOCKED": "La clé est restreinte à d'autres API.\n"
+        "Google Cloud → API et services → Identifiants → votre clé → Restrictions d'API : "
+        "cochez « Places API (New) » (ou choisissez « Ne pas restreindre la clé »).",
+    "API_KEY_HTTP_REFERRER_BLOCKED": "La clé est limitée aux « sites web (référents HTTP) », "
+        "ce qui bloque une application de bureau.\n"
+        "Google Cloud → Identifiants → votre clé → Restrictions d'application : choisissez « Aucune » "
+        "(ou « Adresses IP » avec votre IP).",
+    "API_KEY_IP_ADDRESS_BLOCKED": "La clé est limitée à certaines adresses IP et la vôtre n'en fait pas partie.\n"
+        "Google Cloud → Identifiants → votre clé → Restrictions d'application : ajoutez votre IP ou choisissez « Aucune ».",
+    "API_KEY_ANDROID_APP_BLOCKED": "La clé est limitée aux applis Android. "
+        "Mettez « Aucune » dans Restrictions d'application.",
+    "API_KEY_IOS_APP_BLOCKED": "La clé est limitée aux applis iOS. "
+        "Mettez « Aucune » dans Restrictions d'application.",
+    "RATE_LIMIT_EXCEEDED": "Quota dépassé. Attendez une minute, ou augmentez le quota dans Google Cloud.",
+}
+
+
+def explain_http_error(code, body):
+    """Turn a Places API error response into an actionable message."""
+    message, status, reason = "", "", ""
+    try:
+        err = json.loads(body).get("error", {})
+        message, status = err.get("message", ""), err.get("status", "")
+        for detail in err.get("details", []):
+            reason = reason or detail.get("reason", "")
+    except (ValueError, AttributeError):
+        message = body[:300]
+    if not reason:
+        if "API key not valid" in message:
+            reason = "API_KEY_INVALID"
+        elif "billing" in message.lower():
+            reason = "BILLING_DISABLED"
+        elif "has not been used" in message or "is disabled" in message:
+            reason = "SERVICE_DISABLED"
+        elif code == 429:
+            reason = "RATE_LIMIT_EXCEEDED"
+    hint = ERROR_HINTS.get(reason, "Erreur inattendue de Google, voir le détail ci-dessous.")
+    return f"{hint}\n\nDétail Google ({code} {status} {reason}) :\n{message}".strip()
+
+
+def explain_network_error(reason):
+    text = str(reason)
+    if "CERTIFICATE_VERIFY_FAILED" in text:
+        hint = ("Connexion sécurisée refusée (certificat). Souvent causé par un antivirus ou un proxy "
+                "qui inspecte le HTTPS : désactivez l'analyse HTTPS de l'antivirus, ou essayez un autre réseau.")
+    else:
+        hint = "Impossible de joindre Google. Vérifiez votre connexion Internet, votre pare-feu ou antivirus."
+    return f"{hint}\n\nDétail : {text}"
+
+
+def clean_api_key(key):
+    """Strip whitespace and quotes that often come along with a copy-paste."""
+    return key.strip().strip("\"'«» ").strip()
+
+
 def classify_website(url):
     """Return 'none', 'social_or_directory:<host>' or 'real'."""
     if not url:
@@ -91,9 +156,9 @@ def search(api_key, query, language, region, max_pages):
             with urllib.request.urlopen(req, timeout=30) as resp:
                 data = json.load(resp)
         except urllib.error.HTTPError as e:
-            raise PlacesError(f"Places API error {e.code} for {query!r}: {e.read().decode(errors='replace')}")
+            raise PlacesError(explain_http_error(e.code, e.read().decode(errors="replace")))
         except urllib.error.URLError as e:
-            raise PlacesError(f"Network error for {query!r}: {e.reason}")
+            raise PlacesError(explain_network_error(e.reason))
         yield from data.get("places", [])
         token = data.get("nextPageToken")
         if not token:
@@ -163,7 +228,7 @@ def main():
     p.add_argument("--max-pages", type=int, default=3, help="pages of 20 results per query (API max: 3)")
     args = p.parse_args()
 
-    api_key = os.environ.get("GOOGLE_MAPS_API_KEY")
+    api_key = clean_api_key(os.environ.get("GOOGLE_MAPS_API_KEY", ""))
     if not api_key:
         sys.exit("Set the GOOGLE_MAPS_API_KEY environment variable first.")
 
