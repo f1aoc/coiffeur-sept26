@@ -1,0 +1,51 @@
+name: Build Lead Finder (Windows .exe)
+
+on:
+  push:
+    paths:
+      - "tools/prospection/**"
+      - ".github/workflows/lead-finder-exe.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PyInstaller
+        run: pip install pyinstaller
+
+      - name: Build LeadFinder.exe
+        run: >
+          pyinstaller --onefile --windowed --name LeadFinder
+          --paths tools/prospection --hidden-import find_no_website
+          tools/prospection/lead_finder_app.pyw
+
+      - name: Smoke test (CLI module imports in the build env)
+        run: python tools/prospection/find_no_website.py --help
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LeadFinder-windows
+          path: dist/LeadFinder.exe
+
+      - name: Publish to the "Lead Finder" release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: lead-finder-latest
+          name: Lead Finder (latest Windows build)
+          target_commitish: ${{ github.sha }}
+          body: |
+            Download **LeadFinder.exe** below and double-click it. No Python needed.
+            Windows may show "Windows protected your PC" the first time: click
+            **More info → Run anyway** (the app is not code-signed).
+          files: dist/LeadFinder.exe
+          prerelease: true

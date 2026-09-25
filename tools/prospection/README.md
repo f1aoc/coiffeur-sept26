@@ -24,6 +24,14 @@ list (or type any), enter cities one per line, click **Search**. Double-click
 a result to open it on Google Maps; **Export CSV…** saves the list.
 "Remember" stores the key in `~/.lead_finder.json` on your computer.
 
+### Windows .exe (no Python needed)
+
+GitHub builds `LeadFinder.exe` automatically whenever this folder changes
+(workflow `.github/workflows/lead-finder-exe.yml`). Download it from the
+repo's **Releases → Lead Finder (latest Windows build)**, or from the
+workflow run's artifacts. The exe is not code-signed, so on first launch
+Windows SmartScreen asks: click **More info → Run anyway**.
+
 ## Command line
 
 ```bash
