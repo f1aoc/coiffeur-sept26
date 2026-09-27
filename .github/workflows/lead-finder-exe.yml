@@ -26,7 +26,8 @@ jobs:
       - name: Build LeadFinder.exe
         run: >
           pyinstaller --onefile --windowed --name LeadFinder
-          --paths tools/prospection --hidden-import find_no_website --hidden-import openpyxl
+          --paths tools/prospection --hidden-import find_no_website --hidden-import brand_icon
+          --hidden-import openpyxl --icon tools/prospection/assets/lead_finder.ico
           tools/prospection/lead_finder_app.pyw
 
       - name: Smoke test (CLI module imports in the build env)

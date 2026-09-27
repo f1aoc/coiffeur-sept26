@@ -24,6 +24,14 @@ list (or type any), enter cities one per line, click **Search**. Double-click
 a result to open it on Google Maps; **Exporter Excel…** saves the list as .xlsx.
 "Remember" stores the key in `~/.lead_finder.json` on your computer.
 
+### Look & branding
+
+Colourful interface (violet → pink → orange), fully in French. To rebrand it
+for resale, edit the constants at the top of `lead_finder_app.pyw`
+(`APP_NAME`, `TAGLINE`, `GRADIENT`, colours `C`), and redraw the icon with
+`python3 tools/prospection/assets/make_icon.py` (needs Pillow): it rewrites
+`assets/lead_finder.ico` (the .exe icon) and `brand_icon.py` (window icon).
+
 ### Windows .exe (no Python needed)
 
 GitHub builds `LeadFinder.exe` automatically whenever this folder changes
