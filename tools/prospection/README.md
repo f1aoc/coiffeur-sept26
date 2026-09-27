@@ -35,9 +35,11 @@ for resale, edit the constants at the top of `lead_finder_app.pyw`
 ### Sales page
 
 `site/` holds a static French sales page for Lead Finder (`index.html` +
-`assets/`). No build: upload the folder to any static host (Netlify, Vercel,
+`assets/`) and a post-purchase thank-you page (`merci.html`: download button +
+setup guide, not indexed by search engines; point your payment provider's
+success redirect to it). No build: upload the folder to any static host (Netlify, Vercel,
 GitHub Pages, FTP). Before publishing, edit the lines marked `À MODIFIER` in
-`index.html`: the price and the buy link (Stripe/PayPal payment link or e-mail).
+`index.html` and `merci.html`: the price and the buy link (Stripe/PayPal payment link or e-mail).
 
 ### Windows .exe (no Python needed)
 

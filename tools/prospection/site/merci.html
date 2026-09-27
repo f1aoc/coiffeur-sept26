@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Merci pour votre achat — Lead Finder</title>
+  <meta name="description" content="Téléchargez Lead Finder et suivez le guide de démarrage.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" type="image/png" href="assets/icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --violet: #7C3AED;
+      --violet-dark: #6D28D9;
+      --pink: #EC4899;
+      --orange: #F97316;
+      --teal: #0D9488;
+      --yellow: #FDE68A;
+      --ink: #1E1B4B;
+      --muted: #5E5A86;
+      --bg: #F6F3FF;
+      --card: #FFFFFF;
+      --border: #E9E3FB;
+      --gradient: linear-gradient(120deg, var(--violet) 0%, var(--pink) 55%, var(--orange) 100%);
+      --shadow: 0 20px 50px -20px rgba(76, 29, 149, .35);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+      color: var(--ink); background: var(--bg); line-height: 1.6;
+      -webkit-font-smoothing: antialiased; overflow-x: hidden;
+    }
+    a { color: inherit; }
+    .wrap { width: min(860px, 100% - 32px); margin-inline: auto; }
+    .gradient-text { background: var(--gradient); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    h1, h2, h3 { line-height: 1.15; margin: 0; letter-spacing: -.02em; }
+
+    .nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 72px; width: min(1140px, 100% - 32px); }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.2rem; text-decoration: none; white-space: nowrap; }
+    .brand img { width: 36px; height: 36px; border-radius: 10px; }
+    .nav a.back { color: var(--muted); text-decoration: none; font-weight: 500; }
+    .nav a.back:hover { color: var(--violet); }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+      padding: 16px 30px; border-radius: 999px; font-weight: 700; font-size: 1.05rem;
+      text-decoration: none; transition: transform .2s ease, background .2s ease;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn-primary { background: var(--violet); color: #fff; box-shadow: 0 12px 30px -10px rgba(124, 58, 237, .7); }
+    .btn-primary:hover { background: var(--violet-dark); }
+    .btn-ghost { background: #fff; color: var(--violet-dark); box-shadow: inset 0 0 0 2px var(--border); }
+    .btn-ghost:hover { box-shadow: inset 0 0 0 2px var(--violet); }
+
+    /* ---------- Hero ---------- */
+    .hero { position: relative; text-align: center; padding: clamp(40px, 8vw, 80px) 0 clamp(40px, 7vw, 70px); overflow: hidden; }
+    .blob { position: absolute; border-radius: 50%; filter: blur(70px); opacity: .4; z-index: 0; pointer-events: none; }
+    .blob.one { width: 420px; height: 420px; background: var(--pink); top: -140px; right: -100px; }
+    .blob.two { width: 360px; height: 360px; background: var(--violet); top: 120px; left: -160px; opacity: .3; }
+    .hero .wrap { position: relative; z-index: 1; }
+    .check {
+      width: 96px; height: 96px; margin: 0 auto 26px; border-radius: 30px;
+      background: var(--gradient); display: grid; place-items: center; box-shadow: var(--shadow);
+      animation: pop .7s cubic-bezier(.2, 1.6, .4, 1) both;
+    }
+    .check svg { width: 50px; height: 50px; }
+    .check path { stroke-dasharray: 60; stroke-dashoffset: 60; animation: draw .6s .35s ease forwards; }
+    @keyframes pop { from { transform: scale(.3) rotate(-12deg); opacity: 0; } to { transform: none; opacity: 1; } }
+    @keyframes draw { to { stroke-dashoffset: 0; } }
+    .hero h1 { font-size: clamp(2.2rem, 6vw, 3.6rem); font-weight: 800; }
+    .hero p { color: var(--muted); font-size: clamp(1.05rem, 2.2vw, 1.2rem); max-width: 600px; margin: 18px auto 0; }
+
+    /* ---------- Download card ---------- */
+    .download {
+      position: relative; background: var(--card); border-radius: 28px; padding: clamp(28px, 5vw, 44px);
+      box-shadow: var(--shadow); display: flex; gap: 28px; align-items: center; margin-top: 8px;
+    }
+    .download::before { content: ""; position: absolute; inset: -3px; border-radius: 30px; z-index: -1; background: var(--gradient); }
+    .download img { width: 88px; height: 88px; border-radius: 22px; flex: none; }
+    .download h2 { font-size: 1.5rem; }
+    .download p { color: var(--muted); margin: 6px 0 18px; }
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+    .meta span { background: var(--bg); border: 1px solid var(--border); border-radius: 999px; padding: 4px 12px; font-size: .82rem; font-weight: 500; color: var(--muted); }
+
+    /* ---------- Steps ---------- */
+    .section { padding: clamp(56px, 9vw, 90px) 0 0; }
+    .section-head { text-align: center; margin-bottom: 36px; }
+    .eyebrow { font-size: .8rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--violet); }
+    .section-head h2 { font-size: clamp(1.7rem, 4vw, 2.3rem); font-weight: 800; margin-top: 10px; }
+    .steps { display: grid; gap: 18px; counter-reset: step; }
+    .step {
+      display: grid; grid-template-columns: 56px 1fr; gap: 20px;
+      background: var(--card); border: 1px solid var(--border); border-radius: 22px; padding: 26px;
+    }
+    .step::before {
+      counter-increment: step; content: counter(step);
+      display: grid; place-items: center; width: 56px; height: 56px; border-radius: 16px;
+      font-weight: 800; font-size: 1.4rem; color: #fff;
+    }
+    .step:nth-child(1)::before { background: var(--violet); }
+    .step:nth-child(2)::before { background: var(--pink); }
+    .step:nth-child(3)::before { background: var(--orange); }
+    .step:nth-child(4)::before { background: var(--teal); }
+    .step h3 { font-size: 1.2rem; margin-top: 4px; }
+    .step p { color: var(--muted); margin: 8px 0 0; }
+    .step ol { color: var(--muted); margin: 10px 0 0; padding-left: 20px; display: grid; gap: 6px; }
+    .step b { color: var(--ink); }
+    .kbd { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 1px 8px; font-weight: 700; color: var(--ink); white-space: nowrap; }
+    .link { color: var(--pink); font-weight: 700; text-decoration: none; }
+    .link:hover { text-decoration: underline; }
+    .tip {
+      margin-top: 14px; background: #FFF7E0; border-left: 4px solid #F59E0B; border-radius: 10px;
+      padding: 12px 16px; font-size: .93rem; color: var(--ink);
+    }
+
+    /* ---------- Help ---------- */
+    .help {
+      margin: clamp(56px, 9vw, 90px) 0; background: var(--gradient); color: #fff; border-radius: 28px;
+      padding: clamp(32px, 6vw, 56px); text-align: center;
+    }
+    .help h2 { font-size: clamp(1.6rem, 4vw, 2.1rem); font-weight: 800; }
+    .help p { opacity: .95; max-width: 520px; margin: 12px auto 26px; }
+    .help .btn { background: #fff; color: var(--violet-dark); }
+    .help .btn:hover { background: var(--yellow); }
+
+    footer { padding: 0 0 50px; color: var(--muted); font-size: .9rem; text-align: center; }
+
+    /* ---------- Confetti ---------- */
+    .confetti { position: fixed; inset: 0; pointer-events: none; z-index: 50; overflow: hidden; }
+    .confetti i {
+      position: absolute; top: -20px; width: 10px; height: 16px; border-radius: 3px; opacity: .9;
+      animation: fall linear forwards;
+    }
+    @keyframes fall { to { transform: translateY(110vh) rotate(720deg); opacity: .8; } }
+
+    @media (max-width: 620px) {
+      .download { flex-direction: column; text-align: center; }
+      .meta { justify-content: center; }
+      .download .btn { width: 100%; }
+      .step { grid-template-columns: 1fr; gap: 14px; }
+      .nav a.back span { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+      .check path { stroke-dashoffset: 0; }
+      .confetti { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="wrap">
+      <a class="brand" href="index.html"><img src="assets/icon.png" alt="">Lead Finder</a>
+      <a class="back" href="index.html">← <span>Retour au site</span></a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="blob one"></div><div class="blob two"></div>
+    <div class="wrap">
+      <div class="check" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <h1>Merci pour <span class="gradient-text">votre achat&nbsp;!</span></h1>
+      <p>Bienvenue dans Lead Finder. Votre logiciel est prêt : téléchargez-le, puis suivez les 4 étapes ci-dessous pour lancer votre première recherche.</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="download">
+      <img src="assets/icon.png" alt="">
+      <div>
+        <h2>Lead Finder pour Windows</h2>
+        <p>Un seul fichier, rien à installer.</p>
+        <div class="meta"><span>Windows 10 / 11</span><span>Aucune installation</span><span>Fichier .exe</span></div>
+        <!-- À MODIFIER : lien de téléchargement de LeadFinder.exe -->
+        <a class="btn btn-primary" id="download"
+           href="https://github.com/f1aoc/coiffeur-sept26/releases/download/lead-finder-latest/LeadFinder.exe">⬇&nbsp; Télécharger Lead Finder</a>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <span class="eyebrow">Guide de démarrage</span>
+        <h2>Prêt en <span class="gradient-text">15 minutes</span></h2>
+      </div>
+      <div class="steps">
+        <article class="step">
+          <div>
+            <h3>Lancez l'application</h3>
+            <p>Double-cliquez sur <b>LeadFinder.exe</b> dans votre dossier Téléchargements. Vous pouvez le déplacer sur votre Bureau pour le retrouver facilement.</p>
+            <div class="tip">Si Windows affiche <b>« Windows a protégé votre ordinateur »</b>, cliquez sur <span class="kbd">Informations complémentaires</span> puis <span class="kbd">Exécuter quand même</span>. Vous ne le ferez qu'une seule fois.</div>
+          </div>
+        </article>
+        <article class="step">
+          <div>
+            <h3>Créez votre clé API Google</h3>
+            <p>C'est ce qui permet à Lead Finder d'interroger Google Maps. La création est gratuite.</p>
+            <ol>
+              <li>Allez sur <a class="link" href="https://console.cloud.google.com" target="_blank" rel="noopener">console.cloud.google.com</a> et connectez-vous avec votre compte Google.</li>
+              <li>Créez un <b>nouveau projet</b> (par exemple « prospection »).</li>
+              <li>Dans <b>Facturation</b>, associez une carte bancaire. Google l'exige même pour le quota gratuit.</li>
+              <li>Dans <b>API et services → Bibliothèque</b>, activez <b>« Places API (New) »</b> (avec « New »).</li>
+              <li>Dans <b>API et services → Identifiants</b>, cliquez sur <b>Créer des identifiants → Clé API</b> et copiez la clé (elle commence par « AIza »).</li>
+            </ol>
+            <div class="tip">Conseil : dans <b>Facturation → Budgets et alertes</b>, créez une alerte (par exemple 10&nbsp;€ par mois) pour ne jamais avoir de surprise.</div>
+          </div>
+        </article>
+        <article class="step">
+          <div>
+            <h3>Collez la clé dans Lead Finder</h3>
+            <p>Au premier lancement, la fenêtre <b>« Clé API »</b> s'ouvre toute seule. Collez votre clé, cochez <b>« Mémoriser sur cet ordinateur »</b> et cliquez sur <b>Enregistrer</b>. En haut à droite s'affiche alors <b>« ✔ Clé configurée »</b>.</p>
+          </div>
+        </article>
+        <article class="step">
+          <div>
+            <h3>Lancez votre première recherche</h3>
+            <p>Choisissez un métier (par exemple <b>coiffeur</b>), tapez une ou plusieurs villes, puis cliquez sur <b>Rechercher</b>. Double-cliquez un résultat pour l'ouvrir sur Google Maps, et cliquez sur <b>Exporter Excel</b> pour récupérer votre liste de prospects.</p>
+            <div class="tip">Si un message d'erreur apparaît, il vous indique en français quel réglage Google corriger. Dans la plupart des cas, il suffit d'attendre 2 à 3 minutes après la création de la clé.</div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="help">
+      <h2>Besoin d'un coup de main&nbsp;?</h2>
+      <p>Une question sur l'installation ou sur la clé Google&nbsp;? Écrivez-nous, nous vous répondons rapidement.</p>
+      <!-- À MODIFIER : votre adresse e-mail de support -->
+      <a class="btn" href="mailto:contact@exemple.fr?subject=Aide%20Lead%20Finder">✉&nbsp; Contacter le support</a>
+    </section>
+  </main>
+
+  <footer>© <span id="year">2026</span> Lead Finder · Google Maps est une marque de Google LLC.</footer>
+
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    // Short confetti burst on arrival.
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const colors = ["#7C3AED", "#EC4899", "#F97316", "#FDE68A", "#0D9488"];
+      const box = document.createElement("div");
+      box.className = "confetti";
+      for (let i = 0; i < 90; i++) {
+        const c = document.createElement("i");
+        c.style.left = Math.random() * 100 + "vw";
+        c.style.background = colors[i % colors.length];
+        c.style.animationDuration = 2.2 + Math.random() * 2.2 + "s";
+        c.style.animationDelay = Math.random() * 0.8 + "s";
+        c.style.transform = "rotate(" + Math.random() * 360 + "deg)";
+        box.appendChild(c);
+      }
+      document.body.appendChild(box);
+      setTimeout(() => box.remove(), 5500);
+    }
+  </script>
+</body>
+</html>
