@@ -32,6 +32,13 @@ for resale, edit the constants at the top of `lead_finder_app.pyw`
 `python3 tools/prospection/assets/make_icon.py` (needs Pillow): it rewrites
 `assets/lead_finder.ico` (the .exe icon) and `brand_icon.py` (window icon).
 
+### Sales page
+
+`site/` holds a static French sales page for Lead Finder (`index.html` +
+`assets/`). No build: upload the folder to any static host (Netlify, Vercel,
+GitHub Pages, FTP). Before publishing, edit the lines marked `À MODIFIER` in
+`index.html`: the price and the buy link (Stripe/PayPal payment link or e-mail).
+
 ### Windows .exe (no Python needed)
 
 GitHub builds `LeadFinder.exe` automatically whenever this folder changes
