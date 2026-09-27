@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Lead Finder — Trouvez les commerces sans site web</title>
-  <meta name="description" content="Lead Finder repère sur Google Maps les commerces sans site web, par métier et par ville, et vous livre une liste de prospects prête à appeler, exportée dans Excel.">
-  <meta property="og:title" content="Lead Finder — Trouvez les commerces sans site web">
-  <meta property="og:description" content="Vos prochains clients n'ont pas encore de site. Lead Finder les trouve pour vous en quelques secondes.">
+  <title>BridgeToLeads — Trouvez les commerces sans site web</title>
+  <meta name="description" content="BridgeToLeads repère sur Google Maps les commerces sans site web, par métier et par ville, et vous livre une liste de prospects prête à appeler, exportée dans Excel.">
+  <meta property="og:title" content="BridgeToLeads — Trouvez les commerces sans site web">
+  <meta property="og:description" content="Vos prochains clients n'ont pas encore de site. BridgeToLeads les trouve pour vous en quelques secondes.">
   <meta property="og:image" content="assets/app-screenshot.png">
   <link rel="icon" type="image/png" href="assets/icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -86,6 +86,7 @@
     .nav.scrolled { border-bottom-color: var(--border); }
     .nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 72px; gap: 16px; }
     .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.2rem; text-decoration: none; }
+    .by { font-size: .72rem; font-weight: 500; font-style: italic; color: var(--muted); margin-left: -4px; align-self: flex-end; padding-bottom: 5px; }
     .brand img { width: 36px; height: 36px; border-radius: 10px; }
     .nav-links { display: flex; align-items: center; gap: 28px; }
     .nav-links a { text-decoration: none; font-weight: 500; color: var(--muted); }
@@ -250,6 +251,7 @@
       .nav-links a:not(.btn) { display: none; }
     }
     @media (max-width: 620px) {
+      .nav .by { display: none; }
       .long { display: none; }
       .short { display: inline; }
       .nav .btn { padding: 9px 18px; }
@@ -270,13 +272,13 @@
 
   <nav class="nav" id="nav">
     <div class="wrap">
-      <a class="brand" href="#top"><img src="assets/icon.png" alt="">Lead Finder</a>
+      <a class="brand" href="#top"><img src="assets/icon.png" alt="">BridgeToLeads<small class="by">by ptabountchikoff</small></a>
       <div class="nav-links">
         <a href="#comment">Comment ça marche</a>
         <a href="#fonctionnalites">Fonctionnalités</a>
         <a href="#tarif">Tarif</a>
         <a href="#faq">FAQ</a>
-        <a class="btn btn-primary" href="#tarif"><span class="long">Obtenir Lead Finder</span><span class="short">Acheter</span></a>
+        <a class="btn btn-primary" href="#tarif"><span class="long">Obtenir BridgeToLeads</span><span class="short">Acheter</span></a>
       </div>
     </div>
   </nav>
@@ -286,9 +288,9 @@
     <div class="wrap">
       <span class="pill"><b>Nouveau</b> Logiciel de prospection pour Windows</span>
       <h1>Vos prochains clients <span class="gradient-text">n'ont pas encore de site web.</span></h1>
-      <p class="lead">Lead Finder repère sur Google Maps les commerces sans site, par métier et par ville, et vous livre une liste de prospects prête à appeler, exportée dans Excel.</p>
+      <p class="lead">BridgeToLeads repère sur Google Maps les commerces sans site, par métier et par ville, et vous livre une liste de prospects prête à appeler, exportée dans Excel.</p>
       <div class="hero-ctas">
-        <a class="btn btn-primary" href="#tarif">Obtenir Lead Finder →</a>
+        <a class="btn btn-primary" href="#tarif">Obtenir BridgeToLeads →</a>
         <a class="btn btn-ghost" href="#comment">Voir comment ça marche</a>
       </div>
       <div class="trust">
@@ -299,7 +301,7 @@
       <figure class="screen reveal">
         <div class="bar"><i></i><i></i><i></i></div>
         <img src="assets/app-screenshot.png" width="1180" height="740"
-             alt="Lead Finder : liste de salons de coiffure sans site web avec téléphone, adresse, note et nombre d'avis">
+             alt="BridgeToLeads : liste de salons de coiffure sans site web avec téléphone, adresse, note et nombre d'avis">
         <figcaption>Aperçu de l'application (données d'exemple)</figcaption>
       </figure>
     </div>
@@ -328,7 +330,7 @@
         </article>
         <article class="step reveal">
           <h3>Ajoutez vos villes</h3>
-          <p>Une ou plusieurs villes d'un coup. Lead Finder interroge Google Maps et supprime les doublons.</p>
+          <p>Une ou plusieurs villes d'un coup. BridgeToLeads interroge Google Maps et supprime les doublons.</p>
         </article>
         <article class="step reveal">
           <h3>Exportez et appelez</h3>
@@ -353,7 +355,7 @@
         <article class="feature reveal">
           <div class="icon i-violet">◎</div>
           <h3>« Facebook seulement » repérés</h3>
-          <p>Un commerce qui n'a qu'une page Facebook, Instagram, Planity ou Treatwell est aussi un prospect. Lead Finder le signale.</p>
+          <p>Un commerce qui n'a qu'une page Facebook, Instagram, Planity ou Treatwell est aussi un prospect. BridgeToLeads le signale.</p>
         </article>
         <article class="feature reveal">
           <div class="icon i-orange">★</div>
@@ -373,7 +375,7 @@
         <article class="feature reveal">
           <div class="icon i-pink">✓</div>
           <h3>API officielle Google</h3>
-          <p>Lead Finder passe par l'API Google Places officielle, pas par du « scraping » : des données fiables et à jour.</p>
+          <p>BridgeToLeads passe par l'API Google Places officielle, pas par du « scraping » : des données fiables et à jour.</p>
         </article>
       </div>
     </div>
@@ -429,7 +431,7 @@
             <li>Aide pour créer votre clé Google</li>
           </ul>
           <!-- À MODIFIER : votre lien de paiement (Stripe, PayPal…) ou votre e-mail -->
-          <a class="btn btn-primary" href="mailto:contact@exemple.fr?subject=Achat%20Lead%20Finder">Acheter Lead Finder →</a>
+          <a class="btn btn-primary" href="mailto:contact@exemple.fr?subject=Achat%20BridgeToLeads">Acheter BridgeToLeads →</a>
           <p class="fine">Nécessite une clé API Google Maps personnelle. Google offre un quota d'utilisation gratuit chaque mois ; au-delà, les recherches sont facturées par Google.</p>
         </div>
       </div>
@@ -457,7 +459,7 @@
         </details>
         <details class="reveal">
           <summary>Est-ce que ça fonctionne sur Mac ?</summary>
-          <p>Lead Finder est disponible pour Windows. Une version Mac pourra être proposée plus tard.</p>
+          <p>BridgeToLeads est disponible pour Windows. Une version Mac pourra être proposée plus tard.</p>
         </details>
         <details class="reveal">
           <summary>Windows affiche un avertissement au premier lancement, c'est normal ?</summary>
@@ -476,15 +478,15 @@
       <div class="cta-band reveal">
         <h2>Trouvez vos prochains clients dès aujourd'hui</h2>
         <p>Lancez votre première recherche et découvrez les commerces de votre ville qui n'ont pas encore de site.</p>
-        <a class="btn btn-white" href="#tarif">Obtenir Lead Finder →</a>
+        <a class="btn btn-white" href="#tarif">Obtenir BridgeToLeads →</a>
       </div>
     </div>
   </section>
 
   <footer>
     <div class="wrap">
-      <a class="brand" href="#top"><img src="assets/icon.png" alt="">Lead Finder</a>
-      <span>© <span id="year">2026</span> Lead Finder · Google Maps est une marque de Google LLC.</span>
+      <a class="brand" href="#top"><img src="assets/icon.png" alt="">BridgeToLeads<small class="by">by ptabountchikoff</small></a>
+      <span>© <span id="year">2026</span> BridgeToLeads by ptabountchikoff · Google Maps est une marque de Google LLC.</span>
     </div>
   </footer>
 

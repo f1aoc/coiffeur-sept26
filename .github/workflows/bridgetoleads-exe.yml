@@ -1,10 +1,10 @@
-name: Build Lead Finder (Windows .exe)
+name: Build BridgeToLeads (Windows .exe)
 
 on:
   push:
     paths:
       - "tools/prospection/**"
-      - ".github/workflows/lead-finder-exe.yml"
+      - ".github/workflows/bridgetoleads-exe.yml"
   workflow_dispatch:
 
 permissions:
@@ -23,39 +23,39 @@ jobs:
       - name: Install PyInstaller
         run: pip install pyinstaller openpyxl
 
-      - name: Build LeadFinder.exe
+      - name: Build BridgeToLeads.exe
         run: >
-          pyinstaller --onefile --windowed --name LeadFinder
+          pyinstaller --onefile --windowed --name BridgeToLeads
           --paths tools/prospection --hidden-import find_no_website --hidden-import brand_icon
-          --hidden-import openpyxl --icon tools/prospection/assets/lead_finder.ico
-          tools/prospection/lead_finder_app.pyw
+          --hidden-import openpyxl --icon tools/prospection/assets/bridgetoleads.ico
+          tools/prospection/bridgetoleads.pyw
 
       - name: Smoke test (CLI module imports in the build env)
         run: python tools/prospection/find_no_website.py --help
 
       - name: Zip the sales page
         shell: pwsh
-        run: Compress-Archive -Path tools/prospection/site/* -DestinationPath dist/LeadFinder-site.zip
+        run: Compress-Archive -Path tools/prospection/site/* -DestinationPath dist/BridgeToLeads-site.zip
 
       - uses: actions/upload-artifact@v4
         with:
-          name: LeadFinder-windows
+          name: BridgeToLeads-windows
           path: |
-            dist/LeadFinder.exe
-            dist/LeadFinder-site.zip
+            dist/BridgeToLeads.exe
+            dist/BridgeToLeads-site.zip
 
-      - name: Publish to the "Lead Finder" release
+      - name: Publish to the "BridgeToLeads" release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: lead-finder-latest
-          name: Lead Finder (latest Windows build)
+          tag_name: bridgetoleads-latest
+          name: BridgeToLeads by ptabountchikoff (latest Windows build)
           target_commitish: ${{ github.sha }}
           body: |
-            Download **LeadFinder.exe** below and double-click it. No Python needed.
-            **LeadFinder-site.zip** is the sales page: unzip it and upload the folder to any static host.
+            Download **BridgeToLeads.exe** below and double-click it. No Python needed.
+            **BridgeToLeads-site.zip** is the sales page: unzip it and upload the folder to any static host.
             Windows may show "Windows protected your PC" the first time: click
             **More info → Run anyway** (the app is not code-signed).
           files: |
-            dist/LeadFinder.exe
-            dist/LeadFinder-site.zip
+            dist/BridgeToLeads.exe
+            dist/BridgeToLeads-site.zip
           prerelease: true

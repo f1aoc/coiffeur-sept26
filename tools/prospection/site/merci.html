@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Merci pour votre achat — Lead Finder</title>
-  <meta name="description" content="Téléchargez Lead Finder et suivez le guide de démarrage.">
+  <title>Merci pour votre achat — BridgeToLeads</title>
+  <meta name="description" content="Téléchargez BridgeToLeads et suivez le guide de démarrage.">
   <meta name="robots" content="noindex, nofollow">
   <link rel="icon" type="image/png" href="assets/icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -40,6 +40,7 @@
 
     .nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 72px; width: min(1140px, 100% - 32px); }
     .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.2rem; text-decoration: none; white-space: nowrap; }
+    .by { font-size: .72rem; font-weight: 500; font-style: italic; color: var(--muted); margin-left: -4px; align-self: flex-end; padding-bottom: 5px; }
     .brand img { width: 36px; height: 36px; border-radius: 10px; }
     .nav a.back { color: var(--muted); text-decoration: none; font-weight: 500; }
     .nav a.back:hover { color: var(--violet); }
@@ -137,6 +138,7 @@
     @keyframes fall { to { transform: translateY(110vh) rotate(720deg); opacity: .8; } }
 
     @media (max-width: 620px) {
+      .nav .by { display: none; }
       .download { flex-direction: column; text-align: center; }
       .meta { justify-content: center; }
       .download .btn { width: 100%; }
@@ -154,7 +156,7 @@
 
   <nav class="nav">
     <div class="wrap">
-      <a class="brand" href="index.html"><img src="assets/icon.png" alt="">Lead Finder</a>
+      <a class="brand" href="index.html"><img src="assets/icon.png" alt="">BridgeToLeads<small class="by">by ptabountchikoff</small></a>
       <a class="back" href="index.html">← <span>Retour au site</span></a>
     </div>
   </nav>
@@ -166,7 +168,7 @@
         <svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
       <h1>Merci pour <span class="gradient-text">votre achat&nbsp;!</span></h1>
-      <p>Bienvenue dans Lead Finder. Votre logiciel est prêt : téléchargez-le, puis suivez les 4 étapes ci-dessous pour lancer votre première recherche.</p>
+      <p>Bienvenue dans BridgeToLeads. Votre logiciel est prêt : téléchargez-le, puis suivez les 4 étapes ci-dessous pour lancer votre première recherche.</p>
     </div>
   </header>
 
@@ -174,12 +176,12 @@
     <section class="download">
       <img src="assets/icon.png" alt="">
       <div>
-        <h2>Lead Finder pour Windows</h2>
+        <h2>BridgeToLeads pour Windows</h2>
         <p>Un seul fichier, rien à installer.</p>
         <div class="meta"><span>Windows 10 / 11</span><span>Aucune installation</span><span>Fichier .exe</span></div>
-        <!-- À MODIFIER : lien de téléchargement de LeadFinder.exe -->
+        <!-- À MODIFIER : lien de téléchargement de BridgeToLeads.exe -->
         <a class="btn btn-primary" id="download"
-           href="https://github.com/f1aoc/coiffeur-sept26/releases/download/lead-finder-latest/LeadFinder.exe">⬇&nbsp; Télécharger Lead Finder</a>
+           href="https://github.com/f1aoc/coiffeur-sept26/releases/download/bridgetoleads-latest/BridgeToLeads.exe">⬇&nbsp; Télécharger BridgeToLeads</a>
       </div>
     </section>
 
@@ -192,14 +194,14 @@
         <article class="step">
           <div>
             <h3>Lancez l'application</h3>
-            <p>Double-cliquez sur <b>LeadFinder.exe</b> dans votre dossier Téléchargements. Vous pouvez le déplacer sur votre Bureau pour le retrouver facilement.</p>
+            <p>Double-cliquez sur <b>BridgeToLeads.exe</b> dans votre dossier Téléchargements. Vous pouvez le déplacer sur votre Bureau pour le retrouver facilement.</p>
             <div class="tip">Si Windows affiche <b>« Windows a protégé votre ordinateur »</b>, cliquez sur <span class="kbd">Informations complémentaires</span> puis <span class="kbd">Exécuter quand même</span>. Vous ne le ferez qu'une seule fois.</div>
           </div>
         </article>
         <article class="step">
           <div>
             <h3>Créez votre clé API Google</h3>
-            <p>C'est ce qui permet à Lead Finder d'interroger Google Maps. La création est gratuite.</p>
+            <p>C'est ce qui permet à BridgeToLeads d'interroger Google Maps. La création est gratuite.</p>
             <ol>
               <li>Allez sur <a class="link" href="https://console.cloud.google.com" target="_blank" rel="noopener">console.cloud.google.com</a> et connectez-vous avec votre compte Google.</li>
               <li>Créez un <b>nouveau projet</b> (par exemple « prospection »).</li>
@@ -212,7 +214,7 @@
         </article>
         <article class="step">
           <div>
-            <h3>Collez la clé dans Lead Finder</h3>
+            <h3>Collez la clé dans BridgeToLeads</h3>
             <p>Au premier lancement, la fenêtre <b>« Clé API »</b> s'ouvre toute seule. Collez votre clé, cochez <b>« Mémoriser sur cet ordinateur »</b> et cliquez sur <b>Enregistrer</b>. En haut à droite s'affiche alors <b>« ✔ Clé configurée »</b>.</p>
           </div>
         </article>
@@ -230,11 +232,11 @@
       <h2>Besoin d'un coup de main&nbsp;?</h2>
       <p>Une question sur l'installation ou sur la clé Google&nbsp;? Écrivez-nous, nous vous répondons rapidement.</p>
       <!-- À MODIFIER : votre adresse e-mail de support -->
-      <a class="btn" href="mailto:contact@exemple.fr?subject=Aide%20Lead%20Finder">✉&nbsp; Contacter le support</a>
+      <a class="btn" href="mailto:contact@exemple.fr?subject=Aide%20BridgeToLeads">✉&nbsp; Contacter le support</a>
     </section>
   </main>
 
-  <footer>© <span id="year">2026</span> Lead Finder · Google Maps est une marque de Google LLC.</footer>
+  <footer>© <span id="year">2026</span> BridgeToLeads by ptabountchikoff · Google Maps est une marque de Google LLC.</footer>
 
   <script>
     document.getElementById("year").textContent = new Date().getFullYear();

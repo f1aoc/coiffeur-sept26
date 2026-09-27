@@ -1,4 +1,4 @@
-"""Draw the Lead Finder icon (needs Pillow). Regenerates lead_finder.ico and brand_icon.py.
+"""Draw the BridgeToLeads icon (needs Pillow). Regenerates bridgetoleads.ico/.png and brand_icon.py.
 
     python3 tools/prospection/assets/make_icon.py
 """
@@ -33,18 +33,30 @@ def draw():
     img.paste(grad, (0, 0), mask)
 
     d = ImageDraw.Draw(img)
-    cx, cy, r, w = 430, 430, 230, 78
-    d.line((cx + 150, cy + 150, 800, 800), fill="white", width=120)            # handle
-    d.ellipse((800 - 60, 800 - 60, 800 + 60, 800 + 60), fill="white")         # rounded handle end
-    d.ellipse((cx - r, cy - r, cx + r, cy + r), outline="white", width=w)      # lens ring
-    d.ellipse((cx - 70, cy - 70, cx + 70, cy + 70), fill=(254, 240, 138))     # yellow "found it" dot
+    white, yellow = "white", (254, 240, 138)
+    deck_y, left, right = 650, 150, 874
+    # Arch of the bridge (drawn as a thick arc of a large ellipse).
+    d.arc((230, 330, 794, 970), start=180, end=360, fill=white, width=62)
+    # Hangers between the arch and the deck.
+    for x in (330, 420, 512, 604, 694):
+        top = 650 - int((1 - ((x - 512) / 282) ** 2) ** 0.5 * 320) + 30
+        d.line((x, top, x, deck_y), fill=white, width=26)
+    # Deck, with rounded ends.
+    d.line((left, deck_y, right, deck_y), fill=white, width=64)
+    for x in (left, right):
+        d.ellipse((x - 32, deck_y - 32, x + 32, deck_y + 32), fill=white)
+    # Pillars under the deck.
+    for x in (262, 762):
+        d.rounded_rectangle((x - 30, deck_y, x + 30, 850), radius=14, fill=white)
+    # The lead waiting on the other side.
+    d.ellipse((right - 70, deck_y - 190, right + 20, deck_y - 100), fill=yellow)
     return img
 
 
 def main():
     img = draw()
-    img.save(HERE / "lead_finder.ico", sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
-    img.resize((256, 256), Image.LANCZOS).save(HERE / "lead_finder.png")
+    img.save(HERE / "bridgetoleads.ico", sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
+    img.resize((256, 256), Image.LANCZOS).save(HERE / "bridgetoleads.png")
     buf = io.BytesIO()
     img.resize((64, 64), Image.LANCZOS).save(buf, "PNG", optimize=True)
     b64 = base64.b64encode(buf.getvalue()).decode()

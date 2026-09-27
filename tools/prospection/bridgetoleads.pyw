@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Lead Finder — application de bureau pour trouver les commerces sans site web.
+"""BridgeToLeads by ptabountchikoff — application de bureau pour trouver les commerces sans site web.
 
 Choisissez un métier et une ou plusieurs villes, cliquez sur Rechercher, puis
 exportez les résultats vers Excel. Double-cliquez une ligne pour ouvrir le
 commerce sur Google Maps.
 
-    python3 lead_finder_app.pyw     (ou double-clic sur le fichier sous Windows)
+    python3 bridgetoleads.pyw     (ou double-clic sur le fichier sous Windows)
 """
 
 import json
@@ -25,7 +25,8 @@ from find_no_website import PlacesError, clean_api_key, find_leads, write_xlsx  
 
 # ---------- Brand: change these to rebrand the app ----------
 
-APP_NAME = "Lead Finder"
+APP_NAME = "BridgeToLeads"
+AUTHOR = "ptabountchikoff"
 TAGLINE = "Trouvez les commerces sans site web, prêts à devenir vos clients"
 KEY_HELP_URL = "https://console.cloud.google.com/apis/library/places.googleapis.com"
 
@@ -49,7 +50,8 @@ C = {
     "select": "#FDE68A",
 }
 
-CONFIG_PATH = Path.home() / ".lead_finder.json"
+CONFIG_PATH = Path.home() / ".bridgetoleads.json"
+OLD_CONFIG_PATH = Path.home() / ".lead_finder.json"  # settings saved by the app's previous name
 
 OCCUPATIONS = [
     "coiffeur", "barbier", "institut de beauté", "onglerie", "esthéticienne",
@@ -78,10 +80,12 @@ def page_name(status):
 
 
 def load_config():
-    try:
-        return json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return {}
+    for path in (CONFIG_PATH, OLD_CONFIG_PATH):
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+    return {}
 
 
 def save_config(cfg):
@@ -160,7 +164,7 @@ class PillButton(tk.Canvas):
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title(f"{APP_NAME} — {TAGLINE}")
+        self.title(f"{APP_NAME} by {AUTHOR} — {TAGLINE}")
         self.geometry("1180x740")
         self.minsize(960, 600)
         self.configure(bg=C["bg"])
@@ -174,6 +178,7 @@ class App(tk.Tk):
         self.f = {
             "title": (family, 22, "bold"),
             "tagline": (family, 11),
+            "byline": (family, 10, "italic"),
             "h2": (family, 13, "bold"),
             "label": (family, 10, "bold"),
             "body": (family, 10),
@@ -252,6 +257,9 @@ class App(tk.Tk):
             c.create_rectangle(x, 0, x + step, h, fill=gradient_at(x / max(w - 1, 1)), width=0)
         c.create_image(24, h // 2, image=self.header_logo, anchor="w")
         c.create_text(102, h // 2 - 12, text=APP_NAME, fill="white", font=self.f["title"], anchor="w")
+        title_w = tkfont.Font(font=self.f["title"]).measure(APP_NAME)
+        c.create_text(102 + title_w + 10, h // 2 - 8, text=f"by {AUTHOR}", fill="white",
+                      font=self.f["byline"], anchor="w")
         c.create_text(104, h // 2 + 18, text=TAGLINE, fill="white", font=self.f["tagline"], anchor="w")
         edge = gradient_at(1.0)
         self.settings_btn.config(bg=edge)

@@ -1,4 +1,4 @@
-# Lead finder: local businesses without a website
+# BridgeToLeads by ptabountchikoff: local businesses without a website
 
 `find_no_website.py` searches Google Maps via the official **Places API (New)**
 and exports businesses that have no website (or only a Facebook / Instagram /
@@ -15,26 +15,26 @@ Python 3.9+. Excel export needs `pip install openpyxl` (already inside the .exe)
 ## Desktop app (easiest)
 
 ```bash
-python3 tools/prospection/lead_finder_app.pyw
+python3 tools/prospection/bridgetoleads.pyw
 ```
 
-On Windows you can also just double-click `lead_finder_app.pyw` (with Python
+On Windows you can also just double-click `bridgetoleads.pyw` (with Python
 installed from python.org). Paste your API key, pick an occupation from the
 list (or type any), enter cities one per line, click **Search**. Double-click
 a result to open it on Google Maps; **Exporter Excel…** saves the list as .xlsx.
-"Remember" stores the key in `~/.lead_finder.json` on your computer.
+"Remember" stores the key in `~/.bridgetoleads.json` (settings saved under the old name `~/.lead_finder.json` are picked up automatically) on your computer.
 
 ### Look & branding
 
 Colourful interface (violet → pink → orange), fully in French. To rebrand it
-for resale, edit the constants at the top of `lead_finder_app.pyw`
-(`APP_NAME`, `TAGLINE`, `GRADIENT`, colours `C`), and redraw the icon with
+for resale, edit the constants at the top of `bridgetoleads.pyw`
+(`APP_NAME`, `AUTHOR`, `TAGLINE`, `GRADIENT`, colours `C`), and redraw the icon with
 `python3 tools/prospection/assets/make_icon.py` (needs Pillow): it rewrites
-`assets/lead_finder.ico` (the .exe icon) and `brand_icon.py` (window icon).
+`assets/bridgetoleads.ico` (the .exe icon) and `brand_icon.py` (window icon).
 
 ### Sales page
 
-`site/` holds a static French sales page for Lead Finder (`index.html` +
+`site/` holds a static French sales page for BridgeToLeads (`index.html` +
 `assets/`) and a post-purchase thank-you page (`merci.html`: download button +
 setup guide, not indexed by search engines; point your payment provider's
 success redirect to it). No build: upload the folder to any static host (Netlify, Vercel,
@@ -43,9 +43,9 @@ GitHub Pages, FTP). Before publishing, edit the lines marked `À MODIFIER` in
 
 ### Windows .exe (no Python needed)
 
-GitHub builds `LeadFinder.exe` automatically whenever this folder changes
-(workflow `.github/workflows/lead-finder-exe.yml`). Download it from the
-repo's **Releases → Lead Finder (latest Windows build)**, or from the
+GitHub builds `BridgeToLeads.exe` automatically whenever this folder changes
+(workflow `.github/workflows/bridgetoleads-exe.yml`). Download it from the
+repo's **Releases → BridgeToLeads by ptabountchikoff (latest Windows build)**, which also holds `BridgeToLeads-site.zip`, or from the
 workflow run's artifacts. The exe is not code-signed, so on first launch
 Windows SmartScreen asks: click **More info → Run anyway**.
 
