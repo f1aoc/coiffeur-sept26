@@ -41,13 +41,19 @@ success redirect to it). No build: upload the folder to any static host (Netlify
 GitHub Pages, FTP). Before publishing, edit the lines marked `À MODIFIER` in
 `index.html` and `merci.html`: the price and the buy link (Stripe/PayPal payment link or e-mail).
 
-### Windows .exe (no Python needed)
+### Windows .exe and Mac app (no Python needed)
 
 GitHub builds `BridgeToLeads.exe` automatically whenever this folder changes
 (workflow `.github/workflows/bridgetoleads-exe.yml`). Download it from the
 repo's **Releases → BridgeToLeads by ptabountchikoff (latest Windows build)**, which also holds `BridgeToLeads-site.zip`, or from the
 workflow run's artifacts. The exe is not code-signed, so on first launch
 Windows SmartScreen asks: click **More info → Run anyway**.
+
+The same workflow builds the Mac app on GitHub's macOS runners:
+`BridgeToLeads-mac-apple-silicon.zip` (M1–M4) and `BridgeToLeads-mac-intel.zip`,
+each smoke-tested (the app must start and stay open). The app is not notarized
+by Apple, so the first launch needs System Settings → Privacy & Security →
+**Open Anyway**. Signing/notarization needs an Apple Developer account.
 
 ## Command line
 

@@ -86,6 +86,15 @@
     .meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
     .meta span { background: var(--bg); border: 1px solid var(--border); border-radius: 999px; padding: 4px 12px; font-size: .82rem; font-weight: 500; color: var(--muted); }
 
+    .dl-buttons { display: flex; flex-wrap: wrap; gap: 10px; }
+    .dl-buttons .btn { padding: 13px 22px; font-size: 1rem; }
+    .dl-buttons small { font-weight: 500; opacity: .8; font-size: .82rem; }
+    .which-mac { font-size: .85rem; margin: 14px 0 0 !important; }
+    .os-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+    .os-tabs > div { background: var(--bg); border-radius: 14px; padding: 14px 16px; font-size: .93rem; color: var(--muted); }
+    .os-tabs h4 { margin: 0 0 6px; color: var(--ink); font-size: .95rem; }
+    .os-tabs ol { margin: 0; padding-left: 18px; }
+
     /* ---------- Steps ---------- */
     .section { padding: clamp(56px, 9vw, 90px) 0 0; }
     .section-head { text-align: center; margin-bottom: 36px; }
@@ -142,6 +151,9 @@
       .download { flex-direction: column; text-align: center; }
       .meta { justify-content: center; }
       .download .btn { width: 100%; }
+      .os-tabs { grid-template-columns: 1fr; }
+      .os-tabs > div { min-width: 0; }
+      .kbd { white-space: normal; }
       .step { grid-template-columns: 1fr; gap: 14px; }
       .nav a.back span { display: none; }
     }
@@ -176,12 +188,18 @@
     <section class="download">
       <img src="assets/icon.png" alt="">
       <div>
-        <h2>BridgeToLeads pour Windows</h2>
-        <p>Un seul fichier, rien à installer.</p>
-        <div class="meta"><span>Windows 10 / 11</span><span>Aucune installation</span><span>Fichier .exe</span></div>
-        <!-- À MODIFIER : lien de téléchargement de BridgeToLeads.exe -->
-        <a class="btn btn-primary" id="download"
-           href="https://github.com/f1aoc/coiffeur-sept26/releases/download/bridgetoleads-latest/BridgeToLeads.exe">⬇&nbsp; Télécharger BridgeToLeads</a>
+        <h2>Téléchargez BridgeToLeads</h2>
+        <p>Choisissez la version de votre ordinateur. Rien à installer.</p>
+        <!-- À MODIFIER : liens de téléchargement -->
+        <div class="dl-buttons">
+          <a class="btn btn-primary" data-os="win"
+             href="https://github.com/f1aoc/coiffeur-sept26/releases/download/bridgetoleads-latest/BridgeToLeads.exe">Windows <small>10 / 11</small></a>
+          <a class="btn btn-ghost" data-os="mac"
+             href="https://github.com/f1aoc/coiffeur-sept26/releases/download/bridgetoleads-latest/BridgeToLeads-mac-apple-silicon.zip">Mac <small>puce Apple M1–M4</small></a>
+          <a class="btn btn-ghost" data-os="mac"
+             href="https://github.com/f1aoc/coiffeur-sept26/releases/download/bridgetoleads-latest/BridgeToLeads-mac-intel.zip">Mac <small>Intel</small></a>
+        </div>
+        <p class="which-mac">Quel Mac avez-vous&nbsp;? Menu Pomme → <b>À propos de ce Mac</b> : « Puce Apple M… » = puce Apple, « Processeur Intel » = Intel.</p>
       </div>
     </section>
 
@@ -194,8 +212,21 @@
         <article class="step">
           <div>
             <h3>Lancez l'application</h3>
-            <p>Double-cliquez sur <b>BridgeToLeads.exe</b> dans votre dossier Téléchargements. Vous pouvez le déplacer sur votre Bureau pour le retrouver facilement.</p>
-            <div class="tip">Si Windows affiche <b>« Windows a protégé votre ordinateur »</b>, cliquez sur <span class="kbd">Informations complémentaires</span> puis <span class="kbd">Exécuter quand même</span>. Vous ne le ferez qu'une seule fois.</div>
+            <div class="os-tabs">
+              <div>
+                <h4>Sur Windows</h4>
+                Double-cliquez sur <b>BridgeToLeads.exe</b> dans votre dossier Téléchargements.
+                <div class="tip">Si Windows affiche <b>« Windows a protégé votre ordinateur »</b>, cliquez sur <span class="kbd">Informations complémentaires</span> puis <span class="kbd">Exécuter quand même</span>. Une seule fois.</div>
+              </div>
+              <div>
+                <h4>Sur Mac</h4>
+                <ol>
+                  <li>Double-cliquez sur le fichier <b>.zip</b> téléchargé pour le décompresser.</li>
+                  <li>Glissez <b>BridgeToLeads</b> dans votre dossier <b>Applications</b>, puis ouvrez-le.</li>
+                </ol>
+                <div class="tip">Si le Mac refuse de l'ouvrir la première fois, cliquez sur <span class="kbd">OK</span>, puis ouvrez <b>Réglages Système → Confidentialité et sécurité</b>, descendez et cliquez sur <span class="kbd">Ouvrir quand même</span>. Une seule fois.</div>
+              </div>
+            </div>
           </div>
         </article>
         <article class="step">
@@ -240,6 +271,14 @@
 
   <script>
     document.getElementById("year").textContent = new Date().getFullYear();
+
+    // Put the visitor's platform first.
+    if (/Mac/i.test(navigator.platform || navigator.userAgent)) {
+      document.querySelectorAll('.dl-buttons [data-os="win"]').forEach((b) => b.classList.replace("btn-primary", "btn-ghost"));
+      const macs = document.querySelectorAll('.dl-buttons [data-os="mac"]');
+      macs.forEach((b) => b.classList.replace("btn-ghost", "btn-primary"));
+      macs[0].parentNode.prepend(...macs);
+    }
 
     // Short confetti burst on arrival.
     if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
