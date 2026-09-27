@@ -33,10 +33,16 @@ jobs:
       - name: Smoke test (CLI module imports in the build env)
         run: python tools/prospection/find_no_website.py --help
 
+      - name: Zip the sales page
+        shell: pwsh
+        run: Compress-Archive -Path tools/prospection/site/* -DestinationPath dist/LeadFinder-site.zip
+
       - uses: actions/upload-artifact@v4
         with:
           name: LeadFinder-windows
-          path: dist/LeadFinder.exe
+          path: |
+            dist/LeadFinder.exe
+            dist/LeadFinder-site.zip
 
       - name: Publish to the "Lead Finder" release
         uses: softprops/action-gh-release@v2
@@ -46,7 +52,10 @@ jobs:
           target_commitish: ${{ github.sha }}
           body: |
             Download **LeadFinder.exe** below and double-click it. No Python needed.
+            **LeadFinder-site.zip** is the sales page: unzip it and upload the folder to any static host.
             Windows may show "Windows protected your PC" the first time: click
             **More info → Run anyway** (the app is not code-signed).
-          files: dist/LeadFinder.exe
+          files: |
+            dist/LeadFinder.exe
+            dist/LeadFinder-site.zip
           prerelease: true
