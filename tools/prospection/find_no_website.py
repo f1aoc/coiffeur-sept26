@@ -18,6 +18,7 @@ import argparse
 import csv
 import json
 import os
+import ssl
 import sys
 import time
 import urllib.error
@@ -56,6 +57,18 @@ CSV_COLUMNS = [
     "name", "status", "website", "phone", "address", "category",
     "rating", "reviews", "maps_url", "place_id", "query",
 ]
+
+
+def ssl_context():
+    """Windows: use the system certificate store (works behind antivirus/proxy inspection).
+    macOS/Linux: prefer certifi's bundle, because a packaged app may not find the system certificates."""
+    if sys.platform != "win32":
+        try:
+            import certifi
+            return ssl.create_default_context(cafile=certifi.where())
+        except ImportError:
+            pass
+    return ssl.create_default_context()
 
 
 class PlacesError(Exception):
@@ -153,7 +166,7 @@ def search(api_key, query, language, region, max_pages):
             method="POST",
         )
         try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
+            with urllib.request.urlopen(req, timeout=30, context=ssl_context()) as resp:
                 data = json.load(resp)
         except urllib.error.HTTPError as e:
             raise PlacesError(explain_http_error(e.code, e.read().decode(errors="replace")))

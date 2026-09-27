@@ -1,4 +1,4 @@
-name: Build BridgeToLeads (Windows .exe)
+name: Build BridgeToLeads (Windows .exe + macOS .app)
 
 on:
   push:
@@ -21,13 +21,13 @@ jobs:
           python-version: "3.12"
 
       - name: Install PyInstaller
-        run: pip install pyinstaller openpyxl
+        run: pip install pyinstaller openpyxl certifi
 
       - name: Build BridgeToLeads.exe
         run: >
           pyinstaller --onefile --windowed --name BridgeToLeads
           --paths tools/prospection --hidden-import find_no_website --hidden-import brand_icon
-          --hidden-import openpyxl --icon tools/prospection/assets/bridgetoleads.ico
+          --hidden-import openpyxl --hidden-import certifi --icon tools/prospection/assets/bridgetoleads.ico
           tools/prospection/bridgetoleads.pyw
 
       - name: Smoke test (CLI module imports in the build env)
@@ -51,11 +51,66 @@ jobs:
           name: BridgeToLeads by ptabountchikoff (latest Windows build)
           target_commitish: ${{ github.sha }}
           body: |
-            Download **BridgeToLeads.exe** below and double-click it. No Python needed.
+            **Windows**: download **BridgeToLeads.exe** below and double-click it. No Python needed.
+            **Mac**: download **BridgeToLeads-mac-apple-silicon.zip** (M1/M2/M3/M4 Macs) or
+            **BridgeToLeads-mac-intel.zip** (older Intel Macs), unzip, move BridgeToLeads to Applications.
+            The first time, macOS blocks it (not notarized): open System Settings → Privacy & Security
+            → "Open Anyway".
             **BridgeToLeads-site.zip** is the sales page: unzip it and upload the folder to any static host.
             Windows may show "Windows protected your PC" the first time: click
             **More info → Run anyway** (the app is not code-signed).
           files: |
             dist/BridgeToLeads.exe
             dist/BridgeToLeads-site.zip
+          prerelease: true
+
+  build-mac:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-latest       # Apple Silicon (M1, M2, M3, M4…)
+            label: apple-silicon
+          - runner: macos-15-intel     # older Intel Macs
+            label: intel
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PyInstaller
+        run: pip install pyinstaller openpyxl certifi pillow
+
+      - name: Build BridgeToLeads.app
+        run: >
+          pyinstaller --windowed --name BridgeToLeads
+          --osx-bundle-identifier com.ptabountchikoff.bridgetoleads
+          --paths tools/prospection --hidden-import find_no_website --hidden-import brand_icon
+          --hidden-import openpyxl --hidden-import certifi --icon tools/prospection/assets/bridgetoleads.png
+          tools/prospection/bridgetoleads.pyw
+
+      - name: Smoke test (the app starts and stays open)
+        run: |
+          ./dist/BridgeToLeads.app/Contents/MacOS/BridgeToLeads &
+          PID=$!
+          sleep 15
+          if kill -0 $PID 2>/dev/null; then echo "App is running"; kill $PID; else echo "App exited early"; wait $PID; exit 1; fi
+
+      - name: Zip the app
+        run: ditto -c -k --keepParent dist/BridgeToLeads.app dist/BridgeToLeads-mac-${{ matrix.label }}.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BridgeToLeads-mac-${{ matrix.label }}
+          path: dist/BridgeToLeads-mac-${{ matrix.label }}.zip
+
+      - name: Publish to the "BridgeToLeads" release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: bridgetoleads-latest
+          target_commitish: ${{ github.sha }}
+          files: dist/BridgeToLeads-mac-${{ matrix.label }}.zip
           prerelease: true
