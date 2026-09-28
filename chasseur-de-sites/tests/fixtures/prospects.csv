@@ -1,0 +1,7 @@
+nom;url;Téléphone;adresse;Catégorie
+Salon Tout Va Bien;https://ok.test;01 02 03 04 05;1 rue de la Paix, Paris;coiffeur
+Coiffure Fantôme;https://domaine-mort.test;01 11 11 11 11;2 rue du Vide, Lyon;coiffeur
+Barbier Planté;https://erreur500.test;01 22 22 22 22;3 place Bug, Lille;barbier
+Beauté Expirée;https://ssl-expire.test;01 33 33 33 33;4 av. du Temps, Nantes;esthétique
+Onglerie Sans Site;;01 44 44 44 44;5 bd Sans Web, Nice;onglerie
+Institut Ancien;institut-http.test;01 55 55 55 55;6 rue Vieille, Brest;esthétique

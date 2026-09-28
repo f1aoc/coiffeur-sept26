@@ -1,0 +1,44 @@
+# Configuration de Chasseur de sites.
+#
+# ⚠️ POIDS PROVISOIRES : les valeurs ci-dessous ne viennent pas du cahier des
+# charges (sections 3.2 et 3.3), qui n'était pas disponible au moment du Lot 1.
+# Remplacez-les par celles du cahier des charges ; aucun code n'est à modifier.
+
+# Tableau 3.2 (provisoire) : gravité et points de chaque constat.
+# Gravités autorisées : critique, haute, moyenne, basse, info.
+constats:
+  SITE_ABSENT:          { gravite: haute,    points: 20 }   # pas d'URL dans le CSV
+  URL_INVALIDE:         { gravite: info,     points: 0 }    # URL illisible (erreur de saisie)
+  DNS_INTROUVABLE:      { gravite: critique, points: 60 }   # le domaine ne résout plus
+  HTTP_INJOIGNABLE:     { gravite: critique, points: 50 }   # délai dépassé / connexion refusée après tous les essais
+  HTTP_ERREUR_SERVEUR:  { gravite: critique, points: 45 }   # code 5xx
+  HTTP_ERREUR_CLIENT:   { gravite: haute,    points: 35 }   # code 4xx (404, 410…)
+  SSL_ABSENT:           { gravite: haute,    points: 25 }   # pas de HTTPS
+  SSL_EXPIRE:           { gravite: critique, points: 40 }   # certificat expiré
+  SSL_INVALIDE:         { gravite: haute,    points: 30 }   # autosigné, mauvais nom de domaine…
+  SSL_EXPIRE_BIENTOT:   { gravite: moyenne,  points: 10 }   # expire dans moins de `ssl_alerte_jours`
+  ERREUR_ANALYSE:       { gravite: info,     points: 0 }    # bug interne pendant l'analyse
+
+# Score final = somme des points, plafonnée à score_max.
+score_max: 100
+
+# Tableau 3.3 (provisoire) : priorité selon le score (seuil minimal inclus).
+# Le premier seuil atteint (du plus haut au plus bas) l'emporte.
+priorites:
+  - { min: 60, label: "A - prioritaire" }
+  - { min: 30, label: "B - intéressant" }
+  - { min: 1,  label: "C - à surveiller" }
+  - { min: 0,  label: "D - site sain" }
+
+# Priorité affichée quand une analyse n'a pas pu aller au bout (ERREUR_ANALYSE).
+priorite_incomplete: "? - à revérifier"
+
+reseau:
+  timeout: 15            # secondes, par requête
+  essais: 2              # nombre total de tentatives HTTP
+  pause_entre_essais: 1  # secondes
+  ssl_alerte_jours: 30   # seuil de SSL_EXPIRE_BIENTOT
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36"
+
+# Nombre de sites analysés en parallèle.
+parallelisme: 10
