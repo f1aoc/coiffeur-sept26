@@ -59,6 +59,12 @@ def _parseur() -> argparse.ArgumentParser:
     imp.add_argument("--nom", help="nom de l'analyse (défaut : Import <fichier>)")
     imp.add_argument("--donnees", type=Path, help="dossier des données (défaut : ~/.chasseur-de-sites)")
     imp.add_argument("-c", "--config", type=Path, help="fichier de configuration (défaut : ./config.yaml)")
+
+    rap = sous.add_parser("rapport", help="générer le rapport PDF d'un prospect (identifiant visible dans l'adresse de sa fiche)")
+    rap.add_argument("prospect", type=int, help="identifiant du prospect (ex. 12 pour /prospects/12)")
+    rap.add_argument("-o", "--sortie", type=Path, help="fichier PDF (défaut : diagnostic-<nom>.pdf)")
+    rap.add_argument("--donnees", type=Path, help="dossier des données (défaut : ~/.chasseur-de-sites)")
+    rap.add_argument("--moteur", choices=["auto", "weasyprint", "chromium"], default=None, help="moteur PDF (défaut : auto)")
     return parseur
 
 
@@ -180,9 +186,41 @@ def commande_import(args: argparse.Namespace) -> int:
     return 0
 
 
+def commande_rapport(args: argparse.Namespace) -> int:
+    from chasseur.db import Stockage
+    from chasseur.db.agence import lire_agence
+    from chasseur.reports.donnees import diagnostic
+    from chasseur.reports.pdf import ErreurPDF, MoteurPDF, html_rapport, nom_fichier
+
+    stockage = Stockage(args.donnees)
+    with stockage.session() as s:
+        d = diagnostic(s, args.prospect)
+        if d is None:
+            print(f"Erreur : prospect {args.prospect} introuvable dans {stockage.dossier}", file=sys.stderr)
+            return 2
+        html = html_rapport(stockage, d, lire_agence(s))
+
+    async def rendre() -> bytes:
+        moteur = MoteurPDF(args.moteur)
+        try:
+            return await moteur.pdf(html)
+        finally:
+            await moteur.fermer()
+
+    try:
+        contenu = asyncio.run(rendre())
+    except ErreurPDF as e:
+        print(f"Erreur : {e}", file=sys.stderr)
+        return 2
+    sortie = args.sortie or Path(nom_fichier(d.prospect))
+    sortie.write_bytes(contenu)
+    print(f"Rapport de « {d.prospect.nom} » → {sortie}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     args = _parseur().parse_args(argv)
-    commandes = {"scan": commande_scan, "web": commande_web, "import": commande_import}
+    commandes = {"scan": commande_scan, "web": commande_web, "import": commande_import, "rapport": commande_rapport}
     return commandes[args.commande](args)
 
 

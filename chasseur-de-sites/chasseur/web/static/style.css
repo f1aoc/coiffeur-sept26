@@ -92,6 +92,7 @@ textarea { width: 100%; resize: vertical; }
 .champ { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 1rem; max-width: 36rem; }
 .champ label { font-weight: 600; }
 .case { font-weight: 400 !important; }
+.champ-large { max-width: 48rem; }
 .ligne-formulaire { display: flex; flex-wrap: wrap; align-items: end; gap: 0.75rem; margin-top: 1rem; }
 .ligne-formulaire label { display: flex; flex-direction: column; gap: 0.25rem; font-weight: 600; }
 
@@ -171,6 +172,20 @@ dialog#visionneuse .fermer {
 }
 
 /* Fiche prospect */
+.fiche-statut { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
+.verdict-fiche { margin: -0.4rem 0 1rem; font-size: 1.05rem; font-weight: 600; }
+.message { border-top: 1px solid var(--bordure); padding: 0.5rem 0; }
+.message summary { cursor: pointer; font-weight: 600; }
+.message textarea { margin-top: 0.5rem; font-size: 0.9rem; }
+.actions-message { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.4rem; }
+.barre-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; margin: 0 0 0.75rem; }
+.col-choix { width: 2rem; }
+.logo-agence { max-height: 60px; max-width: 220px; display: block; margin: 0.25rem 0; border: 1px solid var(--bordure); padding: 4px; background: #fff; }
+.aide-variables code { margin-right: 0.3rem; }
+input[type="color"] { width: 4rem; height: 2.2rem; padding: 0.1rem; border: 1px solid var(--bordure); border-radius: 6px; }
+input[type="email"], input[type="url"], input[type="tel"] {
+  font: inherit; color: inherit; padding: 0.4rem 0.55rem; border: 1px solid var(--bordure); border-radius: 6px; background: #fff;
+}
 .fiche-entete { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; align-items: start; }
 .fiche-entete p { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; margin: 0 0 1rem; }
 .score { font-size: 0.95rem; }

@@ -3,8 +3,9 @@
 Repère les sites web d'entreprises locales cassés ou obsolètes et les classe comme prospects.
 Cahier des charges : [CAHIER_DES_CHARGES.md](CAHIER_DES_CHARGES.md).
 
-**État : Lot 3**. Les 4 analyseurs (Réseau, Domaine, Navigateur, Performance), le scoring des tableaux 3.2 et 3.3,
-les catégories Cassé / Obsolète / Correct, et l'interface web locale (base SQLite, statuts commerciaux, notes).
+**État : Lot 4**. Les 4 analyseurs, le scoring (tableaux 3.2 et 3.3), l'interface web locale, et les rapports :
+PDF par prospect aux couleurs de l'agence, export Excel / CSV de la liste filtrée, modèles de messages.
+Exemples de rapports : [exemples/](exemples/).
 
 ## Installation
 
@@ -38,6 +39,24 @@ chasseur import resultats.csv      # importe dans l'interface un CSV produit par
   notes enregistrées automatiquement, historique des statuts.
 - **Réglages** : clés API chiffrées, analyses simultanées (1 à 30), poids du scoring (les scores
   existants sont recalculés).
+
+## Rapports et exports (Lot 4)
+
+- **Réglages → Votre agence** : nom, logo (PNG ou SVG), couleur principale, téléphone, e-mail, site,
+  texte de l'appel à l'action.
+- **Rapport PDF** (bouton sur la fiche, ou `chasseur rapport <id>`) : 2 pages, aux couleurs de l'agence.
+  Page 1 : entreprise, date, captures ordinateur et téléphone, verdict en une phrase, résumé.
+  Page 2 : les 3 à 5 problèmes les plus graves (« ce que voit le visiteur », « pourquoi c'est gênant »),
+  appel à l'action et coordonnées. Aucun jargon, aucune statistique ni promesse chiffrée.
+- **Rapports groupés** : cochez des prospects dans Résultats → « Rapports PDF des prospects cochés (ZIP) ».
+- **Export Excel / CSV** de la liste filtrée : une colonne par contrôle, en-têtes figés, filtres,
+  couleur par catégorie, onglet « Récapitulatif » (par catégorie, par problème, par statut).
+- **Modèles de messages** (Réglages) : e-mail, script d'appel, SMS, avec `{entreprise}`,
+  `{probleme_principal}`, `{ville}`, `{agence}`. Sur la fiche : message pré-rempli + bouton Copier.
+  Rien n'est envoyé automatiquement.
+
+Moteur PDF : WeasyPrint s'il est installé (`pip install -e ".[weasyprint]"`, qui demande GTK/Pango sous
+Windows), sinon Chromium, déjà installé pour les captures. Forcer : variable `CHASSEUR_MOTEUR_PDF=chromium`.
 
 Les données (base `chasseur.db`, captures, fichiers importés, clé de chiffrement `cle.secret`) sont dans
 `~/.chasseur-de-sites/` (ou `--donnees`, ou la variable `CHASSEUR_DONNEES`). L'interface n'écoute que sur
@@ -127,7 +146,7 @@ Les motifs de détection (CMS, parking, spam, maintenance, erreurs PHP) sont dan
 ## Tests
 
 ```bash
-pytest                 # 234 tests hors ligne : réponses simulées + pages locales dans un vrai Chromium
+pytest                 # 315 tests hors ligne : réponses simulées + pages locales dans un vrai Chromium
 pytest -m reseau       # en plus : vrais certificats de badssl.com (connexion Internet requise)
 pytest --cov=chasseur.scoring   # couverture du scoring : 100 %
 ```
@@ -144,7 +163,7 @@ chasseur/
   importers/   csv_importer.py, fichiers.py (CSV/Excel, format Google Maps)
   analyzers/   base.py, reseau.py, domain.py, browser.py, page.py, performance.py
   scoring/     score.py
-  reports/     csv_export.py
+  reports/     csv_export.py, pdf.py, excel.py, messages.py, textes.py, donnees.py, templates/
   db/          tables.py, moteur.py, depot.py, reglages.py, secret.py, import_resultats.py
   web/         app.py, taches.py, routes_*.py, templates/, static/
 tests/

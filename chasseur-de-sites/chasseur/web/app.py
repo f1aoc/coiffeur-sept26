@@ -20,9 +20,11 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from chasseur import __version__
+from chasseur.config import charger_config
 from chasseur.controles import CONTROLES, libelle
 from chasseur.db.moteur import Stockage
 from chasseur.db.tables import LIBELLES_SCAN, STATUTS_COMMERCIAUX, heure_locale
+from chasseur.reports.pdf import MoteurPDF
 from chasseur.web.taches import GestionnaireScans
 
 ICI = Path(__file__).resolve().parent
@@ -89,17 +91,32 @@ def creer_app(
     stockage = stockage or Stockage()
     gestionnaire = gestionnaire or GestionnaireScans(stockage, chemin_config=chemin_config)
 
+    moteurs: list[MoteurPDF] = []
+
+    def moteur_pdf() -> MoteurPDF:
+        """Moteur PDF créé au premier rapport, réutilisé ensuite (Chromium reste ouvert)."""
+        if not moteurs:
+            try:
+                chromium = charger_config(chemin_config).navigateur.chromium or None
+            except Exception:
+                chromium = None
+            moteurs.append(MoteurPDF(chromium=chromium))
+        return moteurs[0]
+
     @asynccontextmanager
     async def cycle_de_vie(app: FastAPI):
         gestionnaire.au_demarrage()
         yield
         await gestionnaire.arreter()
+        for m in moteurs:
+            await m.fermer()
 
     app = FastAPI(title="Chasseur de sites", version=__version__, lifespan=cycle_de_vie, docs_url=None, redoc_url=None)
     app.state.stockage = stockage
     app.state.gestionnaire = gestionnaire
     app.state.templates = creer_templates()
     app.state.chemin_config = chemin_config
+    app.state.moteur_pdf = moteur_pdf
 
     hotes_autorises = hotes or HOTES_LOCAUX
 
@@ -117,8 +134,9 @@ def creer_app(
     app.mount("/static", StaticFiles(directory=ICI / "static"), name="static")
     app.mount("/captures", StaticFiles(directory=stockage.dossier_captures), name="captures")
 
-    from chasseur.web import routes_analyses, routes_reglages, routes_resultats
+    from chasseur.web import routes_analyses, routes_rapports, routes_reglages, routes_resultats
 
+    app.include_router(routes_rapports.routeur)
     app.include_router(routes_analyses.routeur)
     app.include_router(routes_resultats.routeur)
     app.include_router(routes_reglages.routeur)

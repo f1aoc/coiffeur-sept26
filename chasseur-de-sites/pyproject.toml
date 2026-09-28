@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "chasseur-de-sites"
-version = "0.3.0"
+version = "0.4.0"
 description = "Repère les sites d'entreprises locales cassés ou obsolètes et les classe comme prospects."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -29,6 +29,11 @@ dev = [
     "pytest>=8",
     "pytest-asyncio>=0.23",
     "respx>=0.21",
+    "pypdf>=4",
+]
+weasyprint = [
+    # Moteur PDF recommandé (§5). Sous Windows, il faut aussi GTK/Pango ; sinon Chromium est utilisé.
+    "weasyprint>=60",
 ]
 
 [project.scripts]
@@ -39,6 +44,7 @@ include = ["chasseur*"]
 
 [tool.setuptools.package-data]
 "chasseur.web" = ["templates/*.html", "static/*"]
+"chasseur.reports" = ["templates/*.html"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

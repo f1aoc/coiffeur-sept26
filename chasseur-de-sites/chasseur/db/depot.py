@@ -238,14 +238,31 @@ def problemes_principaux(constats: list[ConstatDB], n: int = 3) -> list[tuple[st
     return sortie[:n]
 
 
+def _ordonner(requete, f: Filtres):
+    colonne = TRIS.get(f.tri, ProspectDB.score)
+    ordre = colonne.desc() if f.ordre == "desc" else colonne.asc()
+    return requete.order_by(ordre.nulls_last(), ProspectDB.id)
+
+
+def prospects_filtres(session: Session, f: Filtres) -> list[ProspectDB]:
+    """Tous les prospects correspondant aux filtres, dans l'ordre affiché (exports)."""
+    return list(session.exec(_ordonner(_requete_filtree(f), f)))
+
+
+def constats_par_prospect(session: Session, ids: list[int]) -> dict[int, list[ConstatDB]]:
+    constats: dict[int, list[ConstatDB]] = {i: [] for i in ids}
+    for debut in range(0, len(ids), 500):  # limite de paramètres SQLite
+        for c in session.exec(select(ConstatDB).where(ConstatDB.prospect_id.in_(ids[debut:debut + 500]))):
+            constats[c.prospect_id].append(c)
+    return constats
+
+
 def rechercher(session: Session, f: Filtres) -> PageResultats:
     requete = _requete_filtree(f)
     total = session.exec(select(func.count()).select_from(requete.subquery())).one()
     pages = max(1, math.ceil(total / PAR_PAGE))
     page = min(max(1, f.page), pages)
-    colonne = TRIS.get(f.tri, ProspectDB.score)
-    ordre = colonne.desc() if f.ordre == "desc" else colonne.asc()
-    requete = requete.order_by(ordre.nulls_last(), ProspectDB.id).offset((page - 1) * PAR_PAGE).limit(PAR_PAGE)
+    requete = _ordonner(requete, f).offset((page - 1) * PAR_PAGE).limit(PAR_PAGE)
     prospects = list(session.exec(requete))
     ids = [p.id for p in prospects]
 
@@ -311,3 +328,10 @@ def enregistrer_note(session: Session, prospect_id: int, texte: str) -> Note:
 
 def captures_de(session: Session, prospect_id: int) -> dict[str, Capture]:
     return {c.type: c for c in session.exec(select(Capture).where(Capture.prospect_id == prospect_id))}
+
+
+def captures_par_prospect(session: Session, ids: list[int]) -> list[Capture]:
+    captures: list[Capture] = []
+    for debut in range(0, len(ids), 500):
+        captures += list(session.exec(select(Capture).where(Capture.prospect_id.in_(ids[debut:debut + 500]))))
+    return captures

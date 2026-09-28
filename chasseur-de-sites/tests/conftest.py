@@ -267,3 +267,67 @@ def lancer_scan(web, nom: str, contenu: str) -> int:
     r = web.post("/analyses", data={"jeton": jeton[1], "nom": nom, "nom_fichier": fichier})
     assert r.status_code == 303, r.text
     return int(r.headers["location"].rsplit("/", 1)[1])
+
+
+# --- Rapports (Lot 4) -----------------------------------------------------------------
+
+LOGO_SVG = b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 10"><rect width="40" height="10" fill="#0a7"/></svg>'
+
+
+@pytest.fixture
+def base_rapports(stockage, config):
+    """Trois prospects analysés : cassé, obsolète, correct ; captures et agence renseignées."""
+    from PIL import Image
+
+    from chasseur.db import depot
+    from chasseur.db.agence import ecrire_agence, enregistrer_logo
+    from chasseur.modeles import Prospect, Resultat
+    from chasseur.scoring import noter
+
+    prospects = [
+        Prospect(nom="Salon Cassé", url="https://casse.test", ville="Avignon", telephone="04 90 00 00 01", note_google=4.6, nb_avis=52),
+        Prospect(nom="Institut Vieillot", url="https://vieux.test", ville="Apt", telephone="04 90 00 00 02"),
+        Prospect(nom="Coiffure Impeccable", url="https://ok.test", ville="Cavaillon"),
+    ]
+    codes = [
+        ["DOMAINE_PARKING", "PAGE_BLANCHE", "SSL_ABSENT", "VIEWPORT_ABSENT", "META_DESCRIPTION_ABSENTE", "CONTACT_ABSENT", "NON_VERIFIE"],
+        ["WORDPRESS_OBSOLETE", "JQUERY_OBSOLETE", "COPYRIGHT_ANCIEN", "SSL_ABSENT", "VIEWPORT_ABSENT"],
+        [],
+    ]
+    mesures = [{}, {"version_wordpress": "4.9.8", "annee_copyright": "2017"}, {}]
+    with stockage.session() as s:
+        scan = depot.creer_scan(s, "Vaucluse", prospects, fichier="vaucluse.csv")
+        ids = sorted(p.id for p in depot.a_analyser(s, scan.id))
+        dossier = stockage.dossier_captures / f"scan-{scan.id}"
+        dossier.mkdir(parents=True)
+        for i, prospect_id in enumerate(ids):
+            Image.new("RGB", (1366, 768), (240, 240, 245)).save(dossier / f"{i}-bureau.webp", "WEBP")
+            Image.new("RGB", (375, 667), (230, 235, 240)).save(dossier / f"{i}-mobile.webp", "WEBP")
+            r = Resultat(
+                Prospect(),
+                [config.constat(c, f"message {c}", f"preuve {c}") for c in codes[i]],
+                mesures={**mesures[i], "capture_bureau": str(dossier / f"{i}-bureau.webp"),
+                         "capture_mobile": str(dossier / f"{i}-mobile.webp"), "capture_date": "2026-09-28 10:30:00"},
+            )
+            depot.enregistrer_resultat(stockage, s, prospect_id, noter(r, config))
+        ecrire_agence(s, nom="Atelier Web Provence", couleur="#0a7f5a", telephone="06 12 34 56 78",
+                      email="bonjour@atelier-web.test", site="atelier-web.test")
+        enregistrer_logo(stockage, s, "logo.svg", LOGO_SVG)
+        s.commit()
+    return dict(zip(("casse", "obsolete", "correct"), ids)) | {"scan": scan.id}
+
+
+def moteurs_pdf_disponibles() -> list[str]:
+    from chasseur.reports.pdf import weasyprint_disponible
+
+    return (["weasyprint"] if weasyprint_disponible() else []) + (["chromium"] if chromium_disponible() else [])
+
+
+def texte_pdf(contenu: bytes) -> tuple[int, str]:
+    """(nombre de pages, texte) d'un PDF."""
+    import io
+
+    from pypdf import PdfReader
+
+    lecteur = PdfReader(io.BytesIO(contenu))
+    return len(lecteur.pages), "\n".join(page.extract_text() for page in lecteur.pages)

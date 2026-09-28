@@ -15,8 +15,12 @@
   <div class="fiche-statut">
     {% set contexte = "fiche" %}
     {% include "_statut.html" %}
+    {% if p.analyse %}
+    <a class="bouton bouton-principal" href="/prospects/{{ p.id }}/rapport.pdf" download>Générer le rapport PDF</a>
+    {% endif %}
   </div>
 </div>
+{% if p.analyse %}<p class="verdict-fiche">{{ verdict }}</p>{% endif %}
 
 <div class="fiche">
   <div class="fiche-principale">
@@ -93,6 +97,21 @@
   </div>
 
   <aside class="fiche-laterale">
+    <section class="carte">
+      <h2>Premier contact</h2>
+      <p class="discret">Messages pré-remplis, à relire puis copier. Rien n'est envoyé automatiquement.</p>
+      {% for m, texte in messages %}
+      <details class="message" {% if loop.first %}open{% endif %}>
+        <summary>{{ m.nom }}</summary>
+        <textarea id="message-{{ m.id }}" rows="{{ 5 if m.id == 'sms' else 10 }}" aria-label="{{ m.nom }}">{{ texte }}</textarea>
+        <div class="actions-message">
+          <button type="button" class="bouton" data-copier="message-{{ m.id }}">Copier</button>
+          {% if m.id == "sms" %}<span class="discret" data-compteur="message-{{ m.id }}">{{ texte|length }} caractères</span>{% endif %}
+        </div>
+      </details>
+      {% endfor %}
+      <p class="discret"><a href="/reglages#modeles">Modifier les modèles</a></p>
+    </section>
     <section class="carte">
       <h2><label for="note-texte">Notes</label></h2>
       <textarea id="note-texte" name="texte" rows="8" placeholder="Notes personnelles (enregistrées automatiquement)"

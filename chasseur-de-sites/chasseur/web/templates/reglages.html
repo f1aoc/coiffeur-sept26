@@ -3,8 +3,52 @@
 {% block contenu %}
 <h1>Réglages</h1>
 {% if ok %}<p class="alerte alerte-succes" role="status">Réglages enregistrés. Les scores existants ont été recalculés.</p>{% endif %}
+{% if erreur %}<p class="alerte alerte-erreur" role="alert">{{ erreur }}</p>{% endif %}
 
-<form method="post" action="/reglages" class="reglages">
+<form method="post" action="/reglages" class="reglages" enctype="multipart/form-data">
+  <section class="carte" id="agence">
+    <h2>Votre agence</h2>
+    <p class="discret">Affichée en tête et en pied des rapports PDF, et utilisée pour signer les messages.</p>
+    <div class="champ">
+      <label for="agence_nom">Nom de l'agence</label>
+      <input type="text" id="agence_nom" name="agence_nom" value="{{ agence.nom }}" maxlength="120" placeholder="Ex. Atelier Web Provence">
+    </div>
+    <div class="champ">
+      <label for="agence_logo">Logo (PNG ou SVG, 2 Mo maximum)</label>
+      {% if agence.logo %}<img class="logo-agence" src="/agence/logo?v={{ agence.logo|length }}" alt="Logo actuel">
+        <label class="case"><input type="checkbox" name="supprimer_logo" value="1"> Supprimer le logo</label>{% endif %}
+      <input type="file" id="agence_logo" name="agence_logo" accept=".png,.svg,image/png,image/svg+xml">
+    </div>
+    <div class="champ">
+      <label for="agence_couleur">Couleur principale</label>
+      <input type="color" id="agence_couleur" name="agence_couleur" value="{{ agence.couleur }}">
+    </div>
+    <div class="champ"><label for="agence_telephone">Téléphone</label>
+      <input type="tel" id="agence_telephone" name="agence_telephone" value="{{ agence.telephone }}" maxlength="40"></div>
+    <div class="champ"><label for="agence_email">E-mail</label>
+      <input type="email" id="agence_email" name="agence_email" value="{{ agence.email }}" maxlength="120"></div>
+    <div class="champ"><label for="agence_site">Site</label>
+      <input type="text" id="agence_site" name="agence_site" value="{{ agence.site }}" maxlength="120" placeholder="www.mon-agence.fr"></div>
+    <div class="champ">
+      <label for="agence_appel">Appel à l'action (fin du rapport)</label>
+      <textarea id="agence_appel" name="agence_appel" rows="3" maxlength="600">{{ agence.appel }}</textarea>
+      <span class="discret">Restez factuel : pas de chiffres ni de promesses de résultats.</span>
+    </div>
+  </section>
+
+  <section class="carte" id="modeles">
+    <h2>Modèles de messages</h2>
+    <p class="discret aide-variables">Variables disponibles : <code>{entreprise}</code><code>{probleme_principal}</code><code>{ville}</code><code>{agence}</code>.
+      Les messages ne sont jamais envoyés automatiquement : vous les copiez depuis la fiche d'un prospect.
+      Videz un champ pour revenir au texte d'origine.</p>
+    {% for m, texte in modeles %}
+    <div class="champ champ-large">
+      <label for="modele_{{ m.id }}">{{ m.nom }}</label>
+      <textarea id="modele_{{ m.id }}" name="modele_{{ m.id }}" rows="{{ 4 if m.id == 'sms' else 9 }}">{{ texte }}</textarea>
+    </div>
+    {% endfor %}
+  </section>
+
   <section class="carte">
     <h2>Clés API</h2>
     <p class="discret">Les clés sont chiffrées sur cet ordinateur et ne sont jamais affichées en entier ni exportées.</p>

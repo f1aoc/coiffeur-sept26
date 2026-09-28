@@ -37,7 +37,15 @@
 </form>
 
 <div id="resultats">
-  <p class="discret">{{ r.total }} prospect{{ "s" if r.total > 1 }}</p>
+  <form id="selection" method="post" action="/rapports.zip"></form>
+  <div class="barre-actions">
+    <span class="discret">{{ r.total }} prospect{{ "s" if r.total > 1 }}</span>
+    {% if r.lignes %}
+    <a class="bouton" href="/export.xlsx?{{ requete_export }}" download>Exporter en Excel</a>
+    <a class="bouton" href="/export.csv?{{ requete_export }}" download>Exporter en CSV</a>
+    <button type="submit" form="selection" class="bouton">Rapports PDF des prospects cochés (ZIP)</button>
+    {% endif %}
+  </div>
   {% if not r.lignes %}
   <p class="vide">Aucun prospect ne correspond à ces filtres.</p>
   {% else %}
@@ -51,6 +59,7 @@
   <table class="tableau tableau-resultats">
     <thead>
       <tr>
+        <th class="col-choix"><input type="checkbox" id="tout-cocher" aria-label="Tout cocher"></th>
         <th class="col-mini"><span class="masque-visuel">Capture</span></th>
         {{ entete("nom", "Nom") }}
         {{ entete("ville", "Ville") }}
@@ -65,6 +74,7 @@
     <tbody>
     {% for l in r.lignes %}{% set p = l.prospect %}
       <tr>
+        <td class="col-choix">{% if p.analyse %}<input type="checkbox" name="ids" value="{{ p.id }}" form="selection" aria-label="Choisir {{ p.nom }}">{% endif %}</td>
         <td class="col-mini">
           {% if l.miniature %}
           <button type="button" class="miniature" data-agrandir="/{{ l.capture }}"

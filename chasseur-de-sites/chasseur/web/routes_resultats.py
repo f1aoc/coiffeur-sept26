@@ -11,6 +11,9 @@ from chasseur.controles import CODE_NON_VERIFIE, CONTROLES, libelle
 from chasseur.db import depot
 from chasseur.db.tables import STATUTS_COMMERCIAUX, ProspectDB, Scan
 from chasseur.modeles import GRAVITES, Prospect, Resultat
+from chasseur.db.agence import lire_agence
+from chasseur.reports import messages
+from chasseur.reports.donnees import diagnostic
 from chasseur.scoring import statut_controles
 
 routeur = APIRouter()
@@ -29,15 +32,19 @@ def _entier(texte: str | None) -> int | None:
         return None
 
 
-@routeur.get("/resultats", response_class=HTMLResponse)
-async def resultats(
-    request: Request, scan: str = "", etat: str = "", probleme: str = "", statut: str = "", q: str = "",
-    tri: str = "score", ordre: str = "desc", page: int = 1,
-):
-    filtres = depot.Filtres(
-        scan=_entier(scan), etat=etat, probleme=probleme, statut=statut, q=q,
-        tri=tri if tri in depot.TRIS else "score", ordre="asc" if ordre == "asc" else "desc", page=page,
+def filtres_depuis(params) -> depot.Filtres:
+    """Filtres de l'écran Résultats lus dans l'adresse (aussi utilisés par les exports)."""
+    tri = params.get("tri", "score")
+    return depot.Filtres(
+        scan=_entier(params.get("scan")), etat=params.get("etat", ""), probleme=params.get("probleme", ""),
+        statut=params.get("statut", ""), q=params.get("q", ""), tri=tri if tri in depot.TRIS else "score",
+        ordre="asc" if params.get("ordre") == "asc" else "desc", page=_entier(params.get("page")) or 1,
     )
+
+
+@routeur.get("/resultats", response_class=HTMLResponse)
+async def resultats(request: Request):
+    filtres = filtres_depuis(request.query_params)
     with request.app.state.stockage.session() as s:
         resultat = depot.rechercher(s, filtres)
         analyses = depot.scans(s)
@@ -54,9 +61,10 @@ async def resultats(
             ordre_suivant = "asc"
         return lien(tri=colonne, ordre=ordre_suivant, page=1)
 
+    requete_export = urlencode({k: v for k, v in parametres.items() if k != "page" and v not in (None, "")})
     return _page(
         request, "resultats.html", actif="resultats", r=resultat, f=filtres, analyses=analyses, etats=ETATS,
-        lien=lien, lien_tri=lien_tri,
+        lien=lien, lien_tri=lien_tri, requete_export=requete_export,
     )
 
 
@@ -85,9 +93,16 @@ async def fiche(request: Request, prospect_id: int):
     resultat.constats = [c for c in constats]  # statut_controles ne lit que code
     statuts = statut_controles(resultat)
     controles = [(c, statuts[c.id]) for c in CONTROLES]
+    with request.app.state.stockage.session() as s:
+        d = diagnostic(s, prospect_id)
+        agence = lire_agence(s)
+        modeles = messages.lire_modeles(s)
+    valeurs = messages.variables(p.nom, d.probleme_principal, p.ville, agence.nom)
+    textes_messages = [(m, messages.rendre(modeles[m.id], valeurs)) for m in messages.MODELES]
     return _page(
         request, "fiche.html", actif="resultats", p=p, scan=scan, problemes=problemes, constats=constats,
         captures=captures, note=note, historique=historique, controles=controles, libelle=libelle,
+        verdict=d.verdict, messages=textes_messages,
     )
 
 
