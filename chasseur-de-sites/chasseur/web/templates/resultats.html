@@ -2,6 +2,7 @@
 {% block titre %}Résultats{% endblock %}
 {% block contenu %}
 <h1>Résultats</h1>
+{% if message %}<p class="alerte alerte-succes" role="status">{{ message }}</p>{% endif %}
 
 <form class="filtres" method="get" action="/resultats"
       hx-get="/resultats" hx-target="#resultats" hx-select="#resultats" hx-swap="outerHTML" hx-push-url="true"
@@ -33,6 +34,8 @@
       {% for s in STATUTS %}<option {% if f.statut == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
     </select>
   </label>
+  <label class="case-filtre" title="Site cassé ou obsolète, et fiche Google avec plus de 20 avis et une note d'au moins 4">
+    <input type="checkbox" name="prioritaires" value="1" {% if f.prioritaires %}checked{% endif %}> Prospects prioritaires</label>
   <noscript><button class="bouton">Filtrer</button></noscript>
 </form>
 
@@ -94,7 +97,8 @@
           </ul>
         </td>
         <td class="sans-coupure">{% if p.telephone %}<a href="tel:{{ p.telephone|replace(' ', '') }}">{{ p.telephone }}</a>{% endif %}</td>
-        <td class="sans-coupure">{% if p.note_google is not none %}{{ p.note_google }} ★{% if p.nb_avis is not none %} <span class="discret">({{ p.nb_avis }})</span>{% endif %}{% endif %}</td>
+        <td class="sans-coupure">{% if p.note_google is not none %}{{ p.note_google }} ★{% if p.nb_avis is not none %} <span class="discret">({{ p.nb_avis }})</span>{% endif %}{% endif %}
+          {% if a_bonus(p.note_google, p.nb_avis) %}<br><span class="bonus" title="Plus de 20 avis et note d'au moins 4 : entreprise active">Bonus</span>{% endif %}</td>
         <td>{% include "_statut.html" %}</td>
       </tr>
     {% endfor %}

@@ -37,7 +37,8 @@ def filtres_depuis(params) -> depot.Filtres:
     tri = params.get("tri", "score")
     return depot.Filtres(
         scan=_entier(params.get("scan")), etat=params.get("etat", ""), probleme=params.get("probleme", ""),
-        statut=params.get("statut", ""), q=params.get("q", ""), tri=tri if tri in depot.TRIS else "score",
+        statut=params.get("statut", ""), q=params.get("q", ""), prioritaires=params.get("prioritaires") == "1",
+        tri=tri if tri in depot.TRIS else "score",
         ordre="asc" if params.get("ordre") == "asc" else "desc", page=_entier(params.get("page")) or 1,
     )
 
@@ -49,7 +50,9 @@ async def resultats(request: Request):
         resultat = depot.rechercher(s, filtres)
         analyses = depot.scans(s)
 
-    parametres = {k: v for k, v in vars(filtres).items() if v not in (None, "", 1) or k in ("tri", "ordre")}
+    parametres = {k: v for k, v in vars(filtres).items() if v not in (None, "", 1, False) or k in ("tri", "ordre")}
+    if filtres.prioritaires:
+        parametres["prioritaires"] = "1"
 
     def lien(**changements) -> str:
         valeurs = {**parametres, **changements}
@@ -65,6 +68,7 @@ async def resultats(request: Request):
     return _page(
         request, "resultats.html", actif="resultats", r=resultat, f=filtres, analyses=analyses, etats=ETATS,
         lien=lien, lien_tri=lien_tri, requete_export=requete_export,
+        message=request.query_params.get("message", "")[:300],
     )
 
 

@@ -3,10 +3,17 @@
 {% else %}
 <section class="carte">
   <h2>Aperçu de « {{ nom_fichier }} »</h2>
+  {% if info %}<p class="discret">{{ info }}</p>{% endif %}
   <p>
     <span class="pastille">{{ format }}</span>
     <strong>{{ total }}</strong> entreprise{{ "s" if total > 1 }}, dont <strong>{{ avec_site }}</strong> avec un site à analyser.
   </p>
+  {% if doublons or opposes %}
+  <p class="discret">
+    {% if doublons %}{{ doublons }} doublon{{ "s" if doublons > 1 }} retiré{{ "s" if doublons > 1 }} (même site).{% endif %}
+    {% if opposes %}{{ opposes }} entreprise{{ "s" if opposes > 1 }} écartée{{ "s" if opposes > 1 }} : domaine dans votre <a href="/oppositions">liste d'opposition</a>.{% endif %}
+  </p>
+  {% endif %}
   {% if format_maps and avec_site < total %}
   <p class="alerte">
     Ce fichier vient de l'outil Google Maps, qui ne garde que les entreprises <strong>sans vrai site</strong>
@@ -34,6 +41,7 @@
   <form method="post" action="/analyses" class="ligne-formulaire">
     <input type="hidden" name="jeton" value="{{ jeton }}">
     <input type="hidden" name="nom_fichier" value="{{ nom_fichier }}">
+    {% if source %}<input type="hidden" name="source" value="{{ source }}">{% endif %}
     <label>Nom de l'analyse <input type="text" name="nom" value="{{ nom }}" maxlength="120"></label>
     <button type="submit" class="bouton bouton-principal">Lancer l'analyse</button>
   </form>

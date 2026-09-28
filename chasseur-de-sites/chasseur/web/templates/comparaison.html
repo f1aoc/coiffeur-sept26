@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block titre %}Comparaison – {{ nouveau.nom }}{% endblock %}
+{% block contenu %}
+<p class="fil"><a href="/analyses">Analyses</a> › <a href="/analyses/{{ nouveau.id }}">{{ nouveau.nom }}</a> › Comparaison</p>
+<h1>Qu'est-ce qui a changé ?</h1>
+<form method="get" class="filtres">
+  <label>Comparer « {{ nouveau.nom }} » avec
+    <select name="avec" onchange="this.form.submit()">
+      {% for a in autres %}<option value="{{ a.id }}" {% if ancien and a.id == ancien.id %}selected{% endif %}>{{ a.nom }} ({{ a.cree_le|date_fr }})</option>{% endfor %}
+    </select>
+  </label>
+  <noscript><button class="bouton">Comparer</button></noscript>
+</form>
+{% if not c %}
+<p class="vide">Aucune autre analyse à comparer pour l'instant.</p>
+{% else %}
+<ul class="compteurs">
+  <li class="compteur etat-casse"><span>Devenus cassés</span><strong>{{ c.devenus_casses|length }}</strong></li>
+  <li class="compteur etat-correct"><span>Réparés</span><strong>{{ c.repares|length }}</strong></li>
+  <li class="compteur etat-obsolete"><span>Autres changements</span><strong>{{ c.changements|length }}</strong></li>
+  <li class="compteur etat-sans-site"><span>Nouveaux / disparus</span><strong>{{ c.nouveaux|length }} / {{ c.disparus|length }}</strong></li>
+</ul>
+{% for titre, lignes in (("Sites devenus cassés depuis la dernière fois", c.devenus_casses), ("Sites réparés", c.repares), ("Autres changements", c.changements)) %}
+<section class="carte">
+  <h2>{{ titre }}</h2>
+  {% if lignes %}
+  <div class="tableau-defilant"><table class="tableau">
+    <thead><tr><th>Entreprise</th><th>Avant</th><th>Maintenant</th><th>Statut commercial</th></tr></thead>
+    <tbody>{% for a, n in lignes %}
+      <tr><td><a href="/prospects/{{ n.id }}"><strong>{{ n.nom or n.url }}</strong></a><br><span class="discret">{{ n.url }}</span></td>
+        <td><span class="etat etat-{{ a.etat|classe_etat }}">{{ a.etat }}</span> {{ a.score }}</td>
+        <td><span class="etat etat-{{ n.etat|classe_etat }}">{{ n.etat }}</span> {{ n.score }}</td>
+        <td>{{ n.statut }}</td></tr>
+    {% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="discret">Aucun.</p>{% endif %}
+</section>
+{% endfor %}
+<p class="discret">{{ c.inchanges }} site{{ "s" if c.inchanges > 1 }} sans changement de catégorie.</p>
+{% endif %}
+{% endblock %}

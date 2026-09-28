@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block titre %}À propos{% endblock %}
+{% block contenu %}
+<h1>À propos</h1>
+<section class="carte">
+  <h2>Chasseur de sites {{ version }}</h2>
+  <dl class="coordonnees">
+    <dt>Version</dt><dd>{{ version }}</dd>
+    <dt>Python</dt><dd>{{ python }} · {{ systeme }}</dd>
+    <dt>Moteur PDF</dt><dd>{{ moteur_pdf }}</dd>
+    <dt>Données</dt><dd><code>{{ dossier }}</code></dd>
+    <dt>Contenu</dt><dd>{{ analyses }} analyse{{ "s" if analyses > 1 }}, {{ prospects }} prospect{{ "s" if prospects > 1 }}</dd>
+    <dt>Conservation</dt><dd>Prospects jamais contactés supprimés après {{ conservation }} mois (réglable dans les Réglages)</dd>
+    <dt>Journal</dt><dd><code>{{ journal }}</code></dd>
+  </dl>
+</section>
+<section class="carte">
+  <h2>Dernières erreurs</h2>
+  <p class="discret">Les clés API et les adresses e-mail sont masquées avant d'être écrites.</p>
+  {% if erreurs %}<pre class="journal">{% for l in erreurs %}{{ l }}
+{% endfor %}</pre>{% else %}<p>Aucune erreur enregistrée.</p>{% endif %}
+</section>
+{% include "_encart_b2b.html" %}
+<section class="carte">
+  <h2>Composants</h2>
+  <p class="discret">htmx (licence Zero-Clause BSD), FastAPI, SQLModel, Playwright/Chromium, httpx, openpyxl, WeasyPrint.
+    Les données restent sur cet ordinateur : l'application n'envoie rien ailleurs qu'aux sites analysés et aux API
+    Google dont vous avez fourni la clé.</p>
+</section>
+{% endblock %}

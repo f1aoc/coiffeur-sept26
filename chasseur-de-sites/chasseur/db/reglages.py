@@ -15,10 +15,11 @@ from chasseur.controles import PAR_ID
 from chasseur.db.moteur import Stockage
 from chasseur.db.secret import chiffrer, dechiffrer
 from chasseur.db.tables import Reglage
+from chasseur.journal import enregistrer_secret
 
 CLE_PAGESPEED = "cle_pagespeed"
 CLE_PLACES = "cle_places"
-CLES_API = {CLE_PAGESPEED: "PageSpeed Insights", CLE_PLACES: "Google Places (Lot 5)"}
+CLES_API = {CLE_PAGESPEED: "PageSpeed Insights", CLE_PLACES: "Google Places (recherche secteur + ville)"}
 PARALLELISME = "parallelisme"
 POINTS = "points"
 
@@ -43,7 +44,9 @@ def lire_cle_api(stockage: Stockage, session: Session, cle: str) -> str:
     r = session.get(Reglage, cle)
     if not r or not r.valeur:
         return ""
-    return dechiffrer(stockage.dossier, r.valeur) if r.chiffre else r.valeur
+    valeur = dechiffrer(stockage.dossier, r.valeur) if r.chiffre else r.valeur
+    enregistrer_secret(valeur)  # jamais écrite dans le journal des erreurs
+    return valeur
 
 
 def ecrire_cle_api(stockage: Stockage, session: Session, cle: str, valeur: str) -> None:

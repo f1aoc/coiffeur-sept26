@@ -13,6 +13,8 @@ from chasseur.db import depot
 from chasseur.db.tables import EN_ATTENTE, EN_COURS, EN_PAUSE, Scan
 from chasseur.importers import FORMAT_GENERIQUE, ErreurImport, lire_prospects
 
+FORMAT_PLACES = "Recherche Google Places"
+
 routeur = APIRouter()
 
 TAILLE_MAX = 20 * 1024 * 1024
@@ -58,23 +60,37 @@ async def apercu(request: Request, fichier: UploadFile):
     if not resultat.prospects:
         chemin.unlink(missing_ok=True)
         return _page(request, "_apercu.html", erreur="Le fichier ne contient aucune entreprise.")
-    avec_site = sum(1 for p in resultat.prospects if p.url)
+    return apercu_import(request, jeton, fichier.filename or jeton, resultat.format, resultat.prospects)
+
+
+def apercu_import(request: Request, jeton: str, nom_fichier: str, format_: str, prospects, source: str = "", info: str = ""):
+    """Fragment d'aperçu commun à l'import de fichier et à la recherche Google Places."""
+    with request.app.state.stockage.session() as s:
+        prepare = depot.preparer_import(s, prospects)
+    if not prepare.prospects:
+        return _page(request, "_apercu.html", erreur="Toutes les entreprises de cette liste sont dans votre liste d'opposition.")
     return _page(
         request,
         "_apercu.html",
         jeton=jeton,
-        nom_fichier=fichier.filename,
-        nom=Path(fichier.filename or "Analyse").stem,
-        format=resultat.format,
-        format_maps=resultat.format != FORMAT_GENERIQUE,
-        total=len(resultat.prospects),
-        avec_site=avec_site,
-        lignes=resultat.prospects[:APERCU],
+        nom_fichier=nom_fichier,
+        nom=Path(nom_fichier).stem,
+        format=format_,
+        format_maps=format_ not in (FORMAT_GENERIQUE, FORMAT_PLACES),
+        total=len(prepare.prospects),
+        avec_site=sum(1 for p in prepare.prospects if p.url),
+        doublons=len(prepare.doublons),
+        opposes=len(prepare.opposes),
+        lignes=prepare.prospects[:APERCU],
+        source=source,
+        info=info,
     )
 
 
 @routeur.post("/analyses")
-async def lancer(request: Request, jeton: str = Form(...), nom: str = Form(""), nom_fichier: str = Form("")):
+async def lancer(
+    request: Request, jeton: str = Form(...), nom: str = Form(""), nom_fichier: str = Form(""), source: str = Form(""),
+):
     if not RE_JETON.match(jeton):
         raise HTTPException(400, "Fichier d'import invalide")
     stockage = request.app.state.stockage
@@ -82,10 +98,12 @@ async def lancer(request: Request, jeton: str = Form(...), nom: str = Form(""), 
     if not chemin.is_file():
         raise HTTPException(400, "Fichier d'import expiré : déposez-le à nouveau")
     resultat = lire_prospects(chemin)
+    format_ = FORMAT_PLACES if source.startswith("Recherche Google Places") else resultat.format
     with stockage.session() as s:
+        prepare = depot.preparer_import(s, resultat.prospects)
         scan = depot.creer_scan(
-            s, nom.strip() or Path(nom_fichier).stem or "Analyse", resultat.prospects,
-            fichier=nom_fichier or jeton, format_=resultat.format,
+            s, nom.strip() or Path(nom_fichier).stem or "Analyse", prepare.prospects,
+            fichier=nom_fichier or jeton, format_=format_, source=source[:300],
         )
     request.app.state.gestionnaire.lancer(scan.id)
     return RedirectResponse(f"/analyses/{scan.id}", status_code=303)
@@ -119,7 +137,12 @@ def _etat_progression(request: Request, scan_id: int) -> dict:
 
 @routeur.get("/analyses/{scan_id}", response_class=HTMLResponse)
 async def progression(request: Request, scan_id: int):
-    return _page(request, "progression.html", actif="analyses", **_etat_progression(request, scan_id))
+    from chasseur.planification import racine
+
+    etat = _etat_progression(request, scan_id)
+    with request.app.state.stockage.session() as s:
+        scan_racine = racine(s, s.get(Scan, scan_id))
+    return _page(request, "progression.html", actif="analyses", racine=scan_racine, **etat)
 
 
 @routeur.get("/analyses/{scan_id}/progression", response_class=HTMLResponse)

@@ -45,7 +45,7 @@ reseau:
   essais: 2              # nombre total de tentatives HTTP
   pause_entre_essais: 2  # secondes
   ssl_alerte_jours: 30
-  user_agent: "Mozilla/5.0 (compatible; ChasseurDeSites/0.2)"   # §6.2 : user-agent explicite
+  user_agent: "Mozilla/5.0 (compatible; ChasseurDeSites/1.0)"   # §6.2 : user-agent explicite
 
 domaine:
   alerte_jours: 30
@@ -79,6 +79,14 @@ performance:
   timeout: 90
   max_relances: 4        # relances sur erreur 429 / 5xx de l'API
   pause_base: 5          # secondes avant la 1re relance (doublée à chaque fois)
+
+# Recherche « secteur + ville » (API officielle Google Places, Text Search).
+places:
+  prix_1000_requetes: 35   # tarif INDICATIF pour 1 000 requêtes avec site, téléphone et note :
+  devise: USD              # vérifiez le tarif en vigueur sur la page de tarification Google Maps Platform
+  pages_max: 3             # 20 fiches par page, 60 au plus par ville (limite de l'API)
+  pause_pages: 2
+  timeout: 30
 
 # Sites analysés en parallèle (1 à 30).
 parallelisme: 10

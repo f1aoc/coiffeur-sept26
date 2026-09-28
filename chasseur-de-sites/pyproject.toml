@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "chasseur-de-sites"
-version = "0.4.0"
+version = "1.0.0"
 description = "Repère les sites d'entreprises locales cassés ou obsolètes et les classe comme prospects."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -51,5 +51,6 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 markers = [
     "reseau: tests qui interrogent de vrais sites (désactivés par défaut, lancer avec -m reseau)",
+    "charge: test de charge sur 500 sites locaux (désactivé par défaut, lancer avec -m charge)",
 ]
-addopts = "-m 'not reseau'"
+addopts = "-m 'not reseau and not charge'"

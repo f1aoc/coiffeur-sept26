@@ -14,6 +14,7 @@
     <a class="marque" href="/analyses">Chasseur de sites</a>
     <nav aria-label="Navigation principale">
       <a href="/analyses/nouvelle" {% if actif == "nouvelle" %}aria-current="page"{% endif %}>Nouvelle analyse</a>
+      <a href="/recherche" {% if actif == "recherche" %}aria-current="page"{% endif %}>Recherche</a>
       <a href="/analyses" {% if actif == "analyses" %}aria-current="page"{% endif %}>Analyses</a>
       <a href="/resultats" {% if actif == "resultats" %}aria-current="page"{% endif %}>Résultats</a>
       <a href="/reglages" {% if actif == "reglages" %}aria-current="page"{% endif %}>Réglages</a>
@@ -22,7 +23,8 @@
   <main>
     {% block contenu %}{% endblock %}
   </main>
-  <footer class="pied">Chasseur de sites {{ VERSION }} · application locale, vos données restent sur cet ordinateur</footer>
+  <footer class="pied">Chasseur de sites {{ VERSION }} · application locale, vos données restent sur cet ordinateur ·
+    <a href="/oppositions">Liste d'opposition</a> · <a href="/a-propos">À propos</a></footer>
   <dialog id="visionneuse" aria-label="Capture agrandie">
     <form method="dialog"><button class="fermer" aria-label="Fermer">×</button></form>
     <img alt="">

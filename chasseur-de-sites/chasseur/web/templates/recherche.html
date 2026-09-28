@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block titre %}Recherche secteur + ville{% endblock %}
+{% block contenu %}
+<h1>Recherche « secteur + ville »</h1>
+<p class="intro">Trouvez des entreprises locales avec l'API officielle Google Places, à partir de votre propre clé.
+Seules les fiches qui ont un vrai site sont gardées : elles sont ensuite analysées comme un fichier importé.</p>
+{% if not cle %}
+<p class="alerte">Ajoutez d'abord votre clé Google Places dans les <a href="/reglages#cles">Réglages</a>
+(Google Cloud → « Places API (New) » activée → clé API).</p>
+{% endif %}
+<form class="carte recherche" hx-post="/recherche/estimation" hx-target="#estimation">
+  <div class="champ"><label for="secteur">Secteur</label>
+    <input type="text" id="secteur" name="secteur" required maxlength="80" placeholder="Ex. coiffeur, plombier, boulangerie"></div>
+  <div class="champ"><label for="villes">Villes (une par ligne, {{ 20 }} au plus)</label>
+    <textarea id="villes" name="villes" rows="4" required placeholder="Avignon&#10;Cavaillon"></textarea>
+    <span class="discret">L'API renvoie 60 fiches au plus par recherche : pour une grande ville, cherchez quartier par quartier.</span></div>
+  <div class="champ"><label for="pages">Pages de résultats par ville (20 fiches par page)</label>
+    <select id="pages" name="pages">{% for n in range(1, pages_max + 1) %}<option value="{{ n }}" {% if n == pages_max %}selected{% endif %}>{{ n }} ({{ n * 20 }} fiches au plus)</option>{% endfor %}</select></div>
+  <button type="submit" class="bouton">Estimer le coût</button>
+</form>
+<div id="estimation"></div>
+<div id="apercu"></div>
+{% include "_encart_b2b.html" %}
+{% endblock %}

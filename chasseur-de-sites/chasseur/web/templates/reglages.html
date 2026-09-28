@@ -49,7 +49,7 @@
     {% endfor %}
   </section>
 
-  <section class="carte">
+  <section class="carte" id="cles">
     <h2>Clés API</h2>
     <p class="discret">Les clés sont chiffrées sur cet ordinateur et ne sont jamais affichées en entier ni exportées.</p>
     {% for cle, (nom, masque, erreur) in cles.items() %}
@@ -64,6 +64,15 @@
       {% if erreur %}<span class="alerte alerte-erreur">{{ erreur }}</span>{% endif %}
     </div>
     {% endfor %}
+  </section>
+
+  <section class="carte" id="conservation">
+    <h2>Conservation des données</h2>
+    <div class="champ">
+      <label for="conservation_mois">Supprimer les prospects jamais contactés après (mois)</label>
+      <input type="number" id="conservation_mois" name="conservation_mois" min="1" max="120" value="{{ conservation }}">
+      <span class="discret">Seuls les prospects au statut « À contacter » sont concernés. Vérification une fois par jour.</span>
+    </div>
   </section>
 
   <section class="carte">

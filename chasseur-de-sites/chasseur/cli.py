@@ -65,6 +65,17 @@ def _parseur() -> argparse.ArgumentParser:
     rap.add_argument("-o", "--sortie", type=Path, help="fichier PDF (défaut : diagnostic-<nom>.pdf)")
     rap.add_argument("--donnees", type=Path, help="dossier des données (défaut : ~/.chasseur-de-sites)")
     rap.add_argument("--moteur", choices=["auto", "weasyprint", "chromium"], default=None, help="moteur PDF (défaut : auto)")
+
+    pur = sous.add_parser("purge", help="supprimer les prospects jamais contactés au-delà de la durée de conservation")
+    pur.add_argument("--donnees", type=Path, help="dossier des données (défaut : ~/.chasseur-de-sites)")
+
+    rec = sous.add_parser("recette", help="mesurer le taux de bon classement sur un CSV étiqueté (colonne « attendu »)")
+    rec.add_argument("fichier", type=Path, help="CSV : nom, url, attendu (Cassé / Obsolète / Correct)")
+    rec.add_argument("-c", "--config", type=Path, help="fichier de configuration (défaut : ./config.yaml)")
+
+    pla = sous.add_parser("planifies", help="lancer les analyses planifiées arrivées à échéance (pour le Planificateur de tâches)")
+    pla.add_argument("--donnees", type=Path, help="dossier des données (défaut : ~/.chasseur-de-sites)")
+    pla.add_argument("-c", "--config", type=Path, help="fichier de configuration (défaut : ./config.yaml)")
     return parseur
 
 
@@ -72,6 +83,25 @@ def _afficher_progression(fait: int, total: int, r: Resultat) -> None:
     nom = r.prospect.nom or r.prospect.url or f"ligne {r.prospect.ligne}"
     codes = ", ".join(dict.fromkeys(c.code for c in r.constats if c.code != "NON_VERIFIE")) or "aucun problème"
     print(f"[{fait}/{total}] {r.score:>3} pts  {r.etat:<9} {nom} — {codes}", file=sys.stderr)
+
+
+def _preparer(prospects):
+    """Dédoublonnage par domaine (§3.1) et liste d'opposition de l'interface web, si elle existe (§6.1)."""
+    import os
+
+    from chasseur.dedoublonnage import dedoublonner
+
+    ecartes = 0
+    dossier = Path(os.environ.get("CHASSEUR_DONNEES") or Path.home() / ".chasseur-de-sites")
+    if (dossier / "chasseur.db").is_file():
+        from chasseur.db import Stockage
+        from chasseur.rgpd import domaines_opposes, filtrer_opposes
+
+        with Stockage(dossier).session() as s:
+            prospects, opposes = filtrer_opposes(prospects, domaines_opposes(s))
+        ecartes = len(opposes)
+    gardes, doublons = dedoublonner(prospects)
+    return gardes, len(doublons), ecartes
 
 
 def commande_scan(args: argparse.Namespace) -> int:
@@ -83,6 +113,10 @@ def commande_scan(args: argparse.Namespace) -> int:
         return 2
     if args.parallele:
         config.parallelisme = min(max(1, args.parallele), PARALLELISME_MAX)
+    prospects, doublons, opposes = _preparer(prospects)
+    if (doublons or opposes) and not args.silencieux:
+        print(f"{doublons} doublon(s) de domaine retiré(s), {opposes} domaine(s) en liste d'opposition écarté(s).",
+              file=sys.stderr)
     if not prospects:
         print("Aucun prospect dans le fichier.", file=sys.stderr)
         return 1
@@ -218,9 +252,60 @@ def commande_rapport(args: argparse.Namespace) -> int:
     return 0
 
 
+def commande_purge(args: argparse.Namespace) -> int:
+    from chasseur import rgpd
+    from chasseur.db import Stockage
+
+    stockage = Stockage(args.donnees)
+    with stockage.session() as s:
+        n = rgpd.purger(stockage, s)
+        mois = rgpd.duree_conservation(s)
+    print(f"{n} prospect(s) jamais contacté(s) depuis plus de {mois} mois supprimé(s).")
+    return 0
+
+
+def commande_recette(args: argparse.Namespace) -> int:
+    from chasseur.recette import afficher, recetter
+
+    try:
+        config = charger_config(args.config)
+        recette = asyncio.run(recetter(args.fichier, config))
+    except (ErreurConfig, ErreurImport) as e:
+        print(f"Erreur : {e}", file=sys.stderr)
+        return 2
+    print(afficher(recette))
+    return 0 if recette.reussie else 1
+
+
+def commande_planifies(args: argparse.Namespace) -> int:
+    from chasseur import planification
+    from chasseur.db import Stockage
+    from chasseur.journal import configurer
+    from chasseur.web.taches import GestionnaireScans
+
+    stockage = Stockage(args.donnees)
+    configurer(stockage.dossier)
+
+    async def executer() -> list[str]:
+        gestionnaire = GestionnaireScans(stockage, chemin_config=args.config)
+        with stockage.session() as s:
+            relances = [planification.creer_relance(s, scan) for scan in planification.scans_dus(s)]
+        for r in relances:
+            gestionnaire.lancer(r.id)
+            await gestionnaire.attendre(r.id)
+        return [r.nom for r in relances]
+
+    noms = asyncio.run(executer())
+    print(f"{len(noms)} analyse(s) planifiée(s) lancée(s)" + (" : " + ", ".join(noms) if noms else "."))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     args = _parseur().parse_args(argv)
-    commandes = {"scan": commande_scan, "web": commande_web, "import": commande_import, "rapport": commande_rapport}
+    commandes = {
+        "scan": commande_scan, "web": commande_web, "import": commande_import, "rapport": commande_rapport,
+        "purge": commande_purge, "planifies": commande_planifies, "recette": commande_recette,
+    }
     return commandes[args.commande](args)
 
 

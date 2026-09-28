@@ -7,6 +7,7 @@ from urllib.parse import urlencode
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
+from chasseur import rgpd
 from chasseur.config import PARALLELISME_MAX, charger_config
 from chasseur.controles import CONTROLES
 from chasseur.db import depot, reglages
@@ -43,13 +44,14 @@ async def page(request: Request, ok: int = 0, erreur: str = ""):
         parallelisme = reglages.parallelisme(s, base)
         agence = lire_agence(s)
         textes = messages.lire_modeles(s)
+        conservation = rgpd.duree_conservation(s)
     modeles = [(m, textes[m.id]) for m in messages.MODELES]
     groupes = [(titre, [(c, points[c.id], base.points[c.id]) for c in CONTROLES if c.famille == f and c.id != "url"]) for f, titre in FAMILLES]
     return request.app.state.templates.TemplateResponse(
         request, "reglages.html",
         dict(
             actif="reglages", cles=cles, groupes=groupes, parallelisme=parallelisme, maximum=PARALLELISME_MAX,
-            ok=ok, erreur=erreur[:300], agence=agence, modeles=modeles,
+            ok=ok, erreur=erreur[:300], agence=agence, modeles=modeles, conservation=conservation,
         ),
     )
 
@@ -73,6 +75,11 @@ async def enregistrer(request: Request):
                 reglages.supprimer(s, cle)
             elif (valeur := str(formulaire.get(cle, "")).strip()):
                 reglages.ecrire_cle_api(stockage, s, cle, valeur)
+        try:
+            mois = int(str(formulaire.get("conservation_mois", "")))
+            reglages.ecrire(s, rgpd.CONSERVATION, str(min(max(1, mois), 120)))
+        except ValueError:
+            pass
         try:
             n = int(str(formulaire.get("parallelisme", base.parallelisme)))
             reglages.ecrire(s, reglages.PARALLELISME, str(min(max(1, n), PARALLELISME_MAX)))

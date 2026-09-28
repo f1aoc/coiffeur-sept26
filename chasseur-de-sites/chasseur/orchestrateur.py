@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from typing import Callable
 
 import httpx
@@ -21,6 +22,7 @@ from chasseur.modeles import Prospect, Rapport, Resultat
 from chasseur.scoring import noter
 
 Progression = Callable[[int, int, Resultat], None]
+journal = logging.getLogger("chasseur.analyse")
 
 # Codes souvent renvoyés aux robots par les protections anti-bots (Cloudflare…) :
 # si le vrai navigateur a affiché la page normalement, ce n'est pas une panne.
@@ -54,6 +56,7 @@ async def _executer(analyseur: Analyseur, prospect: Prospect, http: httpx.AsyncC
         return rapport if isinstance(rapport, Rapport) else Rapport(rapport)
     except Exception as e:  # un analyseur ne doit jamais faire planter le scan
         detail = _masquer(f"{type(e).__name__} {e}".strip().splitlines()[0][:300], config)
+        journal.warning("analyseur %s en échec sur %s : %s", analyseur.nom, prospect.url, detail)
         return Rapport(
             [
                 config.constat(

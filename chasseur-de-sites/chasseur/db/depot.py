@@ -10,6 +10,7 @@ from pathlib import Path
 from sqlalchemy import delete, func, or_
 from sqlmodel import Session, select
 
+from chasseur.bonus import ETATS_PRIORITAIRES, condition_bonus
 from chasseur.config import Config
 from chasseur.controles import CODE_NON_VERIFIE, CONTROLE_DU_CODE, libelle
 from chasseur.db.moteur import Stockage
@@ -37,11 +38,14 @@ class ErreurDepot(ValueError):
 # --- Scans --------------------------------------------------------------------------
 
 
-def creer_scan(session: Session, nom: str, prospects: list[Prospect], fichier: str = "", format_: str = "") -> Scan:
-    scan = Scan(nom=nom, fichier=fichier, format=format_, total=len(prospects))
+def creer_scan(
+    session: Session, nom: str, prospects: list[Prospect], fichier: str = "", format_: str = "", source: str = "",
+    origine_id: int | None = None,
+) -> Scan:
+    source = source or f"Import « {fichier or nom} »"
+    scan = Scan(nom=nom, fichier=fichier, format=format_, total=len(prospects), source=source, origine_id=origine_id)
     session.add(scan)
     session.flush()
-    source = f"Import « {fichier or nom} »"
     for p in prospects:
         session.add(
             ProspectDB(
@@ -186,6 +190,7 @@ class Filtres:
     probleme: str = ""  # identifiant de contrôle
     statut: str = ""
     q: str = ""
+    prioritaires: bool = False  # cassé ou obsolète + bonus commercial
     tri: str = "score"
     ordre: str = "desc"
     page: int = 1
@@ -219,6 +224,8 @@ def _requete_filtree(f: Filtres):
         requete = requete.where(
             ProspectDB.id.in_(select(ConstatDB.prospect_id).where(ConstatDB.controle == f.probleme))
         )
+    if f.prioritaires:
+        requete = requete.where(ProspectDB.etat.in_(ETATS_PRIORITAIRES), condition_bonus(ProspectDB))
     if f.q.strip():
         motif = f"%{f.q.strip()}%"
         requete = requete.where(or_(ProspectDB.nom.ilike(motif), ProspectDB.ville.ilike(motif)))
@@ -335,3 +342,21 @@ def captures_par_prospect(session: Session, ids: list[int]) -> list[Capture]:
     for debut in range(0, len(ids), 500):
         captures += list(session.exec(select(Capture).where(Capture.prospect_id.in_(ids[debut:debut + 500]))))
     return captures
+
+
+@dataclass
+class ImportPrepare:
+    """Liste prête à analyser : doublons de domaine et domaines en opposition retirés."""
+
+    prospects: list[Prospect]
+    doublons: list[Prospect] = field(default_factory=list)
+    opposes: list[Prospect] = field(default_factory=list)
+
+
+def preparer_import(session: Session, prospects: list[Prospect]) -> ImportPrepare:
+    from chasseur.dedoublonnage import dedoublonner
+    from chasseur.rgpd import domaines_opposes, filtrer_opposes
+
+    autorises, opposes = filtrer_opposes(prospects, domaines_opposes(session))
+    gardes, doublons = dedoublonner(autorises)
+    return ImportPrepare(gardes, doublons, opposes)

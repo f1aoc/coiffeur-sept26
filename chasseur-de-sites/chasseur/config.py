@@ -73,6 +73,15 @@ class ConfigPerformance:
 
 
 @dataclass
+class ConfigPlaces:
+    prix_1000_requetes: float = 35.0  # tarif indicatif Text Search (champs site/téléphone/note), à vérifier
+    devise: str = "USD"
+    pages_max: int = 3  # 20 résultats par page, 60 au plus par recherche (limite de l'API)
+    pause_pages: float = 2.0  # le jeton de page suivante met un instant à être valide
+    timeout: float = 30.0
+
+
+@dataclass
 class Config:
     points: dict[str, int]  # contrôle → points
     etats: ConfigEtats = field(default_factory=ConfigEtats)
@@ -81,11 +90,12 @@ class Config:
     essais: int = 2
     pause_entre_essais: float = 2.0
     ssl_alerte_jours: int = 30
-    user_agent: str = "Mozilla/5.0 (compatible; ChasseurDeSites/0.2)"
+    user_agent: str = "Mozilla/5.0 (compatible; ChasseurDeSites/1.0)"
     parallelisme: int = 10
     domaine: ConfigDomaine = field(default_factory=ConfigDomaine)
     navigateur: ConfigNavigateur = field(default_factory=ConfigNavigateur)
     performance: ConfigPerformance = field(default_factory=ConfigPerformance)
+    places: ConfigPlaces = field(default_factory=ConfigPlaces)
     source: str = field(default="", compare=False)
 
     def points_du_code(self, code: str) -> int:
@@ -172,6 +182,7 @@ def config_depuis_dict(brut: dict, source: str = "") -> Config:
         domaine=_section(ConfigDomaine, brut.get("domaine"), "domaine"),
         navigateur=_section(ConfigNavigateur, brut.get("navigateur"), "navigateur"),
         performance=_section(ConfigPerformance, brut.get("performance"), "performance"),
+        places=_section(ConfigPlaces, brut.get("places"), "places"),
         source=source,
     )
     if config.essais < 1:

@@ -1,0 +1,19 @@
+{% if erreur %}
+<p class="alerte alerte-erreur" role="alert">{{ erreur }}</p>
+{% else %}
+<section class="carte">
+  <h2>Avant de lancer</h2>
+  <p><strong>{{ estimation.texte }}</strong></p>
+  <p class="discret">C'est une borne haute : la recherche s'arrête dès qu'il n'y a plus de résultats. Google offre un
+    crédit mensuel gratuit ; vérifiez le tarif en vigueur sur <a href="{{ tarifs }}" target="_blank" rel="noopener noreferrer">la page de tarification</a>
+    (le tarif indicatif se règle dans config.yaml).</p>
+  <form hx-post="/recherche" hx-target="#apercu" hx-indicator="#recherche-en-cours" class="actions">
+    <input type="hidden" name="secteur" value="{{ secteur }}">
+    <input type="hidden" name="villes" value="{{ villes|join('\n') }}">
+    <input type="hidden" name="pages" value="{{ pages }}">
+    <button type="submit" class="bouton bouton-principal" {% if not cle %}disabled{% endif %}>
+      Lancer la recherche « {{ secteur }} » ({{ villes|length }} ville{{ "s" if villes|length > 1 }})</button>
+    <span id="recherche-en-cours" class="indicateur">Recherche en cours auprès de Google…</span>
+  </form>
+</section>
+{% endif %}

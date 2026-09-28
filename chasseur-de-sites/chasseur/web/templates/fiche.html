@@ -10,6 +10,7 @@
       <span class="etat etat-{{ p.etat|classe_etat }}">{{ p.etat or "En attente" }}</span>
       {% if p.analyse %}<span class="score">Score <strong>{{ p.score }}</strong>/100</span>{% endif %}
       {% if p.categorie %}<span class="discret">{{ p.categorie }}</span>{% endif %}
+      {% if a_bonus(p.note_google, p.nb_avis) %}<span class="bonus" title="Plus de 20 avis et note d'au moins 4 : entreprise active, qui a sans doute les moyens d'investir">Bonus commercial</span>{% endif %}
     </p>
   </div>
   <div class="fiche-statut">
@@ -111,6 +112,8 @@
       </details>
       {% endfor %}
       <p class="discret"><a href="/reglages#modeles">Modifier les modèles</a></p>
+      <p class="discret">Prospection B2B : parlez de l'activité professionnelle du destinataire et proposez-lui un moyen simple
+        de refuser tout nouveau contact. Vous restez responsable de vos envois.</p>
     </section>
     <section class="carte">
       <h2><label for="note-texte">Notes</label></h2>
@@ -122,6 +125,15 @@
     <section class="carte">
       <h2>Historique des statuts</h2>
       <ul id="historique" class="historique">{% include "_historique.html" %}</ul>
+    </section>
+    <section class="carte zone-danger">
+      <h2>Supprimer ce prospect</h2>
+      <p class="discret">La fiche, ses captures, notes et historique sont effacés définitivement.</p>
+      <form method="post" action="/prospects/{{ p.id }}/supprimer"
+            onsubmit="return confirm('Supprimer définitivement {{ (p.nom or p.url)|e }} ?');">
+        {% if p.url %}<label class="case"><input type="checkbox" name="opposer" value="1"> Ne plus jamais analyser ni contacter ce domaine (liste d'opposition)</label>{% endif %}
+        <button type="submit" class="bouton bouton-danger">Supprimer</button>
+      </form>
     </section>
   </aside>
 </div>

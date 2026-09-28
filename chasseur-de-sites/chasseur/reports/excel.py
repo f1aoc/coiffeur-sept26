@@ -15,6 +15,7 @@ from datetime import datetime
 
 from sqlmodel import Session
 
+from chasseur.bonus import a_bonus
 from chasseur.controles import CONTROLES, libelle
 from chasseur.db import depot
 from chasseur.db.moteur import Stockage
@@ -25,7 +26,7 @@ from chasseur.scoring import statut_controles
 CONTROLES_EXPORTES = [c for c in CONTROLES if c.id != "url"]
 COLONNES_FIXES = [
     "Nom", "Ville", "Catégorie", "Score", "Statut", "Problèmes principaux", "Téléphone", "Site", "Adresse",
-    "Activité", "Note Google", "Avis Google", "Analysé le", "Analyse",
+    "Activité", "Note Google", "Avis Google", "Bonus commercial", "Analysé le", "Analyse", "Source", "Collecté le",
 ]
 COLONNES_CAPTURES = ["Capture ordinateur", "Capture téléphone"]
 COLONNES = COLONNES_FIXES + [c.libelle for c in CONTROLES_EXPORTES] + COLONNES_CAPTURES
@@ -71,7 +72,10 @@ def lignes(stockage: Stockage, session: Session, filtres: depot.Filtres) -> list
             "Activité": p.categorie,
             "Note Google": p.note_google,
             "Avis Google": p.nb_avis,
+            "Bonus commercial": "oui" if a_bonus(p.note_google, p.nb_avis) else "non",
             "Analysé le": analyse_le.strftime("%d/%m/%Y %H:%M") if analyse_le else "",
+            "Source": p.source,
+            "Collecté le": heure_locale(p.collecte_le).strftime("%d/%m/%Y") if p.collecte_le else "",
             "Analyse": noms_scans.get(p.scan_id, ""),
             "Capture ordinateur": captures[p.id].get("bureau", ""),
             "Capture téléphone": captures[p.id].get("mobile", ""),

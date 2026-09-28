@@ -114,6 +114,8 @@ class AnalyseurNavigateur(Analyseur):
             nav = self.config.navigateur
             chemin = nav.chromium or os.environ.get("CHASSEUR_CHROMIUM") or None
             en_root = hasattr(os, "geteuid") and os.geteuid() == 0  # le bac à sable refuse de démarrer en root
+            if os.environ.get("CHASSEUR_SANDBOX") == "0":  # conteneur Docker : c'est lui qui isole
+                en_root = True
             self._playwright = await async_playwright().start()
             try:
                 self._navigateur = await self._playwright.chromium.launch(
@@ -134,7 +136,7 @@ class AnalyseurNavigateur(Analyseur):
             # §6.2 : user-agent explicite, avec le nom du logiciel.
             self._user_agent = (
                 f"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
-                f"Chrome/{version}.0.0.0 Safari/537.36 {JETON_ROBOTS}/0.2"
+                f"Chrome/{version}.0.0.0 Safari/537.36 {JETON_ROBOTS}/1.0"
             )
             return self._navigateur
 

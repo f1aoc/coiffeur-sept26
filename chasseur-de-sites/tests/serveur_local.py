@@ -16,6 +16,16 @@ class _Gestionnaire(SimpleHTTPRequestHandler):
     def log_message(self, *args):  # silence dans la sortie de pytest
         pass
 
+    def do_GET(self):
+        if self.path.startswith("/statut/"):  # /statut/500 → erreur serveur simulée
+            code = int(self.path.split("/")[2].split("?")[0])
+            self.send_response(code)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(f"<h1>Erreur {code}</h1>".encode())
+            return
+        super().do_GET()
+
 
 class ServeurLocal:
     def __init__(self, dossier: Path = PAGES):

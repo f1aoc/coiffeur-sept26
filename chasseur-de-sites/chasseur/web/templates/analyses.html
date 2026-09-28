@@ -14,7 +14,8 @@
   <tbody>
   {% for scan, c in lignes %}
     <tr>
-      <td><a href="/analyses/{{ scan.id }}">{{ scan.nom }}</a><br><span class="discret">{{ scan.format }}</span></td>
+      <td><a href="/analyses/{{ scan.id }}">{{ scan.nom }}</a>{% if scan.planifie %} <span class="pastille">chaque semaine</span>{% endif %}
+        <br><span class="discret">{{ scan.source or scan.format }}</span></td>
       <td>{{ scan.cree_le|date_fr }}</td>
       <td>{{ c.faits }} / {{ scan.total }}</td>
       <td><span class="etat etat-casse">{{ c.get("Cassé", 0) }}</span></td>

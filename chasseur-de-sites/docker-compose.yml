@@ -1,0 +1,17 @@
+# docker compose up -d   →   http://localhost:8765
+services:
+  chasseur:
+    build: .
+    image: chasseur-de-sites:1.0
+    container_name: chasseur-de-sites
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8765:8765"   # accessible depuis cet ordinateur seulement (§6.4)
+    volumes:
+      - chasseur-donnees:/donnees   # base, captures, clé de chiffrement, journal
+    shm_size: "1gb"                 # mémoire partagée pour Chromium
+    environment:
+      TZ: Europe/Paris
+
+volumes:
+  chasseur-donnees:

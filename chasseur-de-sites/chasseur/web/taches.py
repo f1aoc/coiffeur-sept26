@@ -123,6 +123,11 @@ class GestionnaireScans:
         else:
             self.lancer(scan_id)  # scan interrompu : on relance les sites non analysés
 
+    async def attendre(self, scan_id: int) -> None:
+        tache = self._taches.get(scan_id)
+        if tache is not None:
+            await tache
+
     def restant(self, scan_id: int, reste: int) -> float | None:
         suivi = self.suivis.get(scan_id)
         return suivi.restant(reste) if suivi else None

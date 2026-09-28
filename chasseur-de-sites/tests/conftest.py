@@ -55,8 +55,10 @@ def signatures():
 
 
 @pytest.fixture(autouse=True)
-def sans_cle_pagespeed(monkeypatch):
+def sans_cle_pagespeed(monkeypatch, tmp_path):
     monkeypatch.delenv("PAGESPEED_API_KEY", raising=False)
+    # Jamais le vrai dossier de données de l'utilisateur pendant les tests
+    monkeypatch.setenv("CHASSEUR_DONNEES", str(tmp_path / "donnees-par-defaut"))
 
 
 @pytest.fixture

@@ -51,6 +51,11 @@ class Scan(SQLModel, table=True):
     demarre_le: datetime | None = None
     termine_le: datetime | None = None
     erreur: str = ""
+    # Lot 5 : relance hebdomadaire et filiation des scans (pour la comparaison)
+    source: str = ""  # « Import … » ou « Recherche Google Places … »
+    planifie: bool = False
+    prochaine_execution: datetime | None = None
+    origine_id: int | None = Field(default=None, index=True)  # scan d'origine d'une relance
 
 
 class ProspectDB(SQLModel, table=True):
@@ -133,3 +138,14 @@ class Reglage(SQLModel, table=True):
     cle: str = Field(primary_key=True)
     valeur: str = ""
     chiffre: bool = False
+
+
+class Opposition(SQLModel, table=True):
+    """Liste d'opposition (§6.1) : domaines à ne plus jamais analyser, exporter ni contacter."""
+
+    __tablename__ = "oppositions"
+
+    id: int | None = Field(default=None, primary_key=True)
+    domaine: str = Field(index=True, unique=True)
+    motif: str = ""
+    ajoute_le: datetime = Field(default_factory=maintenant)

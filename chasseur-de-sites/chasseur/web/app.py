@@ -9,6 +9,8 @@ Sécurité (§6.4) :
 
 from __future__ import annotations
 
+import asyncio
+import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -19,7 +21,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
-from chasseur import __version__
+from chasseur import __version__, planification, rgpd
+from chasseur.journal import configurer as configurer_journal
+from chasseur.bonus import a_bonus
 from chasseur.config import charger_config
 from chasseur.controles import CONTROLES, libelle
 from chasseur.db.moteur import Stockage
@@ -28,6 +32,7 @@ from chasseur.reports.pdf import MoteurPDF
 from chasseur.web.taches import GestionnaireScans
 
 ICI = Path(__file__).resolve().parent
+journal = logging.getLogger("chasseur.web")
 HOTES_LOCAUX = ["127.0.0.1", "localhost"]
 METHODES_SURES = {"GET", "HEAD", "OPTIONS"}
 
@@ -74,6 +79,7 @@ def creer_templates() -> Jinja2Templates:
     env.filters["heure"] = heure
     env.filters["libelle"] = libelle
     env.globals.update(
+        a_bonus=a_bonus,
         STATUTS=STATUTS_COMMERCIAUX,
         LIBELLES_SCAN=LIBELLES_SCAN,
         CONTROLES=CONTROLES,
@@ -82,13 +88,47 @@ def creer_templates() -> Jinja2Templates:
     return templates
 
 
+def entretenir(stockage: Stockage, gestionnaire: GestionnaireScans, purge: bool) -> tuple[int, list[int]]:
+    """Purge RGPD (si demandée) et lancement des relances planifiées dues ; renvoie (purgés, scans lancés)."""
+    purges, lances = 0, []
+    with stockage.session() as s:
+        if purge:
+            purges = rgpd.purger(stockage, s)
+            if purges:
+                journal.warning("purge automatique : %s prospect(s) non contacté(s) supprimé(s)", purges)
+        for scan in planification.scans_dus(s):
+            if any(gestionnaire.en_cours(x.id) for x in planification.serie(s, scan)):
+                continue  # la relance précédente n'est pas finie
+            lances.append(planification.creer_relance(s, scan).id)
+    for scan_id in lances:
+        gestionnaire.lancer(scan_id)
+    return purges, lances
+
+
+async def boucle_entretien(stockage: Stockage, gestionnaire: GestionnaireScans, intervalle: float) -> None:
+    """Toutes les `intervalle` secondes : relances planifiées ; une fois par jour : purge."""
+    derniere_purge = 0.0
+    while True:
+        try:
+            boucle = asyncio.get_running_loop()
+            purge = boucle.time() - derniere_purge > 24 * 3600 or not derniere_purge
+            entretenir(stockage, gestionnaire, purge)
+            if purge:
+                derniere_purge = boucle.time()
+        except Exception as e:  # noqa: BLE001 — l'entretien ne doit jamais arrêter l'application
+            journal.error("entretien : %s %s", type(e).__name__, e)
+        await asyncio.sleep(intervalle)
+
+
 def creer_app(
     stockage: Stockage | None = None,
     gestionnaire: GestionnaireScans | None = None,
     chemin_config: str | Path | None = None,
     hotes: list[str] | None = None,
+    intervalle_entretien: float = 300,
 ) -> FastAPI:
     stockage = stockage or Stockage()
+    fichier_journal = configurer_journal(stockage.dossier)
     gestionnaire = gestionnaire or GestionnaireScans(stockage, chemin_config=chemin_config)
 
     moteurs: list[MoteurPDF] = []
@@ -106,7 +146,9 @@ def creer_app(
     @asynccontextmanager
     async def cycle_de_vie(app: FastAPI):
         gestionnaire.au_demarrage()
+        entretien = asyncio.get_running_loop().create_task(boucle_entretien(stockage, gestionnaire, intervalle_entretien))
         yield
+        entretien.cancel()
         await gestionnaire.arreter()
         for m in moteurs:
             await m.fermer()
@@ -117,6 +159,14 @@ def creer_app(
     app.state.templates = creer_templates()
     app.state.chemin_config = chemin_config
     app.state.moteur_pdf = moteur_pdf
+    app.state.fichier_journal = fichier_journal
+
+    @app.exception_handler(Exception)
+    async def erreur_interne(request: Request, exc: Exception):
+        journal.error("erreur sur %s %s : %s %s", request.method, request.url.path, type(exc).__name__, exc)
+        return PlainTextResponse(
+            "Une erreur inattendue s'est produite. Elle est notée dans le journal (page « À propos »).", status_code=500
+        )
 
     hotes_autorises = hotes or HOTES_LOCAUX
 
@@ -134,8 +184,17 @@ def creer_app(
     app.mount("/static", StaticFiles(directory=ICI / "static"), name="static")
     app.mount("/captures", StaticFiles(directory=stockage.dossier_captures), name="captures")
 
-    from chasseur.web import routes_analyses, routes_rapports, routes_reglages, routes_resultats
+    from chasseur.web import (
+        routes_analyses,
+        routes_conformite,
+        routes_rapports,
+        routes_recherche,
+        routes_reglages,
+        routes_resultats,
+    )
 
+    app.include_router(routes_recherche.routeur)
+    app.include_router(routes_conformite.routeur)
     app.include_router(routes_rapports.routeur)
     app.include_router(routes_analyses.routeur)
     app.include_router(routes_resultats.routeur)

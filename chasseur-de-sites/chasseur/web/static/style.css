@@ -211,3 +211,13 @@ input[type="email"], input[type="url"], input[type="tel"] {
   .captures { grid-template-columns: 1fr; }
   .entete { padding: 0.6rem 1rem; }
 }
+
+/* Lot 5 */
+.encart-b2b { border-left: 4px solid var(--accent); max-width: 60rem; }
+.encart-b2b h2 { font-size: 1rem; }
+.bonus { display: inline-block; padding: 0.05rem 0.45rem; border-radius: 999px; background: #fff3c4; color: #7a5a00; font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
+.case-filtre { flex-direction: row !important; align-items: center; gap: 0.35rem !important; font-size: 0.9rem !important; color: var(--texte) !important; }
+.zone-danger { border-color: #f1c0bb; }
+.zone-danger .bouton-danger { background: var(--casse); border-color: var(--casse); color: #fff; }
+pre.journal { background: #111827; color: #e5e7eb; padding: 0.75rem; border-radius: 6px; overflow-x: auto; font-size: 0.8rem; max-height: 22rem; }
+.recherche .champ { max-width: 32rem; }

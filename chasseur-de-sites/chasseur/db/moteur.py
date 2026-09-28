@@ -6,7 +6,7 @@ import os
 from contextlib import contextmanager
 from pathlib import Path
 
-from sqlalchemy import event
+from sqlalchemy import event, inspect, text
 from sqlmodel import Session, SQLModel, create_engine
 
 from chasseur.db import tables  # noqa: F401  (enregistre les tables)
@@ -19,6 +19,36 @@ def dossier_donnees(chemin: str | Path | None = None) -> Path:
     dossier = Path(chemin or os.environ.get("CHASSEUR_DONNEES") or Path.home() / ".chasseur-de-sites")
     dossier.mkdir(parents=True, exist_ok=True)
     return dossier.resolve()
+
+
+def migrer(moteur) -> list[str]:
+    """Ajoute aux tables existantes les colonnes apparues dans une version plus récente.
+
+    Une base créée par une version précédente est ainsi mise à jour sans perte
+    (SQLite sait ajouter une colonne, pas en retirer ; il n'y en a jamais besoin ici).
+    """
+    ajoutees = []
+    inspecteur = inspect(moteur)
+    with moteur.begin() as connexion:
+        for table in SQLModel.metadata.sorted_tables:
+            if not inspecteur.has_table(table.name):
+                continue
+            existantes = {c["name"] for c in inspecteur.get_columns(table.name)}
+            for colonne in table.columns:
+                if colonne.name in existantes:
+                    continue
+                type_sql = colonne.type.compile(dialect=moteur.dialect)
+                defaut = colonne.default.arg if colonne.default is not None and not callable(colonne.default.arg) else None
+                clause = ""
+                if isinstance(defaut, bool):
+                    clause = f" DEFAULT {int(defaut)}"
+                elif isinstance(defaut, (int, float)):
+                    clause = f" DEFAULT {defaut}"
+                elif isinstance(defaut, str):
+                    clause = " DEFAULT '" + defaut.replace("'", "''") + "'"
+                connexion.execute(text(f'ALTER TABLE "{table.name}" ADD COLUMN "{colonne.name}" {type_sql}{clause}'))
+                ajoutees.append(f"{table.name}.{colonne.name}")
+    return ajoutees
 
 
 class Stockage:
@@ -39,6 +69,7 @@ class Stockage:
             curseur.close()
 
         SQLModel.metadata.create_all(self.moteur)
+        migrer(self.moteur)
 
     @property
     def dossier_captures(self) -> Path:

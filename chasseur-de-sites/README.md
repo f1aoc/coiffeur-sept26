@@ -1,171 +1,195 @@
 # Chasseur de sites
 
-Repère les sites web d'entreprises locales cassés ou obsolètes et les classe comme prospects.
-Cahier des charges : [CAHIER_DES_CHARGES.md](CAHIER_DES_CHARGES.md).
+Repère les sites web d'entreprises locales **cassés, expirés ou obsolètes**, les classe par « chaleur commerciale »
+et prépare le premier contact : rapport PDF à vos couleurs, export Excel, messages pré-remplis.
+Application locale, en français : vos données restent sur votre ordinateur.
 
-**État : Lot 4**. Les 4 analyseurs, le scoring (tableaux 3.2 et 3.3), l'interface web locale, et les rapports :
-PDF par prospect aux couleurs de l'agence, export Excel / CSV de la liste filtrée, modèles de messages.
-Exemples de rapports : [exemples/](exemples/).
+Cahier des charges : [CAHIER_DES_CHARGES.md](CAHIER_DES_CHARGES.md) · Recette : [RECETTE.md](RECETTE.md) ·
+Exemples de rapports : [exemples/](exemples/)
 
-## Installation
+---
+
+## 1. Installation
+
+Trois possibilités ; choisissez-en **une**.
+
+### A. Exécutable (le plus simple, Windows ou macOS)
+
+1. Sur GitHub, onglet **Actions** → workflow « Chasseur de sites – exécutables » → dernière exécution réussie →
+   téléchargez l'artefact **ChasseurDeSites-windows** (ou **-macos**).
+2. Décompressez le ZIP où vous voulez (par exemple dans `Documents`).
+3. Double-cliquez sur `ChasseurDeSites.exe` (dans le dossier `ChasseurDeSites`).
+   - **Premier lancement** : le navigateur d'analyse (Chromium, environ 150 Mo) est téléchargé une seule fois.
+   - Windows peut afficher « Windows a protégé votre ordinateur » (exécutable non signé) :
+     **Informations complémentaires → Exécuter quand même**.
+   - Sous macOS : clic droit → **Ouvrir** la première fois.
+4. L'interface s'ouvre dans votre navigateur. **Gardez la fenêtre noire ouverte** : la fermer arrête l'application.
+
+### B. Avec Python (pour suivre les mises à jour)
+
+Installez Python 3.12 depuis python.org (**cochez « Add python.exe to PATH »**), téléchargez le projet, puis dans
+PowerShell ouvert dans le dossier `chasseur-de-sites` :
+
+```powershell
+python -m venv .venv
+.venv\Scripts\activate            # macOS / Linux : source .venv/bin/activate
+pip install -e ".[dev]"
+playwright install chromium
+chasseur web
+```
+
+Les fois suivantes : `.venv\Scripts\activate` puis `chasseur web`.
+
+### C. Docker
 
 ```bash
 cd chasseur-de-sites
-python -m venv .venv && source .venv/bin/activate   # Windows : .venv\Scripts\activate
-pip install -e ".[dev]"
-playwright install chromium
+docker compose up -d        # puis ouvrir http://localhost:8765
 ```
 
-Clé PageSpeed Insights (facultative, gratuite) : `performance.cle_api` dans `config.yaml`, ou mieux,
-la variable d'environnement `PAGESPEED_API_KEY`. Sans clé, le contrôle Performance est noté « non vérifié ».
+Les données sont dans le volume `chasseur-donnees`. Le port n'est publié que sur `127.0.0.1`.
 
-## Interface web
+---
+
+## 2. Clés API (facultatives)
+
+Elles se collent dans **Réglages → Clés API**. Elles y sont chiffrées, jamais réaffichées en entier, jamais exportées
+ni écrites dans le journal.
+
+| Clé | À quoi elle sert | Où l'obtenir |
+|---|---|---|
+| **Google Places** | Recherche « secteur + ville » (écran Recherche) | [Google Cloud](https://console.cloud.google.com/) → créer un projet → activer **Places API (New)** → Identifiants → Créer une clé API (restreignez-la à cette API) |
+| **PageSpeed Insights** | Contrôle « lenteur sur mobile » | [Google Cloud](https://console.cloud.google.com/) → activer **PageSpeed Insights API** → clé API (gratuite) |
+
+Sans clé Places, importez vos listes en CSV/Excel. Sans clé PageSpeed, la vitesse est notée « non vérifiée » et le
+reste de l'analyse fonctionne normalement.
+
+**Coût Google Places** : l'écran Recherche affiche le nombre maximal de requêtes et une estimation *avant* de lancer.
+Le tarif utilisé est indicatif (réglable dans `config.yaml`, section `places`) : vérifiez le tarif en vigueur sur la
+[page de tarification Google Maps Platform](https://developers.google.com/maps/billing-and-pricing/pricing).
+
+---
+
+## 3. Premier scan, pas à pas
+
+1. **Réglages → Votre agence** : nom, logo, couleur, coordonnées (utilisés dans les PDF et les messages).
+2. Trouvez des entreprises, au choix :
+   - **Recherche** : secteur (« coiffeur ») + villes → **Estimer le coût** → **Lancer la recherche** ;
+   - **Nouvelle analyse** : glissez un CSV ou un Excel avec au moins les colonnes `nom` et `url`
+     (facultatives : `téléphone`, `adresse`, `ville`, `catégorie`, `note`, `avis`).
+3. Vérifiez l'aperçu (doublons de domaine et domaines en opposition déjà retirés) → **Lancer l'analyse**.
+4. **Progression** : suivez l'avancement ; Pause / Reprendre à tout moment. Si vous fermez l'application,
+   « Reprendre » analyse les sites restants.
+5. **Résultats** : triez, filtrez (catégorie, problème, statut, **Prospects prioritaires**), ouvrez une fiche en
+   cliquant sur le nom.
+6. **Fiche** : captures, problèmes expliqués simplement, **Générer le rapport PDF**, messages e-mail / appel / SMS
+   à copier, notes, statut commercial.
+
+Exemple de CSV :
+
+```
+nom;url;telephone;ville
+Salon Léa;www.salon-lea.fr;04 90 00 00 01;Avignon
+Garage Dupont;garage-dupont.fr;04 90 00 00 02;Cavaillon
+```
+
+---
+
+## 4. Ce que l'outil vérifie
+
+| Catégorie | Contrôles (points) |
+|---|---|
+| **Cassé** (un seul suffit) | domaine introuvable (40) · domaine expiré ou parqué (40) · erreur serveur ou délai dépassé après 2 essais (35) · page d'accueil introuvable (30) · certificat de sécurité expiré ou invalide (30) · page blanche ou erreur affichée (30) · « en construction » (20) · signes de piratage (25) |
+| **Obsolète** (score ≥ 30) | pas de HTTPS (15) · pas adapté au mobile (15) · copyright ancien (10) · CMS ou technologies périmées (10) · lent sur mobile (10) · pas de titre ou description Google (5) · ni formulaire ni appel en un clic (5) · actualités de plus de 2 ans (5) |
+| **Correct** | score < 30 |
+
+Score = somme plafonnée à 100 ; les poids se modifient dans **Réglages**. **Bonus commercial** (affiché à part) :
+fiche Google avec plus de 20 avis et une note d'au moins 4. **Prospects prioritaires** = cassé ou obsolète + bonus.
+
+---
+
+## 5. Conformité (RGPD) et respect des sites
+
+- Seules des informations publiques d'entreprise sont collectées ; chaque prospect garde sa **source** et sa
+  **date de collecte**.
+- **Supprimer un prospect** : en bas de sa fiche (captures, notes et historique compris).
+- **Liste d'opposition** (lien en bas de page) : un domaine ajouté n'est plus jamais importé, analysé ni exporté.
+- **Purge automatique** des prospects jamais contactés après 12 mois (réglable dans Réglages).
+- Rappel : la prospection B2B par e-mail est possible si le message concerne l'activité professionnelle du
+  destinataire et propose un moyen simple de s'opposer. Vous restez responsable de vos envois : faites valider par
+  un juriste avant de commercialiser.
+- User-agent explicite `ChasseurDeSites/1.0`, robots.txt respecté, page d'accueil + page contact seulement,
+  aucun scraping de Google Maps (API officielle uniquement).
+- Navigateur d'analyse isolé : téléchargements bloqués, contexte neuf par site, 20 s par page.
+
+---
+
+## 6. Suivi dans le temps
+
+- **Relance hebdomadaire** : sur l'écran Progression d'une analyse → « Relancer cette analyse chaque semaine ».
+  Le statut commercial est conservé. Les relances ont lieu quand l'application est ouverte ; pour un ordinateur
+  souvent éteint, programmez `chasseur planifies` dans le Planificateur de tâches Windows (ou cron).
+- **Comparaison** : « Comparer avec une autre analyse » → sites **devenus cassés** depuis la dernière fois,
+  sites réparés, autres changements.
+
+---
+
+## 7. Ligne de commande
 
 ```bash
-chasseur web                       # ouvre http://127.0.0.1:8765/ dans le navigateur
-chasseur web --port 9000 --sans-navigateur
-chasseur import resultats.csv      # importe dans l'interface un CSV produit par « chasseur scan »
+chasseur web                          # interface (http://127.0.0.1:8765)
+chasseur scan prospects.csv           # analyse sans interface → prospects_resultats.csv + captures/
+chasseur import prospects_resultats.csv   # importe ces résultats dans l'interface
+chasseur rapport 12 -o diagnostic.pdf # rapport PDF du prospect n° 12 (numéro dans l'adresse de sa fiche)
+chasseur planifies                    # lance les analyses planifiées arrivées à échéance
+chasseur purge                        # applique la durée de conservation
+chasseur recette jeu.csv              # mesure le taux de bon classement sur un jeu étiqueté (colonne « attendu »)
 ```
 
-- **Nouvelle analyse** : glisser-déposer d'un CSV ou d'un Excel, aperçu des 10 premières lignes.
-  Les fichiers de l'outil Google Maps (CSV et Excel) sont reconnus automatiquement. Cet outil ne garde
-  que les entreprises *sans vrai site* : elles apparaissent « Sans site ».
-- **Progression** : avancement en direct, compteurs cassés / obsolètes / corrects, temps restant,
-  Pause / Reprendre. Le scan tourne en tâche de fond ; si l'application est fermée, il est « Interrompu »
-  et « Reprendre » analyse les sites restants.
-- **Résultats** : tableau triable, filtres (catégorie, problème, statut), recherche, 50 lignes par page,
-  statut commercial modifiable sur place.
-- **Fiche prospect** : captures agrandissables, problèmes en langage simple, détails techniques,
-  notes enregistrées automatiquement, historique des statuts.
-- **Réglages** : clés API chiffrées, analyses simultanées (1 à 30), poids du scoring (les scores
-  existants sont recalculés).
+---
 
-## Rapports et exports (Lot 4)
+## 8. FAQ
 
-- **Réglages → Votre agence** : nom, logo (PNG ou SVG), couleur principale, téléphone, e-mail, site,
-  texte de l'appel à l'action.
-- **Rapport PDF** (bouton sur la fiche, ou `chasseur rapport <id>`) : 2 pages, aux couleurs de l'agence.
-  Page 1 : entreprise, date, captures ordinateur et téléphone, verdict en une phrase, résumé.
-  Page 2 : les 3 à 5 problèmes les plus graves (« ce que voit le visiteur », « pourquoi c'est gênant »),
-  appel à l'action et coordonnées. Aucun jargon, aucune statistique ni promesse chiffrée.
-- **Rapports groupés** : cochez des prospects dans Résultats → « Rapports PDF des prospects cochés (ZIP) ».
-- **Export Excel / CSV** de la liste filtrée : une colonne par contrôle, en-têtes figés, filtres,
-  couleur par catégorie, onglet « Récapitulatif » (par catégorie, par problème, par statut).
-- **Modèles de messages** (Réglages) : e-mail, script d'appel, SMS, avec `{entreprise}`,
-  `{probleme_principal}`, `{ville}`, `{agence}`. Sur la fiche : message pré-rempli + bouton Copier.
-  Rien n'est envoyé automatiquement.
+**Où sont mes données ?** Dans `C:\Users\<vous>\.chasseur-de-sites\` (Windows) ou `~/.chasseur-de-sites/` :
+base `chasseur.db`, captures, clé de chiffrement `cle.secret`, journal `erreurs.log`. Sauvegardez ce dossier pour
+tout garder ; supprimez-le pour tout effacer. La page **À propos** l'indique.
 
-Moteur PDF : WeasyPrint s'il est installé (`pip install -e ".[weasyprint]"`, qui demande GTK/Pango sous
-Windows), sinon Chromium, déjà installé pour les captures. Forcer : variable `CHASSEUR_MOTEUR_PDF=chromium`.
+**Je mets à jour l'application : vais-je perdre mes prospects ?** Non. Les données sont à part, et la base est
+mise à jour automatiquement au démarrage.
 
-Les données (base `chasseur.db`, captures, fichiers importés, clé de chiffrement `cle.secret`) sont dans
-`~/.chasseur-de-sites/` (ou `--donnees`, ou la variable `CHASSEUR_DONNEES`). L'interface n'écoute que sur
-127.0.0.1 : elle n'est pas accessible depuis le réseau, et les requêtes venant d'un autre site sont refusées.
+**Beaucoup de sites « À revérifier » ?** L'analyse n'a pas pu les voir (connexion coupée, pare-feu, proxy
+d'entreprise). Vérifiez votre connexion puis relancez l'analyse. Ils ne sont jamais classés « Correct » à tort.
 
-## Ligne de commande
+**Un site marche chez moi mais ressort « Cassé » ?** Ouvrez sa fiche → Détails techniques : la preuve y figure
+(code d'erreur, date du certificat…). Deux essais sont faits avant de conclure à une panne, et un blocage des robots
+n'est pas retenu si le vrai navigateur affiche la page.
+
+**Les fichiers de mon outil Google Maps ressortent tous « Sans site » ?** C'est normal : cet outil ne garde que les
+entreprises sans vrai site. Pour chasser les sites cassés, utilisez l'écran **Recherche** ou un fichier d'entreprises
+qui ont un site.
+
+**Combien de temps pour 500 sites ?** Voir [RECETTE.md](RECETTE.md). Le temps dépend surtout du nombre de sites en
+panne (chacun attend 2 × 15 s) ; 10 sites en parallèle par défaut, jusqu'à 30 dans Réglages.
+
+**Le PDF utilise-t-il WeasyPrint ?** S'il est installé (`pip install -e ".[weasyprint]"`, qui demande GTK/Pango
+sous Windows), oui ; sinon Chromium, avec le même rendu.
+
+**L'interface est-elle accessible depuis Internet ?** Non : elle n'écoute que sur votre ordinateur (127.0.0.1) et
+refuse les requêtes venant d'autres sites.
+
+**Une erreur ?** Page **À propos** → « Dernières erreurs » (clés et e-mails masqués).
+
+---
+
+## 9. Pour les développeurs
 
 ```bash
-chasseur scan prospects.csv                        # → prospects_resultats.csv + captures/
-chasseur scan prospects.csv -o sortie/top.csv -p 20
-chasseur scan prospects.csv -a reseau,domaine      # seulement certains analyseurs
-chasseur scan prospects.csv --recommencer          # ignorer un scan interrompu
+pytest                    # tests hors ligne (réponses simulées, pages locales dans un vrai Chromium)
+pytest -m reseau          # vrais certificats de badssl.com (Internet requis)
+pytest -m charge          # 500 sites locaux, temps et reprise après interruption
+pytest --cov=chasseur.scoring
+pyinstaller packaging/chasseur.spec --noconfirm   # exécutable dans dist/ChasseurDeSites/
 ```
 
-**Reprise** : chaque site terminé est écrit dans `<sortie>.journal.jsonl`. Après une interruption
-(Ctrl+C, coupure), relancez la même commande : les sites déjà analysés sont ignorés. Le journal
-est supprimé à la fin du scan.
-
-### CSV d'entrée
-
-Colonnes toutes optionnelles, reconnues sans tenir compte de la casse ni des accents :
-`nom`, `url`, `téléphone`, `adresse`, `catégorie` (et synonymes : `site web`, `tel`, `entreprise`…).
-Séparateur `,` `;` ou tabulation détecté automatiquement ; UTF-8 ou Windows-1252 (Excel).
-
-### CSV de sortie
-
-Séparateur `;`, UTF-8 avec BOM (s'ouvre tel quel dans Excel), trié par score décroissant :
-
-- `rang, score, etat, nom, url, telephone, adresse, categorie` ;
-- synthèse : `codes`, `messages_client` (phrases pour le prospect), `preuves`, `non_verifies` ;
-- **une colonne `ctrl_<contrôle>` par contrôle** : `OK`, `KO : CODE…`, `non vérifié` ou `n/a` ;
-- preuves techniques (§3.5) : code HTTP, expiration SSL et domaine, CMS et versions, année du copyright,
-  score PageSpeed… ;
-- `capture_bureau`, `capture_mobile` (WebP < 150 Ko, dans `captures/` à côté du CSV) et `capture_date`.
-
-## Contrôles et points (config.yaml)
-
-| Contrôle (`ctrl_…`) | Analyseur | Points | Famille |
-|---|---|---|---|
-| `dns` | Réseau | 40 | cassé |
-| `domaine` : expiré, non enregistré ou parqué | Domaine | 40 | cassé |
-| `http_5xx` : 5xx ou délai dépassé (2 essais) | Réseau | 35 | cassé |
-| `http_4xx` | Réseau | 30 | cassé |
-| `ssl` : certificat expiré ou invalide | Réseau | 30 | cassé |
-| `page_blanche_php` | Navigateur | 30 | cassé |
-| `maintenance` | Navigateur | 20 | cassé |
-| `piratage` : spam, redirection vers un domaine tiers | Navigateur | 25 | cassé |
-| `https` : pas de HTTPS ou pas de redirection HTTP → HTTPS | Réseau | 15 | obsolète |
-| `responsive` : pas de meta viewport ou défilement à 375 px | Navigateur | 15 | obsolète |
-| `copyright` : année ≤ année en cours − 3 | Navigateur | 10 | obsolète |
-| `technologies` : WordPress < 6, jQuery < 3, Joomla < 3, Flash, tableaux | Navigateur | 10 | obsolète |
-| `performance` : PageSpeed mobile < 40 | Performance | 10 | obsolète |
-| `title_meta` | Navigateur | 5 | obsolète |
-| `contact` : ni formulaire ni lien `tel:` (accueil + page contact) | Navigateur | 5 | obsolète |
-| `actualites` : date la plus récente > 2 ans | Navigateur | 5 | obsolète |
-| `domaine_expiration` : expire dans moins de 30 jours | Domaine | 10 | hors tableaux |
-| `ssl_expiration` : certificat qui expire bientôt | Réseau | 0 | information |
-
-- Un contrôle compte **une seule fois**, même si plusieurs de ses codes sont relevés.
-- Score = somme plafonnée à 100.
-- **Cassé** = au moins un contrôle « cassé » ; **Obsolète** = score ≥ 30 sans casse ; **Correct** sinon.
-- **À revérifier** : aucune casse prouvée, mais l'analyseur Réseau ou Navigateur a échoué (panne de
-  connexion…). On n'affiche jamais « Correct » pour un site qu'on n'a pas pu voir.
-- **Sans site** : pas d'URL dans le CSV.
-
-Les motifs de détection (CMS, parking, spam, maintenance, erreurs PHP) sont dans `signatures.yaml`.
-
-## Garde-fous contre les faux positifs (objectif < 5 %)
-
-- 2 essais HTTP espacés avant de conclure à une panne.
-- Un 403, 429 ou 503 renvoyé au robot n'est pas retenu si le vrai navigateur affiche la page.
-- « Maintenance » seulement sur une page courte (une phrase « coming soon » dans un vrai site ne suffit pas).
-- Spam : au moins 2 mots différents (ou 1 dans le titre).
-- Redirection vers un autre domaine tolérée vers les réseaux sociaux, annuaires et créateurs de sites.
-- Domaine « non enregistré » seulement si RDAP **et** whois le confirment.
-- Pas de jugement sur le contenu d'une page d'erreur HTTP (déjà comptée par l'analyseur Réseau).
-
-## Respect des sites et sécurité (§6.2, §6.4)
-
-- User-agent explicite `ChasseurDeSites/0.2` ; robots.txt respecté pour le rendu navigateur.
-- Page d'accueil + page contact si trouvée, pas de crawl.
-- Chromium isolé : un contexte neuf par site, téléchargements refusés, aucune permission, service workers
-  bloqués, bac à sable Chromium (sauf en root sous Linux), 20 s maximum par page.
-- PageSpeed : file d'attente dédiée (60 requêtes/min, 4 simultanées), relance sur 429/5xx.
-- La clé API n'apparaît jamais dans les exports ni les messages d'erreur.
-
-## Tests
-
-```bash
-pytest                 # 315 tests hors ligne : réponses simulées + pages locales dans un vrai Chromium
-pytest -m reseau       # en plus : vrais certificats de badssl.com (connexion Internet requise)
-pytest --cov=chasseur.scoring   # couverture du scoring : 100 %
-```
-
-Les tests Navigateur et le test de bout en bout sont ignorés si Chromium est absent
-(`playwright install chromium`, ou `CHASSEUR_CHROMIUM=/chemin/vers/chrome`).
-
-## Structure
-
-```
-config.yaml, signatures.yaml
-chasseur/
-  cli.py, config.py, controles.py, modeles.py, orchestrateur.py, reprise.py, signatures.py, urls.py
-  importers/   csv_importer.py, fichiers.py (CSV/Excel, format Google Maps)
-  analyzers/   base.py, reseau.py, domain.py, browser.py, page.py, performance.py
-  scoring/     score.py
-  reports/     csv_export.py, pdf.py, excel.py, messages.py, textes.py, donnees.py, templates/
-  db/          tables.py, moteur.py, depot.py, reglages.py, secret.py, import_resultats.py
-  web/         app.py, taches.py, routes_*.py, templates/, static/
-tests/
-  pages/       pages HTML de test (parking, blanche, wordpress49, responsive, pirate…)
-```
+Structure : `chasseur/` (`importers/`, `analyzers/`, `scoring/`, `reports/`, `web/`, `db/`, `sources/`),
+`config.yaml` (poids, délais, tarifs), `signatures.yaml` (motifs de détection), `tests/`, `packaging/`.

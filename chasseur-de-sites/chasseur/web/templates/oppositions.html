@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block titre %}Liste d'opposition{% endblock %}
+{% block contenu %}
+<h1>Liste d'opposition</h1>
+<p class="intro">Les domaines de cette liste ne sont plus jamais importés, analysés (relances planifiées comprises) ni exportés.
+Ajouter un domaine supprime aussi les prospects existants de ce domaine.</p>
+{% if ok %}<p class="alerte alerte-succes" role="status">{{ ok }}</p>{% endif %}
+{% if erreur %}<p class="alerte alerte-erreur" role="alert">{{ erreur }}</p>{% endif %}
+<form method="post" action="/oppositions" class="carte ligne-formulaire">
+  <label>Domaine ou adresse du site <input type="text" name="domaine" required maxlength="253" placeholder="salon-lea.fr"></label>
+  <label>Motif (facultatif) <input type="text" name="motif" maxlength="200" placeholder="Demande par téléphone le …"></label>
+  <button type="submit" class="bouton bouton-principal">Ajouter</button>
+</form>
+{% if oppositions %}
+<div class="tableau-defilant">
+<table class="tableau">
+  <thead><tr><th>Domaine</th><th>Motif</th><th>Ajouté le</th><th></th></tr></thead>
+  <tbody>
+  {% for o in oppositions %}
+    <tr><td><strong>{{ o.domaine }}</strong></td><td>{{ o.motif }}</td><td>{{ o.ajoute_le|date_fr }}</td>
+      <td><form method="post" action="/oppositions/{{ o.id }}/retirer"><button class="bouton" type="submit">Retirer</button></form></td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<p class="vide">Aucun domaine dans la liste d'opposition.</p>
+{% endif %}
+{% endblock %}

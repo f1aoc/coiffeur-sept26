@@ -4,4 +4,20 @@
 <p class="fil"><a href="/analyses">Analyses</a> › {{ scan.nom }}</p>
 <h1>{{ scan.nom }}</h1>
 {% include "_progression.html" %}
+<section class="carte">
+  <h2>Suivi dans le temps</h2>
+  <form method="post" action="/analyses/{{ scan.id }}/planifier" class="actions">
+    {% if racine.planifie %}
+      <input type="hidden" name="actif" value="0">
+      <span>Relancée chaque semaine · prochaine analyse le <strong>{{ racine.prochaine_execution|date_fr }}</strong></span>
+      <button type="submit" class="bouton">Arrêter la relance hebdomadaire</button>
+    {% else %}
+      <input type="hidden" name="actif" value="1">
+      <button type="submit" class="bouton">Relancer cette analyse chaque semaine</button>
+    {% endif %}
+    <a class="bouton" href="/analyses/{{ scan.id }}/comparaison">Comparer avec une autre analyse</a>
+  </form>
+  <p class="discret">Les relances ont lieu quand l'application est ouverte. Le statut commercial de chaque prospect est conservé
+    et la comparaison montre les sites devenus cassés depuis la dernière fois.</p>
+</section>
 {% endblock %}
