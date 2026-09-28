@@ -1,44 +1,84 @@
 # Configuration de Chasseur de sites.
-#
-# ⚠️ POIDS PROVISOIRES : les valeurs ci-dessous ne viennent pas du cahier des
-# charges (sections 3.2 et 3.3), qui n'était pas disponible au moment du Lot 1.
-# Remplacez-les par celles du cahier des charges ; aucun code n'est à modifier.
+# Points et catégories : cahier des charges, sections 3.2, 3.3 et 3.4.
 
-# Tableau 3.2 (provisoire) : gravité et points de chaque constat.
-# Gravités autorisées : critique, haute, moyenne, basse, info.
-constats:
-  SITE_ABSENT:          { gravite: haute,    points: 20 }   # pas d'URL dans le CSV
-  URL_INVALIDE:         { gravite: info,     points: 0 }    # URL illisible (erreur de saisie)
-  DNS_INTROUVABLE:      { gravite: critique, points: 60 }   # le domaine ne résout plus
-  HTTP_INJOIGNABLE:     { gravite: critique, points: 50 }   # délai dépassé / connexion refusée après tous les essais
-  HTTP_ERREUR_SERVEUR:  { gravite: critique, points: 45 }   # code 5xx
-  HTTP_ERREUR_CLIENT:   { gravite: haute,    points: 35 }   # code 4xx (404, 410…)
-  SSL_ABSENT:           { gravite: haute,    points: 25 }   # pas de HTTPS
-  SSL_EXPIRE:           { gravite: critique, points: 40 }   # certificat expiré
-  SSL_INVALIDE:         { gravite: haute,    points: 30 }   # autosigné, mauvais nom de domaine…
-  SSL_EXPIRE_BIENTOT:   { gravite: moyenne,  points: 10 }   # expire dans moins de `ssl_alerte_jours`
-  ERREUR_ANALYSE:       { gravite: info,     points: 0 }    # bug interne pendant l'analyse
+# Points par contrôle, comptés une seule fois par site.
+points:
+  # Tableau 3.2 : site cassé (un seul suffit pour classer le site « Cassé »)
+  dns: 40                 # Domaine qui ne résout pas
+  domaine: 40             # Domaine expiré ou parqué
+  http_5xx: 35            # Erreur serveur 5xx ou délai dépassé (après 2 essais)
+  http_4xx: 30            # Erreur 4xx sur la page d'accueil
+  ssl: 30                 # Certificat SSL expiré ou invalide
+  page_blanche_php: 30    # Page blanche ou erreur PHP affichée
+  maintenance: 20         # Site en maintenance / en construction
+  piratage: 25            # Signes visibles de piratage
+  # Tableau 3.3 : site obsolète
+  https: 15               # Pas de HTTPS / pas de redirection HTTP → HTTPS
+  responsive: 15          # Pas de meta viewport ou défilement horizontal à 375 px
+  copyright: 10           # Année du pied de page ≤ année en cours − 3
+  technologies: 10        # WordPress < 6, jQuery < 3, Flash, Joomla 1.x/2.x, tableaux
+  performance: 10         # PageSpeed mobile < 40
+  title_meta: 5           # Pas de title ou de meta description
+  contact: 5              # Ni formulaire ni lien tel:
+  actualites: 5           # Date la plus récente du site > 2 ans
+  # Hors tableaux
+  domaine_expiration: 10  # Domaine qui expire dans moins de 30 jours
+  ssl_expiration: 0       # Certificat qui expire bientôt (information seulement)
+  url: 0                  # Pas d'URL / URL illisible (information seulement)
 
-# Score final = somme des points, plafonnée à score_max.
+# Score = somme des points, plafonnée.
 score_max: 100
 
-# Tableau 3.3 (provisoire) : priorité selon le score (seuil minimal inclus).
-# Le premier seuil atteint (du plus haut au plus bas) l'emporte.
-priorites:
-  - { min: 60, label: "A - prioritaire" }
-  - { min: 30, label: "B - intéressant" }
-  - { min: 1,  label: "C - à surveiller" }
-  - { min: 0,  label: "D - site sain" }
-
-# Priorité affichée quand une analyse n'a pas pu aller au bout (ERREUR_ANALYSE).
-priorite_incomplete: "? - à revérifier"
+# Catégories (§3.4) : Cassé = au moins un contrôle du tableau 3.2 ;
+# Obsolète = score ≥ seuil_obsolete sans casse ; Correct sinon.
+# À revérifier : pas de casse prouvée, mais analyse Réseau ou Navigateur en échec.
+etats:
+  casse: "Cassé"
+  obsolete: "Obsolète"
+  correct: "Correct"
+  sans_site: "Sans site"
+  a_reverifier: "À revérifier"
+  seuil_obsolete: 30
 
 reseau:
   timeout: 15            # secondes, par requête
   essais: 2              # nombre total de tentatives HTTP
-  pause_entre_essais: 1  # secondes
-  ssl_alerte_jours: 30   # seuil de SSL_EXPIRE_BIENTOT
-  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36"
+  pause_entre_essais: 2  # secondes
+  ssl_alerte_jours: 30
+  user_agent: "Mozilla/5.0 (compatible; ChasseurDeSites/0.2)"   # §6.2 : user-agent explicite
 
-# Nombre de sites analysés en parallèle.
+domaine:
+  alerte_jours: 30
+  rdap_url: "https://rdap.org/domain/{domaine}"
+  whois_actif: true      # repli python-whois si RDAP ne donne pas la date
+  timeout: 15
+
+navigateur:
+  timeout_page: 20       # secondes par page
+  largeur_bureau: 1366
+  hauteur_bureau: 768
+  largeur_mobile: 375
+  hauteur_mobile: 667
+  dossier_captures: captures   # relatif au dossier du CSV de sortie
+  capture_max_ko: 150
+  simultanes: 5          # pages ouvertes en même temps dans Chromium
+  chromium: ""           # chemin d'un Chromium précis (vide = celui installé par Playwright)
+  sandbox: true          # bac à sable Chromium (désactivé automatiquement si lancé en root sous Linux)
+  respecter_robots: true # §6.2 : respect du robots.txt pour le rendu navigateur
+  page_contact: true     # §6.2 : visite aussi la page contact si trouvée
+  texte_min: 500         # en dessous : page blanche
+  copyright_ans: 3       # copyright ≤ année − 3 : ancien
+  actualites_ans: 2      # dernière date trouvée plus vieille : actualités anciennes
+
+performance:
+  cle_api: ""            # clé PageSpeed Insights (ou variable d'environnement PAGESPEED_API_KEY)
+  strategie: mobile
+  seuil: 40              # score mobile en dessous : lent
+  requetes_par_minute: 60
+  simultanees: 4
+  timeout: 90
+  max_relances: 4        # relances sur erreur 429 / 5xx de l'API
+  pause_base: 5          # secondes avant la 1re relance (doublée à chaque fois)
+
+# Sites analysés en parallèle (1 à 30).
 parallelisme: 10

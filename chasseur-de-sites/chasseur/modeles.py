@@ -31,9 +31,29 @@ class Constat:
         return asdict(self)
 
 
+class Rapport(list):
+    """Ce que renvoie un analyseur : une liste de constats, plus
+
+    - mesures       : preuves brutes à conserver (code HTTP, dates, technologies…) ;
+    - non_verifies  : contrôles qui n'ont pas pu être faits → raison ;
+    - echec         : True si l'analyseur n'a pas pu travailler normalement
+                      (erreur technique), False si c'est un simple « sans objet ».
+    """
+
+    def __init__(self, constats=(), mesures=None, non_verifies=None, echec=False):
+        super().__init__(constats)
+        self.mesures: dict[str, str] = dict(mesures or {})
+        self.non_verifies: dict[str, str] = dict(non_verifies or {})
+        self.echec = echec
+
+
 @dataclass
 class Resultat:
     prospect: Prospect
     constats: list[Constat] = field(default_factory=list)
+    mesures: dict[str, str] = field(default_factory=dict)
+    non_verifies: dict[str, str] = field(default_factory=dict)  # contrôle → raison
+    sans_objet: list[str] = field(default_factory=list)  # contrôles non applicables (pas d'URL…)
+    echecs: list[str] = field(default_factory=list)  # analyseurs en échec
     score: int = 0
-    priorite: str = ""
+    etat: str = ""  # Cassé / Obsolète / Correct

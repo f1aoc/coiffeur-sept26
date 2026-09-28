@@ -1,0 +1,170 @@
+# Signatures de détection de Chasseur de sites.
+# Les motifs sont des expressions régulières Python, insensibles à la casse.
+# En YAML entre apostrophes, une apostrophe s'écrit '' (deux apostrophes).
+
+# --- Technologies (contrôle « CMS ou technologies périmées ») ---------------
+# detection : un motif trouvé dans le HTML suffit à détecter la technologie.
+# version   : le 1er groupe capturé donne la version (premier motif qui trouve).
+# obsolete_avant : version minimale acceptable ; absent = la seule présence est un constat.
+# obsolete_si_inconnue : constat même quand la version n'a pas pu être lue.
+technologies:
+  wordpress:
+    nom: WordPress
+    detection:
+      - '/wp-content/'
+      - '/wp-includes/'
+      - 'content=["'']WordPress'
+    version:
+      - 'content=["'']WordPress ([0-9][0-9.]*)'
+      - '/wp-includes/[^"''<>]*?\?ver=([0-9]+\.[0-9][0-9.]*)'
+      - '/wp-content/[^"''<>]*?\?ver=([0-9]+\.[0-9][0-9.]*)'
+    obsolete_avant: "6.0"
+    constat: WORDPRESS_OBSOLETE
+  joomla:
+    nom: Joomla
+    detection:
+      - 'content=["'']Joomla'
+      - '/media/jui/'
+      - '/media/system/js/mootools'
+      - '/components/com_'
+    version:
+      - 'content=["'']Joomla!? ?([0-9][0-9.]*)'
+    obsolete_avant: "3.0"   # Joomla 1.x et 2.x
+    constat: JOOMLA_OBSOLETE
+  jquery:
+    nom: jQuery
+    detection:
+      - 'jquery[^"''<>/]*\.js'
+    version:
+      - 'jquery[.-]([0-9]+\.[0-9]+(?:\.[0-9]+)?)(?:\.min|\.slim)*\.js'
+      - 'jquery(?:\.min)?\.js\?ver=([0-9]+\.[0-9][0-9.]*)'
+    obsolete_avant: "3.0"
+    constat: JQUERY_OBSOLETE
+  flash:
+    nom: Flash
+    detection:
+      - 'application/x-shockwave-flash'
+      - '<(?:embed|object|param)[^>]+\.swf\b'
+      - 'swfobject'
+      - 'clsid:d27cdb6e-ae6d-11cf-96b8-444553540000'
+    constat: FLASH
+
+# --- Pages de parking (analyseur Domaine) ----------------------------------
+parking:
+  # Une de ces phrases dans la page suffit.
+  phrases:
+    - 'ce domaine est à vendre'
+    - 'domaine à vendre'
+    - 'ce nom de domaine est à vendre'
+    - 'nom de domaine (?:est )?disponible à la vente'
+    - 'this domain (?:name )?(?:is|may be) for sale'
+    - 'domain (?:name )?for sale'
+    - 'buy this domain'
+    - 'the domain .{0,60} is for sale'
+    - 'this domain is parked'
+    - 'parked (?:free,? )?(?:courtesy of|by) godaddy'
+    - 'domain parking'
+  # Services de parking / revente : une redirection vers ces domaines suffit.
+  services:
+    - sedo.com
+    - sedoparking.com
+    - dan.com
+    - afternic.com
+    - godaddy.com
+    - hugedomains.com
+    - bodis.com
+    - parkingcrew.net
+    - above.com
+    - undeveloped.com
+    - uniregistry.com
+    - parklogic.com
+    - domainmarket.com
+    - atom.com
+  # Scripts ou ressources typiques des pages de parking, dans le HTML.
+  motifs_html:
+    - 'sedoparking\.com'
+    - 'img\.sedoparking'
+    - 'parkingcrew\.net'
+    - 'bodis\.com/'
+    - 'dan\.com/buy-domain'
+    - 'afternic\.com/forsale'
+    - 'godaddy\.com/domainsearch/find\?.*checkAvail'
+
+# --- Maintenance / en construction -----------------------------------------
+maintenance:
+  phrases:
+    - 'site en construction'
+    - 'site en cours de construction'
+    - 'en cours de construction'
+    - 'site (?:actuellement )?en maintenance'
+    - 'en maintenance'
+    - 'maintenance en cours'
+    - 'bientôt (?:de retour|disponible|en ligne)'
+    - 'under construction'
+    - 'coming soon'
+    - 'under maintenance'
+    - 'briefly unavailable for scheduled maintenance'
+    - 'we''ll be back soon'
+  # Au-delà de ce nombre de caractères visibles, la page est un vrai site :
+  # une phrase isolée (« coming soon » pour un produit) ne suffit plus.
+  texte_max: 1500
+
+# --- Erreurs PHP / serveur affichées ---------------------------------------
+erreurs_php:
+  - '(?:fatal error|parse error|warning|notice|deprecated|catchable fatal error)\s*:.{0,300}? in \S+\.php on line \d+'
+  - 'uncaught (?:error|exception)\b.{0,200}\.php'
+  - 'error establishing a database connection'
+  - 'erreur lors de la connexion à la base de données'
+  - 'mysqli?_connect\(\)'
+  - 'there has been a critical error on (?:this|your) website'
+  - 'il y a eu une erreur critique sur ce site'
+
+# --- Piratage ---------------------------------------------------------------
+piratage:
+  # Mots de spam (pharma, casino…) cherchés dans le HTML complet, contenu caché compris.
+  spam:
+    - 'viagra'
+    - 'cialis'
+    - 'levitra'
+    - 'kamagra'
+    - 'tramadol'
+    - 'xanax'
+    - 'online casino'
+    - 'casino en ligne'
+    - 'slot gacor'
+    - 'judi (?:online|slot|bola)'
+    - 'togel'
+    - 'poker online'
+    - 'payday loans?'
+    - 'replica (?:watches|rolex)'
+    - 'buy (?:cheap )?(?:pills|essay)'
+  # Nombre minimal de mots de spam DIFFÉRENTS (un seul mot dans le title suffit).
+  seuil_spam: 2
+  # Redirection vers un autre domaine : non suspecte vers ces domaines
+  # (réseaux sociaux, annuaires, créateurs de sites…).
+  redirections_autorisees:
+    - facebook.com
+    - instagram.com
+    - linkedin.com
+    - pagesjaunes.fr
+    - google.com
+    - business.site
+    - wixsite.com
+    - wix.com
+    - jimdo.com
+    - jimdofree.com
+    - squarespace.com
+    - webnode.fr
+    - linktr.ee
+    - planity.com
+    - treatwell.fr
+    - doctolib.fr
+    - tripadvisor.fr
+    - booking.com
+
+# --- Page contact (§6.2 : page d'accueil + page contact si trouvée) ---------
+page_contact:
+  - 'contact'
+  - 'nous[- ]contacter'
+  - 'coordonn[ée]es'
+  - 'rendez[- ]vous'

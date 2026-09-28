@@ -40,6 +40,7 @@ async def test_dns_introuvable_stoppe_l_analyse(analyseur, client, ssl_simule):
     assert "domaine-mort.test" in constats[0].preuve
     assert not route.called
     assert ssl_simule.appels == []
+    assert set(constats.non_verifies) == {"http_5xx", "http_4xx", "ssl", "https", "ssl_expiration"}
 
 
 # --- HTTP ------------------------------------------------------------------
@@ -71,10 +72,30 @@ async def test_erreur_de_proxy_local_ne_penalise_pas_le_site(config, analyseur, 
 
     respx.get("https://ok.test/").mock(side_effect=httpx.ProxyError("403 Forbidden"))
     (r,) = await analyser_prospects([Prospect(url="https://ok.test")], config, analyseurs=[analyseur], client=client)
-    assert codes(r.constats) == ["ERREUR_ANALYSE"]
+    assert codes(r.constats) == ["NON_VERIFIE"]
     assert "ProxyError" in r.constats[0].preuve
     assert r.score == 0
-    assert r.priorite == config.priorite_incomplete
+    assert r.echecs == ["reseau"]
+    assert r.etat == "À revérifier"
+    assert r.non_verifies.keys() >= {"dns", "http_5xx", "ssl"}
+
+
+@respx.mock
+async def test_http_sans_redirection_vers_https(analyseur, client):
+    respx.get("http://ok.test/").respond(200)
+    rapport = await analyseur.analyser(Prospect(url="http://ok.test"), client)
+    assert codes(rapport) == ["HTTPS_NON_FORCE"]
+    assert rapport.mesures["code_http"] == "200"
+
+
+@respx.mock
+async def test_http_redirige_vers_https(analyseur, client):
+    respx.get("http://ok.test/").respond(301, headers={"Location": "https://ok.test/"})
+    respx.get("https://ok.test/").respond(200)
+    rapport = await analyseur.analyser(Prospect(url="http://ok.test"), client)
+    assert codes(rapport) == []
+    assert rapport.mesures["url_finale"] == "https://ok.test/"
+    assert rapport.mesures["ssl_expire_le"] == "2027-09-28"
 
 
 @respx.mock

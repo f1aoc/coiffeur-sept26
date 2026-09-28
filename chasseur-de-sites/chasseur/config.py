@@ -2,46 +2,102 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+import os
+from dataclasses import dataclass, field, fields
 from pathlib import Path
 
 import yaml
 
-from chasseur.modeles import GRAVITES, Constat
+from chasseur.controles import CODE_NON_VERIFIE, CONTROLE_DU_CODE, PAR_ID, gravite_du_code
+from chasseur.modeles import Constat
 
 RACINE_PROJET = Path(__file__).resolve().parent.parent
+PARALLELISME_MAX = 30  # cahier des charges §6.3 : réglable de 1 à 30
 
 
 class ErreurConfig(ValueError):
     pass
 
 
-@dataclass(frozen=True)
-class RegleConstat:
-    gravite: str
-    points: int
+@dataclass
+class ConfigEtats:
+    casse: str = "Cassé"
+    obsolete: str = "Obsolète"
+    correct: str = "Correct"
+    sans_site: str = "Sans site"
+    a_reverifier: str = "À revérifier"
+    seuil_obsolete: int = 30
+
+
+@dataclass
+class ConfigDomaine:
+    alerte_jours: int = 30
+    rdap_url: str = "https://rdap.org/domain/{domaine}"
+    whois_actif: bool = True
+    timeout: float = 15.0
+
+
+@dataclass
+class ConfigNavigateur:
+    timeout_page: float = 20.0
+    largeur_bureau: int = 1366
+    hauteur_bureau: int = 768
+    largeur_mobile: int = 375
+    hauteur_mobile: int = 667
+    dossier_captures: str = "captures"
+    capture_max_ko: int = 150
+    simultanes: int = 5
+    chromium: str = ""  # chemin d'un Chromium précis (sinon celui de Playwright)
+    sandbox: bool = True
+    respecter_robots: bool = True
+    page_contact: bool = True
+    texte_min: int = 500
+    copyright_ans: int = 3
+    actualites_ans: int = 2
+
+
+@dataclass
+class ConfigPerformance:
+    cle_api: str = ""
+    strategie: str = "mobile"
+    seuil: int = 40
+    requetes_par_minute: int = 60
+    simultanees: int = 4
+    timeout: float = 90.0
+    max_relances: int = 4
+    pause_base: float = 5.0  # attente avant la 1re relance après un 429 (doublée ensuite)
+
+    @property
+    def cle(self) -> str:
+        return self.cle_api or os.environ.get("PAGESPEED_API_KEY", "")
 
 
 @dataclass
 class Config:
-    constats: dict[str, RegleConstat]
-    priorites: list[tuple[int, str]]  # triées par seuil décroissant
+    points: dict[str, int]  # contrôle → points
+    etats: ConfigEtats = field(default_factory=ConfigEtats)
     score_max: int = 100
-    priorite_incomplete: str = "? - à revérifier"
     timeout: float = 15.0
     essais: int = 2
-    pause_entre_essais: float = 1.0
+    pause_entre_essais: float = 2.0
     ssl_alerte_jours: int = 30
-    user_agent: str = "Mozilla/5.0"
+    user_agent: str = "Mozilla/5.0 (compatible; ChasseurDeSites/0.2)"
     parallelisme: int = 10
+    domaine: ConfigDomaine = field(default_factory=ConfigDomaine)
+    navigateur: ConfigNavigateur = field(default_factory=ConfigNavigateur)
+    performance: ConfigPerformance = field(default_factory=ConfigPerformance)
     source: str = field(default="", compare=False)
 
+    def points_du_code(self, code: str) -> int:
+        if code == CODE_NON_VERIFIE:
+            return 0
+        return self.points.get(CONTROLE_DU_CODE[code].id, 0)
+
     def constat(self, code: str, message_client: str, preuve: str) -> Constat:
-        """Fabrique un constat avec la gravité et les points définis dans la config."""
-        regle = self.constats.get(code)
-        if regle is None:
-            raise ErreurConfig(f"Constat « {code} » absent de la section `constats` de {self.source or 'config.yaml'}")
-        return Constat(code, regle.gravite, regle.points, message_client, preuve)
+        """Fabrique un constat avec la gravité du registre et les points de la config."""
+        if code != CODE_NON_VERIFIE and code not in CONTROLE_DU_CODE:
+            raise ErreurConfig(f"Code de constat inconnu : « {code} » (voir chasseur/controles.py)")
+        return Constat(code, gravite_du_code(code), self.points_du_code(code), message_client, preuve)
 
 
 def trouver_config(chemin: str | Path | None = None) -> Path:
@@ -64,46 +120,62 @@ def charger_config(chemin: str | Path | None = None) -> Config:
     return config_depuis_dict(brut, source=str(p))
 
 
-def config_depuis_dict(brut: dict, source: str = "") -> Config:
-    constats: dict[str, RegleConstat] = {}
-    for code, regle in (brut.get("constats") or {}).items():
-        if not isinstance(regle, dict) or "points" not in regle or "gravite" not in regle:
-            raise ErreurConfig(f"Constat « {code} » : il faut `gravite` et `points`")
-        gravite = str(regle["gravite"]).lower()
-        if gravite not in GRAVITES:
-            raise ErreurConfig(f"Constat « {code} » : gravité « {gravite} » inconnue (attendu : {', '.join(GRAVITES)})")
+def _section(classe, brut: dict | None, nom: str):
+    """Construit une dataclass de section en convertissant chaque valeur au type par défaut."""
+    brut = brut or {}
+    connus = {f.name: f for f in fields(classe)}
+    inconnus = set(brut) - set(connus)
+    if inconnus:
+        raise ErreurConfig(f"Section `{nom}` : clé(s) inconnue(s) : {', '.join(sorted(inconnus))}")
+    valeurs = {}
+    defaut = classe()
+    for cle, valeur in brut.items():
+        type_attendu = type(getattr(defaut, cle))
         try:
-            points = int(regle["points"])
+            if type_attendu is bool:
+                valeurs[cle] = valeur if isinstance(valeur, bool) else str(valeur).lower() in ("1", "true", "oui", "yes")
+            else:
+                valeurs[cle] = type_attendu(valeur if valeur is not None else type_attendu())
         except (TypeError, ValueError):
-            raise ErreurConfig(f"Constat « {code} » : `points` doit être un entier") from None
-        constats[code] = RegleConstat(gravite, points)
-    if not constats:
-        raise ErreurConfig("La section `constats` est vide")
+            raise ErreurConfig(f"Section `{nom}` : `{cle}` doit être de type {type_attendu.__name__}") from None
+    return classe(**valeurs)
 
-    priorites = []
-    for p in brut.get("priorites") or []:
+
+def config_depuis_dict(brut: dict, source: str = "") -> Config:
+    points_bruts = brut.get("points") or {}
+    if not points_bruts:
+        raise ErreurConfig("La section `points` est vide")
+    inconnus = set(points_bruts) - set(PAR_ID)
+    if inconnus:
+        raise ErreurConfig(f"Section `points` : contrôle(s) inconnu(s) : {', '.join(sorted(inconnus))}")
+    points: dict[str, int] = {}
+    for controle, valeur in points_bruts.items():
         try:
-            priorites.append((int(p["min"]), str(p["label"])))
-        except (KeyError, TypeError, ValueError):
-            raise ErreurConfig(f"Priorité mal formée : {p!r} (attendu : {{min: <entier>, label: <texte>}})") from None
-    priorites.sort(key=lambda x: x[0], reverse=True)
+            points[controle] = int(valeur)
+        except (TypeError, ValueError):
+            raise ErreurConfig(f"Contrôle « {controle} » : les points doivent être un entier") from None
+    manquants = set(PAR_ID) - set(points)
+    if manquants:
+        raise ErreurConfig(f"Section `points` : contrôle(s) manquant(s) : {', '.join(sorted(manquants))}")
 
     reseau = brut.get("reseau") or {}
     config = Config(
-        constats=constats,
-        priorites=priorites,
+        points=points,
+        etats=_section(ConfigEtats, brut.get("etats"), "etats"),
         score_max=int(brut.get("score_max", 100)),
-        priorite_incomplete=str(brut.get("priorite_incomplete", "? - à revérifier")),
         timeout=float(reseau.get("timeout", 15)),
         essais=int(reseau.get("essais", 2)),
-        pause_entre_essais=float(reseau.get("pause_entre_essais", 1)),
+        pause_entre_essais=float(reseau.get("pause_entre_essais", 2)),
         ssl_alerte_jours=int(reseau.get("ssl_alerte_jours", 30)),
-        user_agent=str(reseau.get("user_agent", "Mozilla/5.0")),
+        user_agent=str(reseau.get("user_agent", Config.user_agent)),
         parallelisme=int(brut.get("parallelisme", 10)),
+        domaine=_section(ConfigDomaine, brut.get("domaine"), "domaine"),
+        navigateur=_section(ConfigNavigateur, brut.get("navigateur"), "navigateur"),
+        performance=_section(ConfigPerformance, brut.get("performance"), "performance"),
         source=source,
     )
     if config.essais < 1:
         raise ErreurConfig("`reseau.essais` doit valoir au moins 1")
-    if config.parallelisme < 1:
-        raise ErreurConfig("`parallelisme` doit valoir au moins 1")
+    if not 1 <= config.parallelisme <= PARALLELISME_MAX:
+        raise ErreurConfig(f"`parallelisme` doit être compris entre 1 et {PARALLELISME_MAX}")
     return config

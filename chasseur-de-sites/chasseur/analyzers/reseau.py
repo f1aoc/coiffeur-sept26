@@ -19,7 +19,8 @@ import httpx
 
 from chasseur.analyzers.base import Analyseur
 from chasseur.config import Config
-from chasseur.modeles import Constat, Prospect
+from chasseur import urls
+from chasseur.modeles import Constat, Prospect, Rapport
 
 X509_V_ERR_CERT_HAS_EXPIRED = 10
 
@@ -93,6 +94,7 @@ def _decrire_erreur(e: Exception) -> str:
 
 class AnalyseurReseau(Analyseur):
     nom = "reseau"
+    requiert_url = False  # c'est lui qui signale l'absence d'URL
 
     def __init__(
         self,
@@ -115,50 +117,64 @@ class AnalyseurReseau(Analyseur):
     def verificateur_ssl(self) -> VerificateurSSL:
         return self._verificateur_ssl or verifier_certificat
 
-    async def analyser(self, prospect: Prospect, client: httpx.AsyncClient) -> list[Constat]:
+    async def analyser(self, prospect: Prospect, client: httpx.AsyncClient) -> Rapport:
         c = self.config
+        suite = ["dns", "http_5xx", "http_4xx", "ssl", "https", "ssl_expiration"]
         brut = prospect.url.strip()
         if not brut:
-            return [c.constat("SITE_ABSENT", "Aucun site web n'est référencé pour votre entreprise.", "colonne url vide")]
+            return Rapport(
+                [c.constat("SITE_ABSENT", "Aucun site web n'est référencé pour votre entreprise.", "colonne url vide")],
+                non_verifies=dict.fromkeys(suite, "pas d'URL"),
+            )
 
-        candidats = [brut] if "://" in brut else [f"https://{brut}", f"http://{brut}"]
-        hote = urlsplit(candidats[0]).hostname
-        if not hote or urlsplit(candidats[0]).scheme not in ("http", "https"):
-            return [c.constat("URL_INVALIDE", "L'adresse de votre site semble mal saisie.", f"url illisible : {brut!r}")]
+        candidats = urls.candidates(brut)
+        hote = urls.hote(brut)
+        if not hote:
+            return Rapport(
+                [c.constat("URL_INVALIDE", "L'adresse de votre site semble mal saisie.", f"url illisible : {brut!r}")],
+                non_verifies=dict.fromkeys(suite, "URL illisible"),
+            )
 
         # 1. DNS
         try:
             ips = await asyncio.wait_for(self.resolveur(hote), c.timeout)
+            if not ips:
+                raise OSError("aucune adresse IP")
         except (OSError, asyncio.TimeoutError) as e:
-            return [
-                c.constat(
-                    "DNS_INTROUVABLE",
-                    "Votre nom de domaine ne pointe plus vers aucun serveur : votre site n'existe plus aux yeux "
-                    "des internautes (domaine expiré ou mal configuré).",
-                    f"résolution DNS de {hote} impossible : {type(e).__name__} {e}".strip(),
-                )
-            ]
-        if not ips:
-            return [c.constat("DNS_INTROUVABLE", "Votre nom de domaine ne pointe vers aucun serveur.", f"aucune adresse IP pour {hote}")]
+            return Rapport(
+                [
+                    c.constat(
+                        "DNS_INTROUVABLE",
+                        "Votre nom de domaine ne pointe plus vers aucun serveur : votre site n'existe plus aux yeux "
+                        "des internautes (domaine expiré ou mal configuré).",
+                        f"résolution DNS de {hote} impossible : {type(e).__name__} {e}".strip(),
+                    )
+                ],
+                non_verifies=dict.fromkeys(suite[1:], "domaine introuvable"),
+            )
+        rapport = Rapport(mesures={"ip": ", ".join(ips)})
 
         # 2. HTTP
-        constats: list[Constat] = []
         reponse, journal = await self._premiere_reponse(client, candidats)
         if reponse is None:
-            return [
+            rapport.append(
                 c.constat(
                     "HTTP_INJOIGNABLE",
                     "Votre site ne répond pas : les visiteurs tombent sur une page d'erreur ou attendent indéfiniment.",
                     f"{hote} ({', '.join(ips)}) : " + " ; ".join(journal),
                 )
-            ]
+            )
+            rapport.non_verifies.update(dict.fromkeys(["http_4xx", "ssl", "https", "ssl_expiration"], "site injoignable"))
+            return rapport
 
         code = reponse.status_code
+        url_finale = str(reponse.url)
+        rapport.mesures.update({"code_http": str(code), "url_finale": url_finale})
         preuve_http = f"GET {reponse.request.url} → HTTP {code}"
         if reponse.history:
             preuve_http += f" (après {len(reponse.history)} redirection(s) depuis {reponse.history[0].request.url})"
         if code >= 500:
-            constats.append(
+            rapport.append(
                 c.constat(
                     "HTTP_ERREUR_SERVEUR",
                     "Votre site affiche une erreur serveur : les visiteurs voient une page cassée au lieu de votre vitrine.",
@@ -166,7 +182,7 @@ class AnalyseurReseau(Analyseur):
                 )
             )
         elif code >= 400:
-            constats.append(
+            rapport.append(
                 c.constat(
                     "HTTP_ERREUR_CLIENT",
                     "La page d'accueil de votre site est introuvable ou refusée (erreur " + str(code) + ").",
@@ -174,9 +190,23 @@ class AnalyseurReseau(Analyseur):
                 )
             )
 
-        # 3. SSL
-        constats.extend(await self._analyser_ssl(hote))
-        return constats
+        # 3. SSL et HTTPS
+        constats_ssl, info = await self._analyser_ssl(hote)
+        rapport.extend(constats_ssl)
+        if info.expire_le:
+            rapport.mesures["ssl_expire_le"] = info.expire_le.strftime("%Y-%m-%d")
+        if info.emetteur:
+            rapport.mesures["ssl_emetteur"] = info.emetteur
+        if info.statut != "absent" and urlsplit(url_finale).scheme == "http":
+            rapport.append(
+                c.constat(
+                    "HTTPS_NON_FORCE",
+                    "Votre site s'ouvre sans cadenas (« Non sécurisé » dans le navigateur) alors qu'une version "
+                    "sécurisée existe : les visiteurs n'y sont pas redirigés.",
+                    f"{preuve_http} : la page finale est en HTTP, sans redirection vers HTTPS",
+                )
+            )
+        return rapport
 
     async def _premiere_reponse(
         self, client: httpx.AsyncClient, candidats: list[str]
@@ -206,9 +236,13 @@ class AnalyseurReseau(Analyseur):
                 return derniere, journal
         return None, journal
 
-    async def _analyser_ssl(self, hote: str) -> list[Constat]:
+    async def _analyser_ssl(self, hote: str) -> tuple[list[Constat], InfoSSL]:
         c = self.config
         info = await self.verificateur_ssl(hote, 443, c.timeout)
+        return self._constats_ssl(hote, info), info
+
+    def _constats_ssl(self, hote: str, info: InfoSSL) -> list[Constat]:
+        c = self.config
 
         if info.statut == "absent":
             return [
