@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block titre %}Résultats{% endblock %}
+{% block contenu %}
+<h1>Résultats</h1>
+
+<form class="filtres" method="get" action="/resultats"
+      hx-get="/resultats" hx-target="#resultats" hx-select="#resultats" hx-swap="outerHTML" hx-push-url="true"
+      hx-trigger="change, input changed delay:400ms from:#q">
+  <input type="hidden" name="tri" value="{{ f.tri }}">
+  <input type="hidden" name="ordre" value="{{ f.ordre }}">
+  <label>Recherche <input type="search" id="q" name="q" value="{{ f.q }}" placeholder="Nom ou ville"></label>
+  <label>Analyse
+    <select name="scan">
+      <option value="">Toutes</option>
+      {% for a in analyses %}<option value="{{ a.id }}" {% if f.scan == a.id %}selected{% endif %}>{{ a.nom }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Catégorie
+    <select name="etat">
+      <option value="">Toutes</option>
+      {% for e in etats %}<option {% if f.etat == e %}selected{% endif %}>{{ e }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Problème
+    <select name="probleme">
+      <option value="">Tous</option>
+      {% for c in CONTROLES if c.id not in ("url",) %}<option value="{{ c.id }}" {% if f.probleme == c.id %}selected{% endif %}>{{ c.libelle }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Statut
+    <select name="statut">
+      <option value="">Tous</option>
+      {% for s in STATUTS %}<option {% if f.statut == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+    </select>
+  </label>
+  <noscript><button class="bouton">Filtrer</button></noscript>
+</form>
+
+<div id="resultats">
+  <p class="discret">{{ r.total }} prospect{{ "s" if r.total > 1 }}</p>
+  {% if not r.lignes %}
+  <p class="vide">Aucun prospect ne correspond à ces filtres.</p>
+  {% else %}
+  {% macro entete(colonne, titre) -%}
+    <th aria-sort="{{ ('ascending' if f.ordre == 'asc' else 'descending') if f.tri == colonne else 'none' }}">
+      <a href="{{ lien_tri(colonne) }}" hx-get="{{ lien_tri(colonne) }}" hx-target="#resultats" hx-select="#resultats"
+         hx-swap="outerHTML" hx-push-url="true">{{ titre }}{% if f.tri == colonne %} {{ "▲" if f.ordre == "asc" else "▼" }}{% endif %}</a>
+    </th>
+  {%- endmacro %}
+  <div class="tableau-defilant">
+  <table class="tableau tableau-resultats">
+    <thead>
+      <tr>
+        <th class="col-mini"><span class="masque-visuel">Capture</span></th>
+        {{ entete("nom", "Nom") }}
+        {{ entete("ville", "Ville") }}
+        {{ entete("etat", "Catégorie") }}
+        {{ entete("score", "Score") }}
+        <th>Problèmes principaux</th>
+        {{ entete("telephone", "Téléphone") }}
+        {{ entete("note", "Note Google") }}
+        {{ entete("statut", "Statut") }}
+      </tr>
+    </thead>
+    <tbody>
+    {% for l in r.lignes %}{% set p = l.prospect %}
+      <tr>
+        <td class="col-mini">
+          {% if l.miniature %}
+          <button type="button" class="miniature" data-agrandir="/{{ l.capture }}"
+                  aria-label="Agrandir la capture de {{ p.nom }}">
+            <img src="/{{ l.miniature }}" alt="" loading="lazy" width="96">
+          </button>
+          {% endif %}
+        </td>
+        <td><a href="/prospects/{{ p.id }}"><strong>{{ p.nom or p.url or "Sans nom" }}</strong></a>
+          {% if p.categorie %}<br><span class="discret">{{ p.categorie }}</span>{% endif %}</td>
+        <td>{{ p.ville }}</td>
+        <td><span class="etat etat-{{ p.etat|classe_etat }}">{{ p.etat or "En attente" }}</span></td>
+        <td class="nombre"><strong>{{ p.score if p.analyse else "—" }}</strong></td>
+        <td>
+          <ul class="problemes">
+          {% for code, lib, gravite in l.problemes %}<li class="gravite-{{ gravite }}">{{ lib }}</li>{% endfor %}
+          </ul>
+        </td>
+        <td class="sans-coupure">{% if p.telephone %}<a href="tel:{{ p.telephone|replace(' ', '') }}">{{ p.telephone }}</a>{% endif %}</td>
+        <td class="sans-coupure">{% if p.note_google is not none %}{{ p.note_google }} ★{% if p.nb_avis is not none %} <span class="discret">({{ p.nb_avis }})</span>{% endif %}{% endif %}</td>
+        <td>{% include "_statut.html" %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% if r.pages > 1 %}
+  <nav class="pagination" aria-label="Pages">
+    {% if r.page > 1 %}<a href="{{ lien(page=r.page - 1) }}" hx-get="{{ lien(page=r.page - 1) }}" hx-target="#resultats" hx-select="#resultats" hx-swap="outerHTML" hx-push-url="true">← Précédente</a>{% endif %}
+    <span>Page {{ r.page }} / {{ r.pages }}</span>
+    {% if r.page < r.pages %}<a href="{{ lien(page=r.page + 1) }}" hx-get="{{ lien(page=r.page + 1) }}" hx-target="#resultats" hx-select="#resultats" hx-swap="outerHTML" hx-push-url="true">Suivante →</a>{% endif %}
+  </nav>
+  {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

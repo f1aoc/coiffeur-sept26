@@ -162,3 +162,108 @@ def chromium_disponible() -> bool:
 def exige_chromium():
     if not chromium_disponible():
         pytest.skip("Chromium indisponible : lancez « playwright install chromium » (ou CHASSEUR_CHROMIUM=…)")
+
+
+# --- Interface web (Lot 3) ------------------------------------------------------------
+
+from chasseur.analyzers import Analyseur  # noqa: E402
+from chasseur.modeles import Rapport  # noqa: E402
+
+
+class FauxAnalyseur(Analyseur):
+    """Analyseur instantané : le résultat dépend de mots présents dans l'URL.
+
+    « casse » → erreur serveur (Cassé) ; « vieux » → pas de HTTPS ni viewport (Obsolète, 30 pts) ;
+    sinon rien (Correct). `duree` ralentit l'analyse (tests de pause)."""
+
+    nom = "reseau"
+    requiert_url = False
+
+    def __init__(self, config, duree: float = 0.0):
+        super().__init__(config)
+        self.duree = duree
+
+    async def analyser(self, prospect, client):
+        if self.duree:
+            await asyncio.sleep(self.duree)
+        c = self.config
+        if not prospect.url:
+            return Rapport([c.constat("SITE_ABSENT", "Aucun site.", "colonne url vide")])
+        if "casse" in prospect.url:
+            return Rapport([c.constat("HTTP_ERREUR_SERVEUR", "Votre site affiche une erreur.", "HTTP 500")], mesures={"code_http": "500"})
+        if "vieux" in prospect.url:
+            return Rapport(
+                [c.constat("SSL_ABSENT", "Pas de HTTPS.", "port 443 fermé"), c.constat("VIEWPORT_ABSENT", "Pas mobile.", "pas de viewport")],
+                mesures={"code_http": "200"},
+            )
+        return Rapport(mesures={"code_http": "200"})
+
+
+@pytest.fixture
+def stockage(tmp_path):
+    from chasseur.db import Stockage
+
+    return Stockage(tmp_path / "donnees")
+
+
+@pytest.fixture
+def fabrique_web(stockage):
+    """Fabrique une application web de test (analyseurs remplaçables)."""
+    from fastapi.testclient import TestClient
+
+    from chasseur.web.app import creer_app
+    from chasseur.web.taches import GestionnaireScans
+
+    ouverts = []
+
+    def fabrique(analyseurs=None, duree: float = 0.0):
+        def faux(config):
+            config.pause_entre_essais = 0
+            return analyseurs(config) if analyseurs else [FauxAnalyseur(config, duree)]
+
+        gestionnaire = GestionnaireScans(stockage, fabrique_analyseurs=faux, chemin_config=RACINE / "config.yaml")
+        app = creer_app(stockage, gestionnaire, chemin_config=RACINE / "config.yaml", hotes=["testserver", "127.0.0.1"])
+        client = TestClient(app, follow_redirects=False)
+        client.__enter__()
+        ouverts.append(client)
+        return client
+
+    yield fabrique
+    for c in ouverts:
+        c.__exit__(None, None, None)
+
+
+@pytest.fixture
+def web(fabrique_web):
+    return fabrique_web()
+
+
+def attendre_fin(web, scan_id: int, delai: float = 60.0) -> str:
+    """Interroge l'écran Progression jusqu'à la fin du scan ; renvoie le dernier fragment."""
+    import time
+
+    fin = time.monotonic() + delai
+    while time.monotonic() < fin:
+        fragment = web.get(f"/analyses/{scan_id}/progression").text
+        if 'hx-trigger="every 1s"' not in fragment:
+            return fragment
+        time.sleep(0.1)
+    raise AssertionError(f"scan {scan_id} non terminé après {delai} s")
+
+
+def televerser(web, nom: str, contenu: bytes | str, type_mime: str = "text/csv"):
+    if isinstance(contenu, str):
+        contenu = contenu.encode("utf-8")
+    return web.post("/analyses/apercu", files={"fichier": (nom, contenu, type_mime)})
+
+
+def lancer_scan(web, nom: str, contenu: str) -> int:
+    import re
+
+    fichier = nom if nom.endswith((".csv", ".xlsx")) else f"{nom}.csv"
+    apercu = televerser(web, fichier, contenu).text
+    jeton = re.search(r'name="jeton" value="([^"]+)"', apercu)
+    assert jeton, apercu
+    r = web.post("/analyses", data={"jeton": jeton[1], "nom": nom, "nom_fichier": fichier})
+    assert r.status_code == 303, r.text
+    return int(r.headers["location"].rsplit("/", 1)[1])

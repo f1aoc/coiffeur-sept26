@@ -1,0 +1,5 @@
+{% for h in historique %}
+  <li><span class="discret">{{ h.change_le|date_fr }}</span> : {{ h.ancien }} → <strong>{{ h.nouveau }}</strong></li>
+{% else %}
+  <li class="discret">Aucun changement de statut pour l'instant.</li>
+{% endfor %}

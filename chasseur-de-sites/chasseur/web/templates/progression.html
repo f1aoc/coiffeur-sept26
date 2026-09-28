@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block titre %}Progression – {{ scan.nom }}{% endblock %}
+{% block contenu %}
+<p class="fil"><a href="/analyses">Analyses</a> › {{ scan.nom }}</p>
+<h1>{{ scan.nom }}</h1>
+{% include "_progression.html" %}
+{% endblock %}

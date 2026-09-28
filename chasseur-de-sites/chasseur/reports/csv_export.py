@@ -51,7 +51,7 @@ def ligne_export(rang: int, r: Resultat) -> dict:
         "codes": SEPARATEUR_LISTE.join(c.code for c in constats),
         "gravite_max": _gravite_max(r),
         "messages_client": SEPARATEUR_LISTE.join(c.message_client for c in constats),
-        "preuves": SEPARATEUR_LISTE.join(c.preuve for c in r.constats),
+        "preuves": SEPARATEUR_LISTE.join(c.preuve for c in constats),  # alignée sur `codes`
         "non_verifies": SEPARATEUR_LISTE.join(f"{k} ({v})" for k, v in r.non_verifies.items()),
     }
     for controle, statut in statut_controles(r).items():

@@ -1,0 +1,41 @@
+{% if erreur %}
+<p class="alerte alerte-erreur" role="alert">{{ erreur }}</p>
+{% else %}
+<section class="carte">
+  <h2>Aperçu de « {{ nom_fichier }} »</h2>
+  <p>
+    <span class="pastille">{{ format }}</span>
+    <strong>{{ total }}</strong> entreprise{{ "s" if total > 1 }}, dont <strong>{{ avec_site }}</strong> avec un site à analyser.
+  </p>
+  {% if format_maps and avec_site < total %}
+  <p class="alerte">
+    Ce fichier vient de l'outil Google Maps, qui ne garde que les entreprises <strong>sans vrai site</strong>
+    (aucun site, ou seulement une page Facebook, Planity…). Elles apparaîtront « Sans site » dans les résultats.
+  </p>
+  {% endif %}
+  <div class="tableau-defilant">
+    <table class="tableau">
+      <caption>{{ lignes|length }} première{{ "s" if lignes|length > 1 }} ligne{{ "s" if lignes|length > 1 }}</caption>
+      <thead><tr><th>Nom</th><th>Site</th><th>Téléphone</th><th>Ville</th><th>Catégorie</th><th>Note Google</th></tr></thead>
+      <tbody>
+      {% for p in lignes %}
+        <tr>
+          <td>{{ p.nom }}</td>
+          <td>{% if p.url %}{{ p.url }}{% else %}<span class="discret">{{ p.remarque or "—" }}</span>{% endif %}</td>
+          <td>{{ p.telephone }}</td>
+          <td>{{ p.ville }}</td>
+          <td>{{ p.categorie }}</td>
+          <td>{% if p.note_google is not none %}{{ p.note_google }} ★{% if p.nb_avis is not none %} ({{ p.nb_avis }}){% endif %}{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <form method="post" action="/analyses" class="ligne-formulaire">
+    <input type="hidden" name="jeton" value="{{ jeton }}">
+    <input type="hidden" name="nom_fichier" value="{{ nom_fichier }}">
+    <label>Nom de l'analyse <input type="text" name="nom" value="{{ nom }}" maxlength="120"></label>
+    <button type="submit" class="bouton bouton-principal">Lancer l'analyse</button>
+  </form>
+</section>
+{% endif %}

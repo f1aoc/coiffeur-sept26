@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "chasseur-de-sites"
-version = "0.2.0"
+version = "0.3.0"
 description = "Repère les sites d'entreprises locales cassés ou obsolètes et les classe comme prospects."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -15,6 +15,13 @@ dependencies = [
     "playwright>=1.45",
     "python-whois>=0.9",
     "Pillow>=10",
+    "openpyxl>=3.1",
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "sqlmodel>=0.0.16",
+    "jinja2>=3.1",
+    "python-multipart>=0.0.9",
+    "cryptography>=41",
 ]
 
 [project.optional-dependencies]
@@ -29,6 +36,9 @@ chasseur = "chasseur.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["chasseur*"]
+
+[tool.setuptools.package-data]
+"chasseur.web" = ["templates/*.html", "static/*"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

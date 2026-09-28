@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block titre %}{{ p.nom or p.url }}{% endblock %}
+{% block contenu %}
+<p class="fil"><a href="/resultats?scan={{ p.scan_id }}">Résultats{% if scan %} « {{ scan.nom }} »{% endif %}</a> › {{ p.nom or p.url }}</p>
+
+<div class="fiche-entete">
+  <div>
+    <h1>{{ p.nom or p.url or "Sans nom" }}</h1>
+    <p>
+      <span class="etat etat-{{ p.etat|classe_etat }}">{{ p.etat or "En attente" }}</span>
+      {% if p.analyse %}<span class="score">Score <strong>{{ p.score }}</strong>/100</span>{% endif %}
+      {% if p.categorie %}<span class="discret">{{ p.categorie }}</span>{% endif %}
+    </p>
+  </div>
+  <div class="fiche-statut">
+    {% set contexte = "fiche" %}
+    {% include "_statut.html" %}
+  </div>
+</div>
+
+<div class="fiche">
+  <div class="fiche-principale">
+    <section class="carte">
+      <h2>Coordonnées publiques</h2>
+      <dl class="coordonnees">
+        {% if p.url %}<dt>Site</dt><dd><a href="{{ p.url if '://' in p.url else 'https://' ~ p.url }}" target="_blank" rel="noopener noreferrer">{{ p.url }}</a></dd>{% endif %}
+        {% if p.remarque %}<dt>Site</dt><dd>{{ p.remarque }}</dd>{% endif %}
+        {% if p.telephone %}<dt>Téléphone</dt><dd><a href="tel:{{ p.telephone|replace(' ', '') }}">{{ p.telephone }}</a></dd>{% endif %}
+        {% if p.adresse %}<dt>Adresse</dt><dd>{{ p.adresse }}</dd>{% endif %}
+        {% if p.note_google is not none %}<dt>Note Google</dt><dd>{{ p.note_google }} ★{% if p.nb_avis is not none %} ({{ p.nb_avis }} avis){% endif %}</dd>{% endif %}
+        {% if p.lien_maps %}<dt>Google Maps</dt><dd><a href="{{ p.lien_maps }}" target="_blank" rel="noopener noreferrer">Voir la fiche</a></dd>{% endif %}
+        <dt>Source</dt><dd>{{ p.source }}, le {{ p.collecte_le|date_fr }}</dd>
+      </dl>
+    </section>
+
+    {% if captures %}
+    <section class="carte">
+      <h2>Captures d'écran</h2>
+      <div class="captures">
+        {% for type_, titre in (("bureau", "Ordinateur (1366 px)"), ("mobile", "Téléphone (375 px)")) %}
+          {% if captures.get(type_) %}{% set c = captures[type_] %}
+          <figure class="capture capture-{{ type_ }}">
+            <button type="button" class="miniature" data-agrandir="/{{ c.chemin }}" aria-label="Agrandir la capture {{ titre|lower }}">
+              <img src="/{{ c.chemin }}" alt="Capture {{ titre|lower }} de {{ p.nom }}" loading="lazy">
+            </button>
+            <figcaption>{{ titre }}{% if c.prise_le %} · {{ c.prise_le|date_fr }}{% endif %}</figcaption>
+          </figure>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    <section class="carte">
+      <h2>Problèmes détectés</h2>
+      {% if not p.analyse %}
+        <p class="discret">Ce site n'a pas encore été analysé.</p>
+      {% elif not problemes %}
+        <p>Aucun problème détecté.</p>
+      {% else %}
+      <ol class="liste-problemes">
+        {% for c in problemes %}
+        <li class="gravite-{{ c.gravite }}">
+          <strong>{{ libelle(c.code) }}</strong>{% if c.points %} <span class="discret">· {{ c.points }} pts</span>{% endif %}
+          <p>{{ c.message_client }}</p>
+        </li>
+        {% endfor %}
+      </ol>
+      {% endif %}
+      {% if p.analyse %}
+      <details class="details-techniques">
+        <summary>Détails techniques</summary>
+        <h3>Preuves</h3>
+        <table class="tableau tableau-compact">
+          <thead><tr><th>Code</th><th>Preuve</th></tr></thead>
+          <tbody>{% for c in constats %}<tr><td><code>{{ c.code }}</code></td><td>{{ c.preuve }}</td></tr>{% endfor %}</tbody>
+        </table>
+        <h3>Contrôles</h3>
+        <table class="tableau tableau-compact">
+          <tbody>{% for c, statut in controles %}
+            <tr><td>{{ c.libelle }}</td><td class="controle-{{ statut.split(' ')[0]|lower|replace('/', '') }}">{{ statut }}{% if c.id in p.non_verifies %} <span class="discret">({{ p.non_verifies[c.id] }})</span>{% endif %}</td></tr>
+          {% endfor %}</tbody>
+        </table>
+        {% if p.mesures %}
+        <h3>Mesures</h3>
+        <table class="tableau tableau-compact">
+          <tbody>{% for k, v in p.mesures|dictsort %}<tr><td><code>{{ k }}</code></td><td>{{ v }}</td></tr>{% endfor %}</tbody>
+        </table>
+        {% endif %}
+      </details>
+      {% endif %}
+    </section>
+  </div>
+
+  <aside class="fiche-laterale">
+    <section class="carte">
+      <h2><label for="note-texte">Notes</label></h2>
+      <textarea id="note-texte" name="texte" rows="8" placeholder="Notes personnelles (enregistrées automatiquement)"
+                hx-post="/prospects/{{ p.id }}/note" hx-trigger="input changed delay:800ms, blur changed"
+                hx-target="#note-etat" hx-swap="outerHTML">{{ note.texte if note else "" }}</textarea>
+      <span id="note-etat" class="discret" role="status">{% if note %}Enregistré le {{ note.modifie_le|date_fr }}{% endif %}</span>
+    </section>
+    <section class="carte">
+      <h2>Historique des statuts</h2>
+      <ul id="historique" class="historique">{% include "_historique.html" %}</ul>
+    </section>
+  </aside>
+</div>
+{% endblock %}

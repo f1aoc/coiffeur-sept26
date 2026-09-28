@@ -89,3 +89,46 @@ def gravite_du_code(code: str) -> str:
     if code == CODE_NON_VERIFIE:
         return "info"
     return CONTROLE_DU_CODE[code].codes[code]
+
+
+# Libellés courts, compréhensibles par un non-technicien (tableau des résultats).
+LIBELLES: dict[str, str] = {
+    "SITE_ABSENT": "Pas de site",
+    "URL_INVALIDE": "Adresse du site illisible",
+    "DNS_INTROUVABLE": "Domaine introuvable",
+    "HTTP_INJOIGNABLE": "Site qui ne répond pas",
+    "HTTP_ERREUR_SERVEUR": "Erreur serveur",
+    "HTTP_ERREUR_CLIENT": "Page d'accueil introuvable",
+    "SSL_EXPIRE": "Certificat de sécurité expiré",
+    "SSL_INVALIDE": "Certificat de sécurité invalide",
+    "SSL_ABSENT": "Pas de HTTPS",
+    "HTTPS_NON_FORCE": "HTTPS non imposé",
+    "SSL_EXPIRE_BIENTOT": "Certificat bientôt expiré",
+    "DOMAINE_EXPIRE": "Domaine expiré",
+    "DOMAINE_NON_ENREGISTRE": "Domaine libre",
+    "DOMAINE_PARKING": "Domaine parqué (à vendre)",
+    "DOMAINE_EXPIRE_BIENTOT": "Domaine bientôt expiré",
+    "PAGE_BLANCHE": "Page blanche",
+    "ERREUR_PHP": "Message d'erreur affiché",
+    "SITE_EN_MAINTENANCE": "En maintenance / en construction",
+    "PIRATAGE_SPAM": "Spam caché (piratage)",
+    "PIRATAGE_REDIRECTION": "Redirection suspecte",
+    "VIEWPORT_ABSENT": "Pas adapté au mobile",
+    "DEFILEMENT_HORIZONTAL": "Déborde sur mobile",
+    "COPYRIGHT_ANCIEN": "Copyright ancien",
+    "WORDPRESS_OBSOLETE": "WordPress périmé",
+    "JQUERY_OBSOLETE": "jQuery périmé",
+    "JOOMLA_OBSOLETE": "Joomla périmé",
+    "FLASH": "Utilise Flash",
+    "MISE_EN_PAGE_TABLEAUX": "Mise en page années 2000",
+    "TITLE_ABSENT": "Pas de titre",
+    "META_DESCRIPTION_ABSENTE": "Pas de description Google",
+    "CONTACT_ABSENT": "Ni formulaire ni appel en un clic",
+    "ACTUALITES_ANCIENNES": "Actualités anciennes",
+    "PERF_LENTE": "Lent sur mobile",
+    CODE_NON_VERIFIE: "Non vérifié",
+}
+
+
+def libelle(code: str) -> str:
+    return LIBELLES.get(code, code)

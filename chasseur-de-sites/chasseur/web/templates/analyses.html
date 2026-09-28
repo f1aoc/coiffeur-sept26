@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block titre %}Analyses{% endblock %}
+{% block contenu %}
+<div class="titre-actions">
+  <h1>Analyses</h1>
+  <a class="bouton bouton-principal" href="/analyses/nouvelle">Nouvelle analyse</a>
+</div>
+{% if not lignes %}
+<p class="vide">Aucune analyse pour l'instant. <a href="/analyses/nouvelle">Importez une première liste d'entreprises.</a></p>
+{% else %}
+<div class="tableau-defilant">
+<table class="tableau">
+  <thead><tr><th>Analyse</th><th>Date</th><th>Avancement</th><th>Cassés</th><th>Obsolètes</th><th>Corrects</th><th>Statut</th><th></th></tr></thead>
+  <tbody>
+  {% for scan, c in lignes %}
+    <tr>
+      <td><a href="/analyses/{{ scan.id }}">{{ scan.nom }}</a><br><span class="discret">{{ scan.format }}</span></td>
+      <td>{{ scan.cree_le|date_fr }}</td>
+      <td>{{ c.faits }} / {{ scan.total }}</td>
+      <td><span class="etat etat-casse">{{ c.get("Cassé", 0) }}</span></td>
+      <td><span class="etat etat-obsolete">{{ c.get("Obsolète", 0) }}</span></td>
+      <td><span class="etat etat-correct">{{ c.get("Correct", 0) }}</span></td>
+      <td>{{ LIBELLES_SCAN.get(scan.statut, scan.statut) }}</td>
+      <td><a href="/resultats?scan={{ scan.id }}">Résultats</a></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

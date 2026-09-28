@@ -1,0 +1,28 @@
+<section id="progression" class="carte"
+  {% if en_marche %}hx-get="/analyses/{{ scan.id }}/progression" hx-trigger="every 1s" hx-swap="outerHTML"{% endif %}>
+  <div class="barre" role="progressbar" aria-valuemin="0" aria-valuemax="{{ total }}" aria-valuenow="{{ faits }}"
+       aria-label="Sites analysés">
+    <div class="barre-remplie {% if en_pause %}barre-pause{% endif %}" style="width: {{ pourcentage }}%"></div>
+  </div>
+  <p class="avancement">
+    <strong>{{ faits }} / {{ total }}</strong> sites analysés ({{ pourcentage }} %)
+    · <span class="statut-scan statut-{{ scan.statut }}">{{ LIBELLES_SCAN.get(scan.statut, scan.statut) }}</span>
+    {% if en_marche and not en_pause %}· Temps restant estimé : <strong>{{ restant|duree }}</strong>{% endif %}
+  </p>
+  <ul class="compteurs">
+    <li class="compteur etat-casse"><span>Cassés</span><strong>{{ casses }}</strong></li>
+    <li class="compteur etat-obsolete"><span>Obsolètes</span><strong>{{ obsoletes }}</strong></li>
+    <li class="compteur etat-correct"><span>Corrects</span><strong>{{ corrects }}</strong></li>
+    <li class="compteur etat-sans-site"><span>Autres</span><strong>{{ autres }}</strong></li>
+  </ul>
+  {% if scan.erreur %}<p class="alerte alerte-erreur">Erreur : {{ scan.erreur }}</p>{% endif %}
+  <div class="actions">
+    {% if en_marche and not en_pause %}
+      <button class="bouton" hx-post="/analyses/{{ scan.id }}/pause" hx-target="#progression" hx-swap="outerHTML">Pause</button>
+    {% elif faits < total %}
+      <button class="bouton bouton-principal" hx-post="/analyses/{{ scan.id }}/reprendre" hx-target="#progression" hx-swap="outerHTML">Reprendre</button>
+    {% endif %}
+    {% if en_pause %}<span class="discret">Les sites en cours se terminent, aucun nouveau site ne démarre.</span>{% endif %}
+    <a class="bouton {% if not en_marche %}bouton-principal{% endif %}" href="/resultats?scan={{ scan.id }}">Voir les résultats</a>
+  </div>
+</section>

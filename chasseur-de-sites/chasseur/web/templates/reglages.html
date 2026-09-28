@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block titre %}Réglages{% endblock %}
+{% block contenu %}
+<h1>Réglages</h1>
+{% if ok %}<p class="alerte alerte-succes" role="status">Réglages enregistrés. Les scores existants ont été recalculés.</p>{% endif %}
+
+<form method="post" action="/reglages" class="reglages">
+  <section class="carte">
+    <h2>Clés API</h2>
+    <p class="discret">Les clés sont chiffrées sur cet ordinateur et ne sont jamais affichées en entier ni exportées.</p>
+    {% for cle, (nom, masque, erreur) in cles.items() %}
+    <div class="champ">
+      <label for="{{ cle }}">{{ nom }}</label>
+      <input type="password" id="{{ cle }}" name="{{ cle }}" autocomplete="off"
+             placeholder="{{ 'Nouvelle clé (laisser vide pour garder ' ~ masque ~ ')' if masque else 'Collez votre clé' }}">
+      {% if masque %}
+        <span class="discret">Enregistrée : {{ masque }}</span>
+        <label class="case"><input type="checkbox" name="effacer_{{ cle }}" value="1"> Supprimer cette clé</label>
+      {% endif %}
+      {% if erreur %}<span class="alerte alerte-erreur">{{ erreur }}</span>{% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="carte">
+    <h2>Analyses simultanées</h2>
+    <div class="champ">
+      <label for="parallelisme">Nombre de sites analysés en même temps (1 à {{ maximum }})</label>
+      <input type="number" id="parallelisme" name="parallelisme" min="1" max="{{ maximum }}" value="{{ parallelisme }}">
+      <span class="discret">10 convient à un ordinateur portable récent. Plus haut : plus rapide, mais plus gourmand.</span>
+    </div>
+  </section>
+
+  <section class="carte">
+    <h2>Poids du scoring</h2>
+    <p class="discret">Points ajoutés au score quand le problème est détecté (score plafonné à 100).
+      Un site est « Cassé » dès qu'un problème de la première liste est détecté, quels que soient ses points.</p>
+    {% for titre, lignes in groupes %}
+    <h3>{{ titre }}</h3>
+    <table class="tableau tableau-compact tableau-poids">
+      <tbody>
+      {% for c, valeur, defaut in lignes %}
+        <tr>
+          <td><label for="points_{{ c.id }}">{{ c.libelle }}</label></td>
+          <td><input type="number" id="points_{{ c.id }}" name="points_{{ c.id }}" min="0" max="100" value="{{ valeur }}"></td>
+          <td class="discret">{% if valeur != defaut %}par défaut : {{ defaut }}{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% endfor %}
+  </section>
+
+  <div class="actions actions-collantes">
+    <button type="submit" class="bouton bouton-principal">Enregistrer</button>
+  </div>
+</form>
+{% endblock %}

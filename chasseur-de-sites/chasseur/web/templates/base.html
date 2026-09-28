@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titre %}Chasseur de sites{% endblock %} · Chasseur de sites</title>
+  <link rel="icon" href="/static/icone.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/htmx.min.js" defer></script>
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <header class="entete">
+    <a class="marque" href="/analyses">Chasseur de sites</a>
+    <nav aria-label="Navigation principale">
+      <a href="/analyses/nouvelle" {% if actif == "nouvelle" %}aria-current="page"{% endif %}>Nouvelle analyse</a>
+      <a href="/analyses" {% if actif == "analyses" %}aria-current="page"{% endif %}>Analyses</a>
+      <a href="/resultats" {% if actif == "resultats" %}aria-current="page"{% endif %}>Résultats</a>
+      <a href="/reglages" {% if actif == "reglages" %}aria-current="page"{% endif %}>Réglages</a>
+    </nav>
+  </header>
+  <main>
+    {% block contenu %}{% endblock %}
+  </main>
+  <footer class="pied">Chasseur de sites {{ VERSION }} · application locale, vos données restent sur cet ordinateur</footer>
+  <dialog id="visionneuse" aria-label="Capture agrandie">
+    <form method="dialog"><button class="fermer" aria-label="Fermer">×</button></form>
+    <img alt="">
+  </dialog>
+</body>
+</html>

@@ -43,6 +43,22 @@ def _parseur() -> argparse.ArgumentParser:
     )
     scan.add_argument("--recommencer", action="store_true", help="ignorer un scan interrompu et tout réanalyser")
     scan.add_argument("-q", "--silencieux", action="store_true", help="ne pas afficher la progression")
+
+    web = sous.add_parser("web", help="ouvrir l'interface web locale")
+    web.add_argument("--port", type=int, default=8765, help="port local (défaut : 8765)")
+    web.add_argument(
+        "--hote", default="127.0.0.1",
+        help="adresse d'écoute (défaut : 127.0.0.1, accessible depuis cet ordinateur seulement)",
+    )
+    web.add_argument("--donnees", type=Path, help="dossier des données (défaut : ~/.chasseur-de-sites)")
+    web.add_argument("-c", "--config", type=Path, help="fichier de configuration (défaut : ./config.yaml)")
+    web.add_argument("--sans-navigateur", action="store_true", help="ne pas ouvrir le navigateur automatiquement")
+
+    imp = sous.add_parser("import", help="importer dans l'interface web un CSV de résultats de « chasseur scan »")
+    imp.add_argument("fichier", type=Path, help="CSV produit par « chasseur scan »")
+    imp.add_argument("--nom", help="nom de l'analyse (défaut : Import <fichier>)")
+    imp.add_argument("--donnees", type=Path, help="dossier des données (défaut : ~/.chasseur-de-sites)")
+    imp.add_argument("-c", "--config", type=Path, help="fichier de configuration (défaut : ./config.yaml)")
     return parseur
 
 
@@ -118,11 +134,56 @@ def commande_scan(args: argparse.Namespace) -> int:
     return 0
 
 
+def commande_web(args: argparse.Namespace) -> int:
+    import threading
+    import webbrowser
+
+    import uvicorn
+
+    from chasseur.db import Stockage
+    from chasseur.web.app import HOTES_LOCAUX, creer_app
+
+    try:
+        charger_config(args.config)
+    except ErreurConfig as e:
+        print(f"Erreur : {e}", file=sys.stderr)
+        return 2
+    hotes = HOTES_LOCAUX if args.hote in HOTES_LOCAUX else [*HOTES_LOCAUX, args.hote]
+    if args.hote not in HOTES_LOCAUX:
+        print(f"⚠ L'interface sera accessible depuis le réseau ({args.hote}) : réservez-le à un réseau de confiance.",
+              file=sys.stderr)
+    stockage = Stockage(args.donnees)
+    app = creer_app(stockage, chemin_config=args.config, hotes=hotes)
+    adresse = f"http://{'127.0.0.1' if args.hote in ('0.0.0.0', '::') else args.hote}:{args.port}/"
+    print(f"Chasseur de sites : {adresse}  (données : {stockage.dossier})  — Ctrl+C pour arrêter")
+    if not args.sans_navigateur:
+        threading.Timer(1.2, webbrowser.open, args=(adresse,)).start()
+    uvicorn.run(app, host=args.hote, port=args.port, log_level="warning")
+    return 0
+
+
+def commande_import(args: argparse.Namespace) -> int:
+    from chasseur.db import Stockage
+    from chasseur.db.import_resultats import ErreurMigration, importer_resultats
+    from chasseur.db.reglages import config_effective
+
+    try:
+        stockage = Stockage(args.donnees)
+        with stockage.session() as s:
+            config = config_effective(stockage, s, charger_config(args.config))
+        scan = importer_resultats(stockage, args.fichier, config, nom=args.nom)
+    except (ErreurConfig, ErreurMigration) as e:
+        print(f"Erreur : {e}", file=sys.stderr)
+        return 2
+    print(f"{scan.total} prospect(s) importé(s) dans l'analyse « {scan.nom} » ({stockage.dossier}).")
+    print("Lancez « chasseur web » pour les consulter.")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     args = _parseur().parse_args(argv)
-    if args.commande == "scan":
-        return commande_scan(args)
-    return 1
+    commandes = {"scan": commande_scan, "web": commande_web, "import": commande_import}
+    return commandes[args.commande](args)
 
 
 if __name__ == "__main__":

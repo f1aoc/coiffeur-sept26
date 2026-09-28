@@ -1,0 +1,14 @@
+<form class="statut-commercial" id="statut-{{ p.id }}"
+      hx-post="/prospects/{{ p.id }}/statut" hx-trigger="change" hx-target="this" hx-swap="outerHTML">
+  {% if contexte %}<input type="hidden" name="contexte" value="{{ contexte }}">{% endif %}
+  <label class="masque-visuel" for="statut-choix-{{ p.id }}">Statut commercial de {{ p.nom }}</label>
+  <select name="statut" id="statut-choix-{{ p.id }}">
+    {% for s in STATUTS %}<option {% if p.statut == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+  </select>
+  {% if enregistre %}<span class="enregistre" role="status">Enregistré</span>{% endif %}
+</form>
+{% if oob %}
+<ul id="historique" class="historique" hx-swap-oob="true">
+  {% include "_historique.html" %}
+</ul>
+{% endif %}

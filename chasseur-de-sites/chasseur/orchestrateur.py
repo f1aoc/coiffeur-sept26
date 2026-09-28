@@ -84,8 +84,13 @@ async def analyser_prospects(
     analyseurs: list[Analyseur] | None = None,
     client: httpx.AsyncClient | None = None,
     progression: Progression | None = None,
+    porte: asyncio.Event | None = None,
 ) -> list[Resultat]:
-    """Renvoie un Resultat noté par prospect, dans l'ordre d'entrée."""
+    """Renvoie un Resultat noté par prospect, dans l'ordre d'entrée.
+
+    `porte` (facultatif) met le scan en pause quand elle est fermée : aucun
+    nouveau site ne démarre ; les sites déjà commencés se terminent.
+    """
     analyseurs = analyseurs if analyseurs is not None else analyseurs_par_defaut(config)
     places = asyncio.Semaphore(config.parallelisme)
     lances = {a.nom for a in analyseurs}
@@ -104,13 +109,14 @@ async def analyser_prospects(
         limites = [a for a in applicables if not a.file_dediee]
         dedies = [a for a in applicables if a.file_dediee]
 
-        async def groupe_limite() -> list[Rapport]:
-            async with places:
-                return list(await asyncio.gather(*(_executer(a, prospect, http, config) for a in limites)))
-
-        rapports_limites, *rapports_dedies = await asyncio.gather(
-            groupe_limite(), *(_executer(a, prospect, http, config) for a in dedies)
-        )
+        async with places:
+            if porte is not None:
+                await porte.wait()
+            # Les analyseurs à file dédiée (PageSpeed) démarrent avec le site mais ne
+            # retiennent pas sa place : elle se libère dès que les autres ont fini.
+            taches_dediees = [asyncio.create_task(_executer(a, prospect, http, config)) for a in dedies]
+            rapports_limites = list(await asyncio.gather(*(_executer(a, prospect, http, config) for a in limites)))
+        rapports_dedies = list(await asyncio.gather(*taches_dediees))
         for analyseur, rapport in zip(limites + dedies, rapports_limites + rapports_dedies):
             resultat.constats.extend(rapport)
             resultat.mesures.update(rapport.mesures)

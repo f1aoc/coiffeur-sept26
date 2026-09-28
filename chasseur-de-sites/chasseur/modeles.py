@@ -15,6 +15,11 @@ class Prospect:
     adresse: str = ""
     categorie: str = ""
     ligne: int = 0  # numéro de ligne dans le CSV source, pour s'y retrouver
+    ville: str = ""
+    note_google: float | None = None
+    nb_avis: int | None = None
+    lien_maps: str = ""
+    remarque: str = ""  # ex. « Pas de site (page facebook.com seulement) »
 
 
 @dataclass
