@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import sqlite3
 
 import pytest
@@ -188,7 +189,8 @@ def test_recalcul_des_scores(stockage, config, base_remplie):
 def test_chiffrement(tmp_path):
     jeton = chiffrer(tmp_path, "AIzaSyD-cle-secrete-1234")
     assert "cle-secrete" not in jeton and dechiffrer(tmp_path, jeton) == "AIzaSyD-cle-secrete-1234"
-    assert (tmp_path / "cle.secret").stat().st_mode & 0o077 == 0  # lisible par l'utilisateur seul
+    if os.name != "nt":  # droits Unix ; sous Windows, le dossier du profil est déjà réservé à l'utilisateur
+        assert (tmp_path / "cle.secret").stat().st_mode & 0o077 == 0  # lisible par l'utilisateur seul
     (tmp_path / "cle.secret").unlink()
     with pytest.raises(ErreurSecret):
         dechiffrer(tmp_path, jeton)

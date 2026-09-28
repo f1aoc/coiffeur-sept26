@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import mimetypes
 from contextlib import asynccontextmanager
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -30,6 +31,9 @@ from chasseur.db.moteur import Stockage
 from chasseur.db.tables import LIBELLES_SCAN, STATUTS_COMMERCIAUX, heure_locale
 from chasseur.reports.pdf import MoteurPDF
 from chasseur.web.taches import GestionnaireScans
+
+# Sous Windows, le type des fichiers vient du registre, qui ignore souvent .webp (captures)
+mimetypes.add_type("image/webp", ".webp")
 
 ICI = Path(__file__).resolve().parent
 journal = logging.getLogger("chasseur.web")
