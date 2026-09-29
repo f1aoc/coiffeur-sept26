@@ -14,6 +14,7 @@ CHASSEUR_SANS_NAVIGATEUR=1 (ne pas ouvrir le navigateur), CHASSEUR_SANS_FENETRE=
 from __future__ import annotations
 
 import os
+import queue
 import subprocess
 import sys
 import threading
@@ -140,18 +141,34 @@ class Fenetre:
                  bg=FOND, fg=GRIS, font=("Segoe UI", 9), wraplength=420, justify="left").pack(anchor="w", pady=(14, 0))
         self.racine.protocol("WM_DELETE_WINDOW", self.quitter)
         self.serveur = None
+        self.messages: queue.Queue = queue.Queue()
 
+    # Seul le fil principal touche à la fenêtre (Tk n'est pas sûr entre fils, notamment sur Mac) :
+    # le fil de préparation dépose des messages, relevés toutes les 100 ms.
     def afficher(self, texte: str, occupe: bool) -> None:
-        def maj():
+        print(texte, flush=True)
+        self.messages.put(("etat", texte, occupe))
+
+    def _relever(self) -> None:
+        while True:
+            try:
+                genre, *valeurs = self.messages.get_nowait()
+            except queue.Empty:
+                break
+            if genre == "pret":
+                self.ouvrir.configure(state="normal")
+                continue
+            texte, occupe = valeurs
             self.etat.configure(text=texte)
             if occupe:
                 self.barre.start(12)
             else:
                 self.barre.stop()
                 self.barre.pack_forget()
-        self.racine.after(0, maj)
+        self.racine.after(100, self._relever)
 
     def demarrer(self) -> None:
+        self.racine.after(100, self._relever)
         threading.Thread(target=self._preparer, daemon=True).start()
         self.racine.mainloop()
 
@@ -180,7 +197,7 @@ class Fenetre:
             self.afficher(f"⚠ Le port {PORT} est déjà utilisé par un autre programme. Fermez-le, puis relancez.", False)
             return
         self.afficher(f"L'application est prête : {ADRESSE}", False)
-        self.racine.after(0, lambda: self.ouvrir.configure(state="normal"))
+        self.messages.put(("pret",))
         ouvrir_navigateur()
 
     def quitter(self) -> None:
