@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block titre %}Chasseur de sites{% endblock %} · Chasseur de sites</title>
+  <title>{% block titre %}Chasseur de sites{% endblock %} · Chasseur de sites by ptabountchikoff</title>
   <link rel="icon" href="/static/icone.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/static/style.css">
   <script src="/static/htmx.min.js" defer></script>
@@ -11,7 +11,7 @@
 </head>
 <body>
   <header class="entete">
-    <a class="marque" href="/analyses">Chasseur de sites</a>
+    <a class="marque" href="/analyses">Chasseur de sites <small class="auteur">by ptabountchikoff</small></a>
     <nav aria-label="Navigation principale">
       <a href="/analyses/nouvelle" {% if actif == "nouvelle" %}aria-current="page"{% endif %}>Nouvelle analyse</a>
       <a href="/recherche" {% if actif == "recherche" %}aria-current="page"{% endif %}>Recherche</a>
@@ -23,7 +23,7 @@
   <main>
     {% block contenu %}{% endblock %}
   </main>
-  <footer class="pied">Chasseur de sites {{ VERSION }} · application locale, vos données restent sur cet ordinateur ·
+  <footer class="pied">Chasseur de sites by ptabountchikoff {{ VERSION }} · application locale, vos données restent sur cet ordinateur ·
     <a href="/oppositions">Liste d'opposition</a> · <a href="/a-propos">À propos</a></footer>
   <dialog id="visionneuse" aria-label="Capture agrandie">
     <form method="dialog"><button class="fermer" aria-label="Fermer">×</button></form>

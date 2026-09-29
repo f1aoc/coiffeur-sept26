@@ -69,8 +69,9 @@ def ecran_de_demarrage(icone: Image.Image) -> Image.Image:
     ecran = Image.new("RGB", (600, 200), (245, 247, 251))
     ecran.paste(icone.resize((136, 136), Image.LANCZOS), (32, 32), icone.resize((136, 136), Image.LANCZOS))
     d = ImageDraw.Draw(ecran)
-    d.text((196, 62), "Chasseur de sites", fill=(27, 36, 51), font=police(34))
-    d.text((198, 116), "Démarrage en cours…", fill=(91, 101, 118), font=police(20))
+    d.text((196, 46), "Chasseur de sites", fill=(27, 36, 51), font=police(34))
+    d.text((198, 92), "by ptabountchikoff", fill=(31, 95, 191), font=police(18))
+    d.text((198, 132), "Démarrage en cours…", fill=(91, 101, 118), font=police(18))
     return ecran
 
 

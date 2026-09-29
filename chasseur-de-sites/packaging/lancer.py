@@ -23,6 +23,7 @@ import webbrowser
 from pathlib import Path
 
 NOM = "Chasseur de sites"
+AUTEUR = "ptabountchikoff"
 PORT = 8765
 ADRESSE = f"http://127.0.0.1:{PORT}/"
 ACCENT, ACCENT_FONCE, FOND, ENCRE, GRIS = "#1f5fbf", "#174a96", "#f5f7fb", "#1b2433", "#5b6576"
@@ -111,7 +112,7 @@ class Fenetre:
 
         self.tk = tk
         self.racine = tk.Tk()
-        self.racine.title(NOM)
+        self.racine.title(f"{NOM} by {AUTEUR}")
         self.racine.configure(bg=FOND)
         self.racine.resizable(False, False)
         try:
@@ -121,7 +122,10 @@ class Fenetre:
             pass
         cadre = tk.Frame(self.racine, bg=FOND, padx=28, pady=22)
         cadre.pack()
-        tk.Label(cadre, text=NOM, bg=FOND, fg=ENCRE, font=("Segoe UI", 18, "bold")).pack(anchor="w")
+        titre = tk.Frame(cadre, bg=FOND)
+        titre.pack(anchor="w")
+        tk.Label(titre, text=NOM, bg=FOND, fg=ENCRE, font=("Segoe UI", 18, "bold")).pack(side="left")
+        tk.Label(titre, text=f"by {AUTEUR}", bg=FOND, fg=GRIS, font=("Segoe UI", 10)).pack(side="left", padx=(8, 0), pady=(6, 0))
         tk.Label(cadre, text="Repérez les sites cassés ou obsolètes des entreprises locales", bg=FOND, fg=GRIS,
                  font=("Segoe UI", 10)).pack(anchor="w", pady=(0, 14))
         self.etat = tk.Label(cadre, text="Démarrage…", bg=FOND, fg=ENCRE, font=("Segoe UI", 11), justify="left",

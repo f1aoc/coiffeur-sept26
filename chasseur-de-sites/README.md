@@ -1,4 +1,4 @@
-# Chasseur de sites
+# Chasseur de sites by ptabountchikoff
 
 Repère les sites web d'entreprises locales **cassés, expirés ou obsolètes**, les classe par « chaleur commerciale »
 et prépare le premier contact : rapport PDF à vos couleurs, export Excel, messages pré-remplis.
