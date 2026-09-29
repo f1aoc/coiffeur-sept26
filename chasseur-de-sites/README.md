@@ -16,14 +16,17 @@ Trois possibilités ; choisissez-en **une**.
 ### A. Exécutable (le plus simple, Windows ou macOS)
 
 1. Sur GitHub, onglet **Actions** → workflow « Chasseur de sites – exécutables » → dernière exécution réussie →
-   téléchargez l'artefact **ChasseurDeSites-windows** (ou **-macos**).
-2. Décompressez le ZIP où vous voulez (par exemple dans `Documents`).
-3. Double-cliquez sur `ChasseurDeSites.exe` (dans le dossier `ChasseurDeSites`).
-   - **Premier lancement** : le navigateur d'analyse (Chromium, environ 150 Mo) est téléchargé une seule fois.
-   - Windows peut afficher « Windows a protégé votre ordinateur » (exécutable non signé) :
-     **Informations complémentaires → Exécuter quand même**.
-   - Sous macOS : clic droit → **Ouvrir** la première fois.
-4. L'interface s'ouvre dans votre navigateur. **Gardez la fenêtre noire ouverte** : la fermer arrête l'application.
+   artefact **ChasseurDeSites-windows** (ou **ChasseurDeSites-mac-apple-silicon** pour un Mac M1 à M4,
+   **ChasseurDeSites-mac-intel** pour un Mac Intel).
+2. **Windows** : décompressez le ZIP téléchargé, puis double-cliquez sur **ChasseurDeSites.exe** (un seul fichier,
+   à ranger où vous voulez). Windows peut afficher « Windows a protégé votre ordinateur » (application non signée) :
+   **Informations complémentaires → Exécuter quand même**.
+   **Mac** : décompressez, glissez **ChasseurDeSites** dans Applications et ouvrez-le. La première fois, macOS le
+   bloque (application non notariée) : Réglages Système → Confidentialité et sécurité → **Ouvrir quand même**.
+3. Une petite fenêtre « Chasseur de sites » s'ouvre. **Premier lancement** : elle télécharge le navigateur d'analyse
+   (Chromium, environ 150 Mo), une seule fois. Puis l'interface s'ouvre dans votre navigateur.
+4. **Gardez la petite fenêtre ouverte** (vous pouvez la réduire) : « Quitter » ou la fermer arrête l'application.
+   Relancer l'application quand elle tourne déjà rouvre simplement l'interface.
 
 ### B. Avec Python (pour suivre les mises à jour)
 
@@ -188,7 +191,7 @@ pytest                    # tests hors ligne (réponses simulées, pages locales
 pytest -m reseau          # vrais certificats de badssl.com (Internet requis)
 pytest -m charge          # 500 sites locaux, temps et reprise après interruption
 pytest --cov=chasseur.scoring
-pyinstaller packaging/chasseur.spec --noconfirm   # exécutable dans dist/ChasseurDeSites/
+python packaging/icone.py && pyinstaller packaging/chasseur.spec --noconfirm   # dist/ChasseurDeSites.exe (Windows), .app (Mac)
 ```
 
 Structure : `chasseur/` (`importers/`, `analyzers/`, `scoring/`, `reports/`, `web/`, `db/`, `sources/`),

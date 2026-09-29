@@ -1,5 +1,7 @@
-# Construit l'exécutable « Chasseur de sites » pour Windows et macOS (PyInstaller).
-# Résultat : onglet « Actions » → dernière exécution → artefacts ChasseurDeSites-windows / -macos (fichiers ZIP).
+# Construit « Chasseur de sites » comme BridgeToLeads :
+#   Windows : ChasseurDeSites.exe (un seul fichier, double-clic, sans console)
+#   macOS   : ChasseurDeSites-mac-apple-silicon.zip / ChasseurDeSites-mac-intel.zip (application .app)
+# Résultat : onglet « Actions » → dernière exécution → artefacts (connexion GitHub requise, 30 jours).
 name: Chasseur de sites – exécutables
 
 on:
@@ -10,16 +12,8 @@ on:
       - ".github/workflows/chasseur-executables.yml"
 
 jobs:
-  construire:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: windows-latest
-            nom: windows
-          - os: macos-latest
-            nom: macos
-    runs-on: ${{ matrix.os }}
+  windows:
+    runs-on: windows-latest
     defaults:
       run:
         working-directory: chasseur-de-sites
@@ -31,27 +25,85 @@ jobs:
       - name: Dépendances
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev]" pyinstaller
+          pip install -e ".[dev]" pyinstaller pillow
       - name: Tests (ceux qui demandent Chromium sont ignorés)
         run: pytest -q
-      - name: Construction
+      - name: Icônes
+        run: python packaging/icone.py
+      - name: Construction de ChasseurDeSites.exe
         run: pyinstaller packaging/chasseur.spec --noconfirm
-      - name: Vérification
+      - name: Essai réel (premier lancement, téléchargement de Chromium, interface qui répond)
+        shell: pwsh
         env:
-          CHASSEUR_SANS_INSTALLATION: "1"
-        run: ./dist/ChasseurDeSites/ChasseurDeSites --version
-        shell: bash
-      - name: Archive
-        shell: bash
+          CHASSEUR_SANS_NAVIGATEUR: "1"
         run: |
-          cd dist
-          if [ "${{ matrix.nom }}" = "windows" ]; then
-            7z a ../ChasseurDeSites-windows.zip ChasseurDeSites
-          else
-            ditto -c -k --keepParent ChasseurDeSites ../ChasseurDeSites-macos.zip
-          fi
+          $app = Start-Process -FilePath dist\ChasseurDeSites.exe -PassThru
+          $ok = $false
+          for ($i = 0; $i -lt 150; $i++) {
+            Start-Sleep -Seconds 2
+            try { $r = Invoke-WebRequest -Uri http://127.0.0.1:8765/a-propos -UseBasicParsing -TimeoutSec 5
+                  if ($r.Content -match "Chasseur de sites") { $ok = $true; break } } catch {}
+          }
+          taskkill /IM ChasseurDeSites.exe /F /T | Out-Null
+          Get-Content "$env:USERPROFILE\.chasseur-de-sites\console.log" -ErrorAction SilentlyContinue
+          if (-not $ok) { Write-Error "L'interface n'a pas répondu"; exit 1 }
+          if (-not (Test-Path "$env:USERPROFILE\.chasseur-de-sites\navigateurs\.chromium-installe")) {
+            Write-Error "Chromium n'a pas été téléchargé"; exit 1 }
+          Write-Output "Application lancée, Chromium installé, interface OK"
       - uses: actions/upload-artifact@v4
         with:
-          name: ChasseurDeSites-${{ matrix.nom }}
-          path: chasseur-de-sites/ChasseurDeSites-${{ matrix.nom }}.zip
+          name: ChasseurDeSites-windows
+          path: chasseur-de-sites/dist/ChasseurDeSites.exe
+          retention-days: 30
+
+  mac:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-latest       # Apple Silicon (M1, M2, M3, M4…)
+            label: apple-silicon
+          - runner: macos-15-intel     # Mac Intel plus anciens
+            label: intel
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        working-directory: chasseur-de-sites
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Dépendances
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]" pyinstaller pillow
+      - name: Tests (ceux qui demandent Chromium sont ignorés)
+        run: pytest -q
+      - name: Icônes
+        run: python packaging/icone.py
+      - name: Construction de ChasseurDeSites.app
+        run: pyinstaller packaging/chasseur.spec --noconfirm
+      - name: Essai réel (premier lancement, téléchargement de Chromium, interface qui répond)
+        env:
+          CHASSEUR_SANS_NAVIGATEUR: "1"
+        run: |
+          ./dist/ChasseurDeSites.app/Contents/MacOS/ChasseurDeSites &
+          PID=$!
+          OK=0
+          for i in $(seq 1 150); do
+            sleep 2
+            if curl -s --max-time 5 http://127.0.0.1:8765/a-propos | grep -q "Chasseur de sites"; then OK=1; break; fi
+            kill -0 $PID 2>/dev/null || break
+          done
+          kill $PID 2>/dev/null || true
+          test $OK = 1 || { echo "L'interface n'a pas répondu"; exit 1; }
+          test -f ~/.chasseur-de-sites/navigateurs/.chromium-installe || { echo "Chromium n'a pas été téléchargé"; exit 1; }
+          echo "Application lancée, Chromium installé, interface OK"
+      - name: Archive
+        run: ditto -c -k --keepParent dist/ChasseurDeSites.app dist/ChasseurDeSites-mac-${{ matrix.label }}.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ChasseurDeSites-mac-${{ matrix.label }}
+          path: chasseur-de-sites/dist/ChasseurDeSites-mac-${{ matrix.label }}.zip
           retention-days: 30
