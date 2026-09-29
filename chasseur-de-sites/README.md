@@ -15,10 +15,14 @@ Trois possibilités ; choisissez-en **une**.
 
 ### A. Exécutable (le plus simple, Windows ou macOS)
 
-1. Sur GitHub, onglet **Actions** → workflow « Chasseur de sites – exécutables » → dernière exécution réussie →
-   artefact **ChasseurDeSites-windows** (ou **ChasseurDeSites-mac-apple-silicon** pour un Mac M1 à M4,
-   **ChasseurDeSites-mac-intel** pour un Mac Intel).
-2. **Windows** : décompressez le ZIP téléchargé, puis double-cliquez sur **ChasseurDeSites.exe** (un seul fichier,
+1. Téléchargez la dernière version (liens permanents, sans compte GitHub) :
+   - Windows : [ChasseurDeSites.exe](https://github.com/f1aoc/coiffeur-sept26/releases/download/chasseurdesites-latest/ChasseurDeSites.exe)
+   - Mac M1 à M4 : [ChasseurDeSites-mac-apple-silicon.zip](https://github.com/f1aoc/coiffeur-sept26/releases/download/chasseurdesites-latest/ChasseurDeSites-mac-apple-silicon.zip)
+   - Mac Intel : [ChasseurDeSites-mac-intel.zip](https://github.com/f1aoc/coiffeur-sept26/releases/download/chasseurdesites-latest/ChasseurDeSites-mac-intel.zip)
+
+   (Onglet **Releases** du dépôt → « Chasseur de sites by ptabountchikoff » ; chaque modification du dossier
+   `chasseur-de-sites` la met à jour automatiquement.)
+2. **Windows** : double-cliquez sur **ChasseurDeSites.exe** (un seul fichier,
    à ranger où vous voulez). Windows peut afficher « Windows a protégé votre ordinateur » (application non signée) :
    **Informations complémentaires → Exécuter quand même**.
    **Mac** : décompressez, glissez **ChasseurDeSites** dans Applications et ouvrez-le. La première fois, macOS le

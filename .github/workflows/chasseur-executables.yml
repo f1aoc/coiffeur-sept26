@@ -1,7 +1,8 @@
 # Construit « Chasseur de sites » comme BridgeToLeads :
 #   Windows : ChasseurDeSites.exe (un seul fichier, double-clic, sans console)
 #   macOS   : ChasseurDeSites-mac-apple-silicon.zip / ChasseurDeSites-mac-intel.zip (application .app)
-# Résultat : onglet « Actions » → dernière exécution → artefacts (connexion GitHub requise, 30 jours).
+# et les publie dans la release « chasseurdesites-latest » (liens permanents, sans compte GitHub) :
+#   https://github.com/f1aoc/coiffeur-sept26/releases/download/chasseurdesites-latest/ChasseurDeSites.exe
 name: Chasseur de sites – exécutables
 
 on:
@@ -10,6 +11,9 @@ on:
     paths:
       - "chasseur-de-sites/**"
       - ".github/workflows/chasseur-executables.yml"
+
+permissions:
+  contents: write
 
 jobs:
   windows:
@@ -57,6 +61,23 @@ jobs:
           name: ChasseurDeSites-windows
           path: chasseur-de-sites/dist/ChasseurDeSites.exe
           retention-days: 30
+      - name: Publication dans la release « Chasseur de sites »
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: chasseurdesites-latest
+          name: Chasseur de sites by ptabountchikoff (dernière version)
+          target_commitish: ${{ github.sha }}
+          body: |
+            **Windows** : téléchargez **ChasseurDeSites.exe** ci-dessous et double-cliquez dessus. Python n'est pas nécessaire.
+            La première fois, Windows peut afficher « Windows a protégé votre ordinateur » (application non signée) :
+            cliquez sur **Informations complémentaires → Exécuter quand même**.
+            **Mac** : téléchargez **ChasseurDeSites-mac-apple-silicon.zip** (Mac M1/M2/M3/M4) ou
+            **ChasseurDeSites-mac-intel.zip** (Mac Intel plus anciens), décompressez, glissez l'application dans
+            Applications. La première fois, macOS la bloque (application non notariée) : Réglages Système →
+            Confidentialité et sécurité → **Ouvrir quand même**.
+            Au premier lancement, le navigateur d'analyse (environ 150 Mo) est téléchargé une seule fois.
+          files: chasseur-de-sites/dist/ChasseurDeSites.exe
+          prerelease: true
 
   mac:
     strategy:
@@ -111,3 +132,10 @@ jobs:
           name: ChasseurDeSites-mac-${{ matrix.label }}
           path: chasseur-de-sites/dist/ChasseurDeSites-mac-${{ matrix.label }}.zip
           retention-days: 30
+      - name: Publication dans la release « Chasseur de sites »
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: chasseurdesites-latest
+          target_commitish: ${{ github.sha }}
+          files: chasseur-de-sites/dist/ChasseurDeSites-mac-${{ matrix.label }}.zip
+          prerelease: true
