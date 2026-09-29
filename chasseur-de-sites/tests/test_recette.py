@@ -101,9 +101,11 @@ async def test_taux_de_bon_classement(site_recette, config, tmp_path):
     assert recette.taux >= OBJECTIF, afficher(recette)
 
 
-def test_commande_recette(site_recette, tmp_path, capsys):
+def test_commande_recette(site_recette, tmp_path, capsys, monkeypatch):
     from chasseur import cli
     from conftest import RACINE
+
+    monkeypatch.chdir(tmp_path)  # les captures vont dans ./captures
 
     jeu = tmp_path / "petit.csv"
     jeu.write_text(f"nom;url;attendu\nA;{site_recette.url('correct-0.html')};Correct\nB;{site_recette.url('parking.html')};cassé\n",
