@@ -188,7 +188,21 @@ refuse les requêtes venant d'autres sites.
 
 ---
 
-## 9. Pour les développeurs
+## 9. Page de vente
+
+`site/` contient la page de vente (`index.html` + `assets/`) et la page de remerciement après achat
+(`merci.html` : boutons de téléchargement Windows / Mac et guide de démarrage, non référencée par Google ;
+indiquez-la comme page de retour après paiement). Aucune construction : envoyez le dossier sur n'importe quel
+hébergeur statique (Netlify, Vercel, GitHub Pages, FTP). Elle est aussi publiée dans la release sous
+`ChasseurDeSites-site.zip`.
+
+Avant de publier, modifiez les lignes marquées `À MODIFIER` : le prix et le lien d'achat (lien de paiement
+Stripe / PayPal ou e-mail) dans `index.html`, l'adresse e-mail du support dans `merci.html`.
+Les captures (`assets/app-screenshot.jpg`, `assets/rapport-exemple.jpg`) montrent des données fictives.
+
+---
+
+## 10. Pour les développeurs
 
 ```bash
 pytest                    # tests hors ligne (réponses simulées, pages locales dans un vrai Chromium)

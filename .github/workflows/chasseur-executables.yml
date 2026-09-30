@@ -56,10 +56,15 @@ jobs:
           if (-not (Test-Path "$env:USERPROFILE\.chasseur-de-sites\navigateurs\.chromium-installe")) {
             Write-Error "Chromium n'a pas été téléchargé"; exit 1 }
           Write-Output "Application lancée, Chromium installé, interface OK"
+      - name: Page de vente (ZIP)
+        shell: pwsh
+        run: Compress-Archive -Path site/* -DestinationPath dist/ChasseurDeSites-site.zip
       - uses: actions/upload-artifact@v4
         with:
           name: ChasseurDeSites-windows
-          path: chasseur-de-sites/dist/ChasseurDeSites.exe
+          path: |
+            chasseur-de-sites/dist/ChasseurDeSites.exe
+            chasseur-de-sites/dist/ChasseurDeSites-site.zip
           retention-days: 30
       - name: Publication dans la release « Chasseur de sites »
         uses: softprops/action-gh-release@v2
@@ -76,7 +81,10 @@ jobs:
             Applications. La première fois, macOS la bloque (application non notariée) : Réglages Système →
             Confidentialité et sécurité → **Ouvrir quand même**.
             Au premier lancement, le navigateur d'analyse (environ 150 Mo) est téléchargé une seule fois.
-          files: chasseur-de-sites/dist/ChasseurDeSites.exe
+            **ChasseurDeSites-site.zip** est la page de vente : décompressez-la et envoyez le dossier sur n'importe quel hébergeur de site statique.
+          files: |
+            chasseur-de-sites/dist/ChasseurDeSites.exe
+            chasseur-de-sites/dist/ChasseurDeSites-site.zip
           prerelease: true
 
   mac:
