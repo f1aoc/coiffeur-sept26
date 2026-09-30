@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ptabountchikoff — Logiciels de prospection pour créateurs de sites web</title>
+  <meta name="description" content="BridgeToLeads, Chasseur de sites et les prochains : des logiciels simples, en français, qui trouvent les entreprises qui ont besoin d'un site web, et vous aident à les contacter.">
+  <meta property="og:title" content="ptabountchikoff — Des logiciels qui trouvent vos prochains clients">
+  <meta property="og:description" content="Trouvez les entreprises sans site web ou au site cassé, et décrochez vos prochains contrats.">
+  <meta property="og:image" content="assets/chasseur-apercu.jpg">
+  <link rel="icon" type="image/png" href="assets/chasseur-icone.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --night: #0A0F1F;
+      --night-2: #111831;
+      --glass: rgba(255, 255, 255, .06);
+      --line: rgba(255, 255, 255, .12);
+      --text: #EEF1FA;
+      --soft: #A7B0C8;
+      --ink: #0F1733;
+      --muted: #5B6480;
+      --paper: #F5F7FC;
+      --border: #E3E8F4;
+      /* BridgeToLeads */
+      --btl-1: #7C3AED; --btl-2: #EC4899; --btl-3: #F97316;
+      --btl: linear-gradient(120deg, var(--btl-1), var(--btl-2) 55%, var(--btl-3));
+      /* Chasseur de sites */
+      --cds-1: #1F5FBF; --cds-2: #0EA5E9; --cds-3: #F97316;
+      --cds: linear-gradient(120deg, var(--cds-1), var(--cds-2) 70%);
+      /* Marque ombrelle */
+      --aurora: linear-gradient(100deg, #A78BFA 0%, #F472B6 30%, #FB923C 55%, #38BDF8 80%, #818CF8 100%);
+      --radius: 22px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0; font-family: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: var(--paper); color: var(--ink); line-height: 1.6;
+      -webkit-font-smoothing: antialiased; overflow-x: hidden;
+    }
+    img { max-width: 100%; height: auto; display: block; }
+    a { color: inherit; }
+    .wrap { width: min(1180px, 100% - 32px); margin-inline: auto; }
+    h1, h2, h3 { margin: 0; line-height: 1.12; letter-spacing: -.025em; }
+    h2 { font-size: clamp(1.9rem, 4.4vw, 2.9rem); font-weight: 800; }
+    .aurora-text { background: var(--aurora); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .eyebrow { display: inline-block; font-size: .78rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+    .section { padding: clamp(72px, 11vw, 120px) 0; }
+    .head { max-width: 720px; margin: 0 auto clamp(40px, 6vw, 60px); text-align: center; }
+    .head p { font-size: 1.1rem; margin: 16px 0 0; color: var(--muted); }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+      padding: 15px 28px; border-radius: 999px; font-weight: 700; font-size: 1rem;
+      text-decoration: none; border: 0; cursor: pointer; white-space: nowrap;
+      transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn-light { background: #fff; color: var(--ink); box-shadow: 0 14px 34px -14px rgba(255, 255, 255, .6); }
+    .btn-glass { background: var(--glass); color: var(--text); box-shadow: inset 0 0 0 1px var(--line); }
+    .btn-glass:hover { background: rgba(255, 255, 255, .12); }
+    .btn-btl { background: var(--btl); color: #fff; box-shadow: 0 14px 30px -12px rgba(236, 72, 153, .65); }
+    .btn-cds { background: var(--cds); color: #fff; box-shadow: 0 14px 30px -12px rgba(31, 95, 191, .7); }
+    .btn-dark { background: var(--ink); color: #fff; }
+
+    /* ---------- Navigation ---------- */
+    .nav { position: fixed; inset: 0 0 auto; z-index: 30; transition: background .25s ease, box-shadow .25s ease; }
+    .nav.scrolled { background: rgba(10, 15, 31, .82); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 1px 0 var(--line); }
+    .nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 74px; gap: 16px; }
+    .logo { display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; font-weight: 800; font-size: 1.1rem; letter-spacing: -.01em; }
+    .short { display: none; }
+    .logo-mark { width: 34px; height: 34px; border-radius: 10px; background: var(--aurora); display: grid; place-items: center; color: #0A0F1F; font-weight: 800; font-size: 1.05rem; }
+    .links { display: flex; align-items: center; gap: 26px; }
+    .links a { color: var(--soft); text-decoration: none; font-weight: 500; }
+    .links a:hover { color: #fff; }
+    .links .btn { color: var(--ink); padding: 10px 20px; font-size: .95rem; }
+
+    /* ---------- En-tête ---------- */
+    .hero { position: relative; background: var(--night); color: var(--text); padding: 150px 0 0; overflow: hidden; isolation: isolate; }
+    .hero::before {
+      content: ""; position: absolute; inset: 0; z-index: -1; opacity: .5;
+      background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+      background-size: 64px 64px; mask-image: radial-gradient(ellipse at 50% 20%, #000 20%, transparent 70%);
+      -webkit-mask-image: radial-gradient(ellipse at 50% 20%, #000 20%, transparent 70%);
+    }
+    .glow { position: absolute; border-radius: 50%; filter: blur(90px); z-index: -1; pointer-events: none; }
+    .glow.a { width: 520px; height: 520px; background: #7C3AED; opacity: .45; top: -160px; left: -140px; animation: drift 16s ease-in-out infinite alternate; }
+    .glow.b { width: 480px; height: 480px; background: #0EA5E9; opacity: .35; top: -80px; right: -160px; animation: drift 19s ease-in-out infinite alternate-reverse; }
+    .glow.c { width: 380px; height: 380px; background: #F97316; opacity: .25; top: 420px; left: 40%; animation: drift 22s ease-in-out infinite alternate; }
+    @keyframes drift { to { transform: translate(60px, 40px) scale(1.1); } }
+    .hero .wrap { text-align: center; }
+    .pill { display: inline-flex; align-items: center; gap: 10px; padding: 7px 16px 7px 8px; border-radius: 999px; background: var(--glass); box-shadow: inset 0 0 0 1px var(--line); color: var(--soft); font-size: .9rem; font-weight: 500; }
+    .pill b { background: var(--aurora); color: var(--night); border-radius: 999px; padding: 3px 10px; font-size: .75rem; white-space: nowrap; }
+    .hero h1 { font-size: clamp(2.5rem, 7vw, 5rem); font-weight: 800; max-width: 980px; margin: 24px auto 0; }
+    .hero .lead { color: var(--soft); font-size: clamp(1.05rem, 2.2vw, 1.28rem); max-width: 700px; margin: 24px auto 0; }
+    .ctas { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin-top: 36px; }
+    .trust { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 28px; margin-top: 28px; color: var(--soft); font-size: .92rem; }
+    .trust span::before { content: "✦"; margin-right: 8px; background: var(--aurora); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+    .stage { position: relative; margin: clamp(56px, 8vw, 84px) auto 0; max-width: 1060px; height: clamp(260px, 44vw, 500px); }
+    .window {
+      position: absolute; width: 66%; border-radius: 16px; overflow: hidden; background: #fff;
+      box-shadow: 0 50px 100px -30px rgba(0, 0, 0, .7), 0 0 0 1px rgba(255, 255, 255, .15);
+      transition: transform .6s cubic-bezier(.2, .8, .2, 1);
+    }
+    .window .bar { display: flex; gap: 6px; padding: 9px 12px; background: #F1F4FA; }
+    .window .bar i { width: 10px; height: 10px; border-radius: 50%; background: #CBD3E3; }
+    .window .bar i:nth-child(1) { background: #F87171; } .window .bar i:nth-child(2) { background: #FBBF24; } .window .bar i:nth-child(3) { background: #34D399; }
+    .window.w1 { left: 0; top: 0; transform: rotate(-4deg); }
+    .window.w2 { right: 0; top: 16%; transform: rotate(3deg); }
+    .stage:hover .w1 { transform: rotate(-2deg) translate(-12px, -8px); }
+    .stage:hover .w2 { transform: rotate(1.5deg) translate(12px, 8px); }
+    .tag-float {
+      position: absolute; z-index: 2; display: flex; align-items: center; gap: 10px; padding: 10px 16px 10px 10px;
+      border-radius: 14px; background: rgba(15, 23, 51, .88); color: #fff; font-weight: 700; font-size: .92rem;
+      box-shadow: 0 20px 40px -18px rgba(0, 0, 0, .7), inset 0 0 0 1px var(--line); backdrop-filter: blur(8px);
+    }
+    .tag-float img { width: 32px; height: 32px; border-radius: 9px; }
+    .tag-float.t1 { left: 4%; bottom: 6%; }
+    .tag-float.t2 { right: 3%; top: 2%; }
+    .hero-fade { height: 120px; background: linear-gradient(to bottom, transparent, var(--paper)); margin-top: -60px; position: relative; }
+
+    /* ---------- Catalogue ---------- */
+    .catalog { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .product {
+      position: relative; display: flex; flex-direction: column; background: #fff; border-radius: 26px; padding: 32px;
+      box-shadow: 0 30px 60px -36px rgba(15, 23, 51, .35), 0 0 0 1px var(--border);
+      transition: transform .3s ease, box-shadow .3s ease;
+    }
+    .product:hover { transform: translateY(-6px); box-shadow: 0 40px 70px -34px rgba(15, 23, 51, .45), 0 0 0 1px var(--border); }
+    .product::before { content: ""; position: absolute; inset: 0 0 auto; height: 6px; border-radius: 26px 26px 0 0; }
+    .product.btl::before { background: var(--btl); }
+    .product.cds::before { background: var(--cds); }
+    .product-top { display: flex; align-items: center; gap: 14px; }
+    .product-top img { width: 58px; height: 58px; border-radius: 16px; box-shadow: 0 10px 24px -10px rgba(15, 23, 51, .5); }
+    .product h3 { font-size: 1.4rem; font-weight: 800; }
+    .product .by { font-size: .78rem; color: var(--muted); font-style: italic; }
+    .product .pitch { font-size: 1.05rem; font-weight: 600; margin: 20px 0 0; }
+    .product ul { list-style: none; padding: 0; margin: 18px 0 26px; display: grid; gap: 10px; color: var(--muted); font-size: .96rem; }
+    .product li { display: flex; gap: 10px; }
+    .product.btl li::before { content: "✔"; font-weight: 800; color: var(--btl-2); }
+    .product.cds li::before { content: "✔"; font-weight: 800; color: var(--cds-1); }
+    .product .foot { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .price { font-weight: 800; font-size: 1.5rem; }
+    .price small { display: block; font-size: .75rem; font-weight: 500; color: var(--muted); }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .chips span { font-size: .75rem; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--paper); color: var(--muted); box-shadow: inset 0 0 0 1px var(--border); }
+
+    .product.soon { background: transparent; box-shadow: none; border: 2px dashed #C7D0E4; justify-content: center; text-align: center; align-items: center; }
+    .product.soon:hover { transform: none; }
+    .soon-mark { width: 64px; height: 64px; border-radius: 18px; background: var(--aurora); display: grid; place-items: center; font-size: 1.8rem; color: var(--night); margin-bottom: 18px; animation: pulse 2.6s ease-in-out infinite; }
+    @keyframes pulse { 50% { transform: scale(1.08) rotate(6deg); } }
+    .product.soon p { color: var(--muted); margin: 10px 0 22px; }
+
+    /* ---------- Parcours ---------- */
+    .journey { background: var(--night); color: var(--text); border-radius: 36px; padding: clamp(40px, 7vw, 80px) clamp(22px, 5vw, 64px); position: relative; overflow: hidden; isolation: isolate; }
+    .journey .glow.a { top: -200px; left: -200px; opacity: .35; }
+    .journey .glow.b { bottom: -220px; top: auto; right: -160px; opacity: .3; }
+    .journey .head p { color: var(--soft); }
+    .flow { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 18px; align-items: stretch; }
+    .flow .card { background: var(--glass); box-shadow: inset 0 0 0 1px var(--line); border-radius: 22px; padding: 26px; }
+    .flow .card img { width: 44px; height: 44px; border-radius: 12px; margin-bottom: 16px; }
+    .flow .card .emoji { width: 44px; height: 44px; border-radius: 12px; margin-bottom: 16px; display: grid; place-items: center; background: var(--aurora); color: var(--night); font-size: 1.3rem; font-weight: 800; }
+    .flow h3 { font-size: 1.15rem; }
+    .flow p { color: var(--soft); margin: 8px 0 0; font-size: .96rem; }
+    .flow .arrow { display: grid; place-items: center; font-size: 1.6rem; color: var(--soft); }
+    .flow .card.b1 { box-shadow: inset 0 0 0 1px rgba(236, 72, 153, .45); }
+    .flow .card.b2 { box-shadow: inset 0 0 0 1px rgba(14, 165, 233, .5); }
+
+    /* ---------- Zoom produit ---------- */
+    .spotlight { display: grid; grid-template-columns: 1.05fr 1fr; gap: clamp(28px, 6vw, 72px); align-items: center; }
+    .spotlight + .spotlight { margin-top: clamp(72px, 10vw, 110px); }
+    .spotlight.flip .shot { order: 2; }
+    .spotlight > * { min-width: 0; }
+    main { overflow-x: clip; }
+    .shot { position: relative; }
+    .shot .frame { border-radius: 18px; overflow: hidden; background: #fff; box-shadow: 0 40px 80px -36px rgba(15, 23, 51, .5), 0 0 0 1px var(--border); }
+    .shot::after { content: ""; position: absolute; inset: 8% -4% -6% 8%; z-index: -1; border-radius: 30px; filter: blur(40px); opacity: .45; }
+    .shot.btl::after { background: var(--btl); }
+    .shot.cds::after { background: var(--cds); }
+    .spotlight .eyebrow.btl { color: var(--btl-2); }
+    .spotlight .eyebrow.cds { color: var(--cds-1); }
+    .spotlight h2 { font-size: clamp(1.7rem, 3.6vw, 2.4rem); margin-top: 10px; }
+    .spotlight p { color: var(--muted); font-size: 1.06rem; margin: 16px 0 0; }
+    .points { list-style: none; padding: 0; margin: 22px 0 30px; display: grid; gap: 12px; }
+    .points li { display: flex; gap: 12px; }
+    .points li b { flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; color: #fff; font-size: .8rem; }
+    .spotlight.b-btl .points li b { background: var(--btl); }
+    .spotlight.b-cds .points li b { background: var(--cds); }
+    .grad-btl { background: var(--btl); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .grad-cds { background: var(--cds); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+    /* ---------- Promesses ---------- */
+    .values { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    .value { background: #fff; border-radius: var(--radius); padding: 26px; box-shadow: 0 0 0 1px var(--border); }
+    .value .ico { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; font-size: 1.3rem; margin-bottom: 16px; background: var(--paper); box-shadow: inset 0 0 0 1px var(--border); }
+    .value h3 { font-size: 1.08rem; }
+    .value p { color: var(--muted); margin: 8px 0 0; font-size: .95rem; }
+
+    /* ---------- À venir ---------- */
+    .next { position: relative; border-radius: 36px; padding: clamp(40px, 7vw, 76px) clamp(24px, 6vw, 72px); text-align: center; color: #fff; overflow: hidden; isolation: isolate; background: var(--night); }
+    .next::before { content: ""; position: absolute; inset: -2px; z-index: -1; background: var(--aurora); opacity: .9; }
+    .next::after { content: ""; position: absolute; inset: 2px; z-index: -1; border-radius: 34px; background: radial-gradient(circle at 20% 0%, #1D2550, var(--night) 60%); }
+    .next h2 { color: #fff; }
+    .next p { color: var(--soft); font-size: 1.12rem; max-width: 600px; margin: 16px auto 30px; }
+    .next .ctas { margin-top: 0; }
+
+    /* ---------- FAQ ---------- */
+    .faq { max-width: 800px; margin: 0 auto; display: grid; gap: 14px; }
+    .faq details { background: #fff; border-radius: 18px; padding: 0 24px; box-shadow: 0 0 0 1px var(--border); }
+    .faq details[open] { box-shadow: 0 0 0 2px #C4B5FD; }
+    .faq summary { list-style: none; cursor: pointer; padding: 20px 0; font-weight: 700; font-size: 1.05rem; display: flex; justify-content: space-between; gap: 16px; }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::after { content: "+"; font-size: 1.5rem; line-height: 1; color: #7C3AED; transition: transform .2s ease; }
+    .faq details[open] summary::after { transform: rotate(45deg); }
+    .faq details p { margin: 0 0 20px; color: var(--muted); }
+
+    footer { background: var(--night); color: var(--soft); padding: 56px 0 44px; margin-top: clamp(72px, 11vw, 120px); font-size: .92rem; }
+    footer .wrap { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 32px; }
+    footer h4 { color: #fff; margin: 0 0 12px; font-size: .95rem; }
+    footer ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+    footer a { text-decoration: none; }
+    footer a:hover { color: #fff; }
+    footer .legal { grid-column: 1 / -1; border-top: 1px solid var(--line); padding-top: 22px; font-size: .82rem; }
+
+    /* ---------- Apparition ---------- */
+    .reveal { opacity: 0; transform: translateY(26px); transition: opacity .8s ease, transform .8s ease; }
+    .reveal.in { opacity: 1; transform: none; }
+    .no-js .reveal { opacity: 1; transform: none; }
+
+    @media (max-width: 980px) {
+      .catalog { grid-template-columns: 1fr 1fr; }
+      .product.soon { grid-column: 1 / -1; }
+      .values { grid-template-columns: 1fr 1fr; }
+      .flow { grid-template-columns: 1fr; }
+      .flow .arrow { transform: rotate(90deg); }
+      .spotlight, .spotlight.flip { grid-template-columns: 1fr; }
+      .spotlight.flip .shot { order: 0; }
+      .links a:not(.btn) { display: none; }
+    }
+    @media (max-width: 640px) {
+      .catalog, .values { grid-template-columns: 1fr; }
+      footer .wrap { grid-template-columns: 1fr; }
+      .ctas .btn { width: 100%; }
+      .stage { height: 250px; }
+      .window { width: 80%; }
+      .tag-float { font-size: .8rem; padding: 7px 12px 7px 7px; }
+      .tag-float img { width: 24px; height: 24px; }
+      .logo span.long { display: none; }
+      .product { padding: 26px; }
+      .pill { font-size: .8rem; text-align: left; }
+    }
+    @media (max-width: 400px) {
+      .links .btn { padding: 9px 14px; font-size: .88rem; }
+      .links .btn .long { display: none; }
+      .links .btn .short { display: inline; }
+      .tag-float.t2 { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+      .reveal { opacity: 1; transform: none; }
+    }
+  </style>
+</head>
+<body class="no-js">
+
+  <!--
+    À MODIFIER : adresses des pages de vente de chaque logiciel.
+    Par défaut, la vitrine suppose un hébergement commun :
+      /                      → cette page (vitrine)
+      /bridgetoleads/        → la page de vente de BridgeToLeads (contenu de BridgeToLeads-site.zip)
+      /chasseur-de-sites/    → la page de vente de Chasseur de sites (contenu de ChasseurDeSites-site.zip)
+    Si vos pages sont ailleurs, remplacez simplement les liens href="bridgetoleads/" et href="chasseur-de-sites/".
+  -->
+
+  <nav class="nav" id="nav">
+    <div class="wrap">
+      <a class="logo" href="#top"><span class="logo-mark">p</span><span>ptabountchikoff<span class="long" style="font-weight:500;color:var(--soft)"> · logiciels</span></span></a>
+      <div class="links">
+        <a href="#logiciels">Logiciels</a>
+        <a href="#parcours">Le duo</a>
+        <a href="#a-venir">À venir</a>
+        <a href="#faq">FAQ</a>
+        <a class="btn btn-light" href="#logiciels"><span class="long">Voir les logiciels</span><span class="short">Logiciels</span></a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero" id="top">
+    <div class="glow a"></div><div class="glow b"></div><div class="glow c"></div>
+    <div class="wrap">
+      <span class="pill"><b>2 logiciels</b> Pour créateurs de sites, agences et freelances</span>
+      <h1>Des logiciels qui trouvent <span class="aurora-text">vos prochains clients.</span></h1>
+      <p class="lead">Les entreprises sans site web, celles dont le site est en panne ou dépassé : nos logiciels les repèrent pour vous, et vous aident à les contacter. Simples, en français, sans abonnement.</p>
+      <div class="ctas">
+        <a class="btn btn-light" href="#logiciels">Découvrir les logiciels →</a>
+        <a class="btn btn-glass" href="#parcours">Pourquoi les deux ensemble&nbsp;?</a>
+      </div>
+      <div class="trust">
+        <span>Windows et Mac</span>
+        <span>Paiement unique</span>
+        <span>Vos données restent chez vous</span>
+      </div>
+      <div class="stage reveal" aria-hidden="true">
+        <div class="window w1"><div class="bar"><i></i><i></i><i></i></div><img src="assets/bridgetoleads-apercu.jpg" width="1180" height="740" alt=""></div>
+        <div class="window w2"><div class="bar"><i></i><i></i><i></i></div><img src="assets/chasseur-apercu.jpg" width="1600" height="1003" alt=""></div>
+        <div class="tag-float t1"><img src="assets/bridgetoleads-icone.png" alt="">10 commerces sans site trouvés</div>
+        <div class="tag-float t2"><img src="assets/chasseur-icone.png" alt="">4 sites cassés repérés</div>
+      </div>
+    </div>
+    <div class="hero-fade"></div>
+  </header>
+
+  <main>
+    <section class="section" id="logiciels" style="padding-top:clamp(40px,6vw,70px)">
+      <div class="wrap">
+        <div class="head reveal">
+          <span class="eyebrow aurora-text">Le catalogue</span>
+          <h2 style="margin-top:10px">Choisissez votre <span class="aurora-text">terrain de chasse</span></h2>
+          <p>Chaque logiciel résout un problème précis de la prospection. Utilisez-en un, ou combinez-les.</p>
+        </div>
+
+        <div class="catalog">
+          <!-- ===== Logiciel : BridgeToLeads ===== -->
+          <article class="product btl reveal">
+            <div class="product-top">
+              <img src="assets/bridgetoleads-icone.png" width="58" height="58" alt="">
+              <div><h3>BridgeToLeads</h3><span class="by">by ptabountchikoff</span></div>
+            </div>
+            <p class="pitch">Trouvez les commerces qui n'ont pas encore de site web.</p>
+            <ul>
+              <li>Par métier et par ville, depuis Google Maps</li>
+              <li>Repère aussi les « Facebook seulement »</li>
+              <li>Liste prête à appeler, exportée dans Excel</li>
+            </ul>
+            <div class="chips"><span>Windows</span><span>Mac</span><span>Export Excel</span></div>
+            <div class="foot" style="margin-top:26px">
+              <!-- À MODIFIER : prix de BridgeToLeads -->
+              <div class="price">49&nbsp;€<small>paiement unique</small></div>
+              <a class="btn btn-btl" href="bridgetoleads/">Découvrir →</a>
+            </div>
+          </article>
+
+          <!-- ===== Logiciel : Chasseur de sites ===== -->
+          <article class="product cds reveal">
+            <div class="product-top">
+              <img src="assets/chasseur-icone.png" width="58" height="58" alt="">
+              <div><h3>Chasseur de sites</h3><span class="by">by ptabountchikoff</span></div>
+            </div>
+            <p class="pitch">Repérez les entreprises dont le site est cassé ou dépassé.</p>
+            <ul>
+              <li>Domaine expiré, erreur, piratage, pas adapté au mobile…</li>
+              <li>Captures d'écran et preuve pour chaque problème</li>
+              <li>Rapport PDF à vos couleurs et messages prêts</li>
+            </ul>
+            <div class="chips"><span>Windows</span><span>Mac</span><span>Rapport PDF</span></div>
+            <div class="foot" style="margin-top:26px">
+              <!-- À MODIFIER : prix de Chasseur de sites -->
+              <div class="price">79&nbsp;€<small>paiement unique</small></div>
+              <a class="btn btn-cds" href="chasseur-de-sites/">Découvrir →</a>
+            </div>
+          </article>
+
+          <!-- ===== Emplacement « à venir » =====
+               Pour ajouter un logiciel : copiez un bloc <article class="product …"> ci-dessus, changez le nom,
+               l'icône (dans assets/), les textes, le prix et le lien, puis collez-le avant ce bloc.
+               Pour lui donner ses couleurs, ajoutez une classe (ex. « nouveau ») et, dans le style,
+               « .product.nouveau::before { background: linear-gradient(120deg, #couleur1, #couleur2); } ». -->
+          <article class="product soon reveal">
+            <div class="soon-mark">✦</div>
+            <h3>Le prochain arrive</h3>
+            <p>Un nouveau logiciel est en préparation pour vous faire gagner encore plus de clients.</p>
+            <a class="btn btn-dark" href="#a-venir">Être prévenu</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="parcours" style="padding-top:0">
+      <div class="wrap">
+        <div class="journey reveal">
+          <div class="glow a"></div><div class="glow b"></div>
+          <div class="head">
+            <span class="eyebrow" style="color:#F9A8D4">Le duo gagnant</span>
+            <h2 style="margin-top:10px;color:#fff">Aucune entreprise de votre secteur <span class="aurora-text">ne vous échappe</span></h2>
+            <p>Deux logiciels, deux types de prospects, un seul objectif : vous faire signer des sites.</p>
+          </div>
+          <div class="flow">
+            <div class="card b1">
+              <img src="assets/bridgetoleads-icone.png" alt="">
+              <h3>Pas de site du tout&nbsp;?</h3>
+              <p>BridgeToLeads trouve les commerces sans site web, ou avec une simple page Facebook.</p>
+            </div>
+            <div class="arrow" aria-hidden="true">+</div>
+            <div class="card b2">
+              <img src="assets/chasseur-icone.png" alt="">
+              <h3>Un site qui ne marche plus&nbsp;?</h3>
+              <p>Chasseur de sites repère les sites en panne, expirés ou dépassés, preuve à l'appui.</p>
+            </div>
+            <div class="arrow" aria-hidden="true">=</div>
+            <div class="card">
+              <div class="emoji">€</div>
+              <h3>Vos prochains contrats</h3>
+              <p>Création pour les uns, refonte pour les autres : une liste complète de prospects qui ont une vraie raison de vous répondre.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:0">
+      <div class="wrap">
+        <div class="spotlight b-btl">
+          <figure class="shot btl reveal" style="margin:0">
+            <div class="frame"><img src="assets/bridgetoleads-apercu.jpg" width="1180" height="740" loading="lazy" alt="BridgeToLeads : liste de salons de coiffure sans site web, avec téléphone, adresse, note et nombre d'avis"></div>
+          </figure>
+          <div class="reveal">
+            <span class="eyebrow btl">BridgeToLeads</span>
+            <h2>Les commerces <span class="grad-btl">sans site web</span>, en quelques secondes</h2>
+            <p>Choisissez un métier, tapez vos villes : BridgeToLeads interroge Google Maps et ne garde que ceux qui n'ont pas de site.</p>
+            <ol class="points">
+              <li><b>1</b>30 métiers prêts, ou celui que vous voulez</li>
+              <li><b>2</b>Les commerces les plus établis en premier</li>
+              <li><b>3</b>Export Excel avec lien Google Maps</li>
+            </ol>
+            <a class="btn btn-btl" href="bridgetoleads/">Découvrir BridgeToLeads →</a>
+          </div>
+        </div>
+
+        <div class="spotlight flip b-cds">
+          <figure class="shot cds reveal" style="margin:0">
+            <div class="frame"><img src="assets/chasseur-apercu.jpg" width="1600" height="1003" loading="lazy" alt="Chasseur de sites : entreprises classées par score, avec les sites cassés et obsolètes et les problèmes trouvés"></div>
+          </figure>
+          <div class="reveal">
+            <span class="eyebrow cds">Chasseur de sites</span>
+            <h2>Les sites <span class="grad-cds">cassés ou dépassés</span>, avec la preuve</h2>
+            <p>Chaque site est ouvert comme le ferait un client, sur ordinateur et sur téléphone. Les plus mal en point remontent en tête.</p>
+            <ol class="points">
+              <li><b>1</b>18 contrôles : domaine, erreurs, sécurité, mobile…</li>
+              <li><b>2</b>Rapport PDF à vos couleurs, prêt à envoyer</li>
+              <li><b>3</b>E-mail, script d'appel et SMS déjà rédigés</li>
+            </ol>
+            <a class="btn btn-cds" href="chasseur-de-sites/">Découvrir Chasseur de sites →</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:0">
+      <div class="wrap">
+        <div class="head reveal">
+          <span class="eyebrow aurora-text">Nos engagements</span>
+          <h2 style="margin-top:10px">Pensés pour ceux qui <span class="aurora-text">vendent des sites</span></h2>
+        </div>
+        <div class="values">
+          <div class="value reveal"><div class="ico">€</div><h3>Paiement unique</h3><p>Pas d'abonnement : vous achetez le logiciel, il est à vous. Mises à jour incluses.</p></div>
+          <div class="value reveal"><div class="ico">🔒</div><h3>Vos données chez vous</h3><p>Tout reste sur votre ordinateur. Aucun de vos prospects n'est envoyé sur nos serveurs.</p></div>
+          <div class="value reveal"><div class="ico">⚡</div><h3>Prêt en quelques minutes</h3><p>Téléchargez, double-cliquez : rien à installer, aucune compétence technique.</p></div>
+          <div class="value reveal"><div class="ico">✓</div><h3>Sources officielles</h3><p>Données Google Maps via l'API officielle, pas de « scraping » : fiable et à jour.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="a-venir" style="padding-top:0">
+      <div class="wrap">
+        <div class="next reveal">
+          <span class="eyebrow aurora-text">À venir</span>
+          <h2 style="margin-top:10px">D'autres logiciels arrivent</h2>
+          <p>De nouveaux outils sont en préparation pour vous aider à trouver, convaincre et fidéliser vos clients. Soyez parmi les premiers à les découvrir.</p>
+          <div class="ctas">
+            <!-- À MODIFIER : votre adresse e-mail (ou un lien vers votre formulaire d'inscription) -->
+            <a class="btn btn-light" href="mailto:contact@exemple.fr?subject=Pr%C3%A9venez-moi%20du%20prochain%20logiciel">✉&nbsp; Être prévenu du prochain logiciel</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="faq" style="padding-top:0">
+      <div class="wrap">
+        <div class="head reveal">
+          <span class="eyebrow aurora-text">FAQ</span>
+          <h2 style="margin-top:10px">Questions fréquentes</h2>
+        </div>
+        <div class="faq">
+          <details class="reveal">
+            <summary>Quel logiciel choisir&nbsp;?</summary>
+            <p>Vous créez des sites pour des commerces qui n'en ont pas&nbsp;? Commencez par BridgeToLeads. Vous proposez des refontes ou de la maintenance&nbsp;? Chasseur de sites est fait pour vous. Les deux ensemble couvrent toutes les entreprises de votre secteur.</p>
+          </details>
+          <details class="reveal">
+            <summary>Faut-il un abonnement&nbsp;?</summary>
+            <p>Non. Chaque logiciel se paie une seule fois, pour un ordinateur, mises à jour incluses. Seules les recherches Google Maps passent par votre propre clé Google, qui offre un quota gratuit chaque mois.</p>
+          </details>
+          <details class="reveal">
+            <summary>Ça fonctionne sur Mac&nbsp;?</summary>
+            <p>Oui. Les deux logiciels fonctionnent sur Windows 10 / 11 et sur Mac (puce Apple et Intel).</p>
+          </details>
+          <details class="reveal">
+            <summary>Ai-je le droit de contacter ces entreprises&nbsp;?</summary>
+            <p>La prospection auprès des professionnels est autorisée en France, si votre offre concerne leur activité et qu'ils peuvent refuser d'être recontactés. Nos logiciels n'utilisent que des informations publiques d'entreprises. En cas de doute, renseignez-vous auprès de la CNIL.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <div>
+        <a class="logo" href="#top"><span class="logo-mark">p</span>ptabountchikoff</a>
+        <p style="max-width:340px;margin:14px 0 0">Des logiciels de prospection simples et en français, pour les créateurs de sites web, agences et freelances.</p>
+      </div>
+      <div>
+        <h4>Logiciels</h4>
+        <ul>
+          <li><a href="bridgetoleads/">BridgeToLeads</a></li>
+          <li><a href="chasseur-de-sites/">Chasseur de sites</a></li>
+          <li><a href="#a-venir">Prochainement…</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <ul>
+          <!-- À MODIFIER : votre adresse e-mail -->
+          <li><a href="mailto:contact@exemple.fr">contact@exemple.fr</a></li>
+          <li><a href="#faq">Questions fréquentes</a></li>
+        </ul>
+      </div>
+      <div class="legal">© <span id="year">2026</span> ptabountchikoff · BridgeToLeads et Chasseur de sites by ptabountchikoff · Google Maps est une marque de Google LLC.</div>
+    </div>
+  </footer>
+
+  <script>
+    document.body.classList.remove("no-js");
+    document.getElementById("year").textContent = new Date().getFullYear();
+    const nav = document.getElementById("nav");
+    const onScroll = () => nav.classList.toggle("scrolled", window.scrollY > 20);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    const items = document.querySelectorAll(".reveal");
+    if ("IntersectionObserver" in window) {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
+      }, { threshold: 0.12 });
+      items.forEach((el, i) => { el.style.transitionDelay = (i % 3) * 90 + "ms"; io.observe(el); });
+    } else {
+      items.forEach((el) => el.classList.add("in"));
+    }
+  </script>
+</body>
+</html>
