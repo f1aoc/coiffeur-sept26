@@ -313,7 +313,7 @@
 
     // Clé de licence : demandée au serveur de licences grâce au numéro de paiement Stripe (session_id).
     // À MODIFIER : adresse de votre serveur de licences (la même que SERVEUR dans le logiciel)
-    const SERVEUR_LICENCES = "";
+    const SERVEUR_LICENCES = "https://licences.patrick-tabountchikoff.workers.dev";
     (async () => {
       const texte = document.getElementById("cle-texte");
       const session = new URLSearchParams(location.search).get("session_id");
