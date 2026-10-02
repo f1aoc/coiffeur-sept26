@@ -107,7 +107,7 @@ l'étape 1 (produits, liens de paiement, clé restreinte `rk_live_…`) et mette
 ## Pour les développeurs
 
 ```bash
-node --test serveur-licences/          # tests du serveur (faux Stripe en mémoire)
+node --test serveur-licences/worker.test.mjs   # tests du serveur (faux Stripe en mémoire)
 node serveur-licences/serveur-local.mjs 8790   # serveur local + faux Stripe, pour essayer les logiciels
 ```
 

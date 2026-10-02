@@ -1,4 +1,4 @@
-// Tests du serveur de licences : node --test serveur-licences/
+// Tests du serveur de licences : node --test serveur-licences/worker.test.mjs
 import assert from "node:assert/strict";
 import { beforeEach, test } from "node:test";
 
