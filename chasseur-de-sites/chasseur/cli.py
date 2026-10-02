@@ -27,6 +27,46 @@ def _liste_analyseurs(texte: str) -> list[str]:
     return noms
 
 
+def _licence(donnees: Path | None = None):
+    from chasseur import licence
+    from chasseur.db.moteur import dossier_donnees
+
+    return licence.licence_par_defaut(dossier_donnees(donnees))
+
+
+def _exiger_licence(args: argparse.Namespace) -> bool:
+    """Vrai si la licence permet de travailler ; sinon explique quoi faire."""
+    licence = _licence(getattr(args, "donnees", None))
+    etat = licence.verifier() if licence.verification_due() else licence.etat()
+    if etat.utilisable:
+        return True
+    print(f"Licence requise : {etat.message}\n"
+          "Ouvrez l'application (écran Licence) ou tapez : chasseur licence activer VOTRE-CLE", file=sys.stderr)
+    return False
+
+
+def commande_licence(args: argparse.Namespace) -> int:
+    from chasseur.licence import ErreurLicence
+
+    licence = _licence(args.donnees)
+    try:
+        if args.action == "activer":
+            etat = licence.activer(args.cle)
+        elif args.action == "verifier":
+            etat = licence.verifier()
+        elif args.action == "liberer":
+            licence.liberer()
+            print("Licence libérée : vous pouvez l'activer sur un autre ordinateur.")
+            return 0
+        else:
+            etat = licence.etat()
+    except ErreurLicence as e:
+        print(f"Erreur : {e}", file=sys.stderr)
+        return 3
+    print(etat.message + (f" (clé {etat.cle_masquee})" if etat.cle else ""))
+    return 0 if etat.utilisable else 3
+
+
 def _parseur() -> argparse.ArgumentParser:
     parseur = argparse.ArgumentParser(prog="chasseur", description="Repère les sites d'entreprises cassés ou obsolètes.")
     parseur.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
@@ -73,6 +113,12 @@ def _parseur() -> argparse.ArgumentParser:
     rec.add_argument("fichier", type=Path, help="CSV : nom, url, attendu (Cassé / Obsolète / Correct)")
     rec.add_argument("-c", "--config", type=Path, help="fichier de configuration (défaut : ./config.yaml)")
 
+    lic = sous.add_parser("licence", help="voir, activer ou libérer la licence")
+    lic.add_argument("action", nargs="?", default="etat", choices=["etat", "activer", "verifier", "liberer"],
+                     help="etat (défaut), activer CLE, verifier, liberer")
+    lic.add_argument("cle", nargs="?", default="", help="clé de licence (pour « activer »)")
+    lic.add_argument("--donnees", type=Path, help="dossier des données (défaut : ~/.chasseur-de-sites)")
+
     pla = sous.add_parser("planifies", help="lancer les analyses planifiées arrivées à échéance (pour le Planificateur de tâches)")
     pla.add_argument("--donnees", type=Path, help="dossier des données (défaut : ~/.chasseur-de-sites)")
     pla.add_argument("-c", "--config", type=Path, help="fichier de configuration (défaut : ./config.yaml)")
@@ -105,6 +151,8 @@ def _preparer(prospects):
 
 
 def commande_scan(args: argparse.Namespace) -> int:
+    if not _exiger_licence(args):
+        return 3
     try:
         config = charger_config(args.config)
         prospects = importer_csv(args.fichier)
@@ -203,6 +251,8 @@ def commande_web(args: argparse.Namespace) -> int:
 
 
 def commande_import(args: argparse.Namespace) -> int:
+    if not _exiger_licence(args):
+        return 3
     from chasseur.db import Stockage
     from chasseur.db.import_resultats import ErreurMigration, importer_resultats
     from chasseur.db.reglages import config_effective
@@ -221,6 +271,8 @@ def commande_import(args: argparse.Namespace) -> int:
 
 
 def commande_rapport(args: argparse.Namespace) -> int:
+    if not _exiger_licence(args):
+        return 3
     from chasseur.db import Stockage
     from chasseur.db.agence import lire_agence
     from chasseur.reports.donnees import diagnostic
@@ -278,6 +330,8 @@ def commande_recette(args: argparse.Namespace) -> int:
 
 
 def commande_planifies(args: argparse.Namespace) -> int:
+    if not _exiger_licence(args):
+        return 3
     from chasseur import planification
     from chasseur.db import Stockage
     from chasseur.journal import configurer
@@ -305,6 +359,7 @@ def main(argv: list[str] | None = None) -> int:
     commandes = {
         "scan": commande_scan, "web": commande_web, "import": commande_import, "rapport": commande_rapport,
         "purge": commande_purge, "planifies": commande_planifies, "recette": commande_recette,
+        "licence": commande_licence,
     }
     return commandes[args.commande](args)
 

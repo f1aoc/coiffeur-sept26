@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block titre %}Licence{% endblock %}
+{% block contenu %}
+<h1>Licence</h1>
+{% if ok %}<p class="alerte alerte-succes" role="status">{{ ok }}</p>{% endif %}
+{% if erreur %}<p class="alerte alerte-erreur" role="alert">{{ erreur }}</p>{% endif %}
+
+{% if etat.utilisable %}
+<section class="carte">
+  <h2>✔ Licence active</h2>
+  <dl class="coordonnees">
+    {% if etat.client %}<dt>Titulaire</dt><dd>{{ etat.client }}{% if etat.email %} ({{ etat.email }}){% endif %}</dd>{% endif %}
+    <dt>Clé</dt><dd><code>{{ etat.cle_masquee }}</code></dd>
+    {% if etat.derniere_verification %}<dt>Dernière vérification</dt><dd>{{ etat.derniere_verification | date_fr }}</dd>{% endif %}
+  </dl>
+  {% if etat.hors_ligne_depuis_longtemps %}
+  <p class="alerte alerte-erreur">Votre licence n'a pas pu être vérifiée récemment. Connectez-vous à Internet :
+    sans vérification, l'application se bloquera dans {{ etat.jours_restants }} jour{{ "s" if etat.jours_restants > 1 }}.</p>
+  {% endif %}
+  <div class="actions">
+    <form method="post" action="/licence/verifier"><button class="bouton bouton-principal" type="submit">Vérifier maintenant</button></form>
+    <form method="post" action="/licence/liberer"
+          onsubmit="return confirm('Libérer la licence de cet ordinateur ? Vous pourrez l\'activer sur un autre ordinateur.')">
+      <button class="bouton" type="submit">Libérer (changer d'ordinateur)</button>
+    </form>
+  </div>
+</section>
+{% else %}
+<section class="carte">
+  {% if etat.statut == "absente" %}
+  <h2>Activez Chasseur de sites</h2>
+  {% else %}
+  <h2>⚠ Licence inactive</h2>
+  {% endif %}
+  <p>{{ etat.message }}</p>
+  {% if etat.statut in ("absente", "invalide") %}
+  <form method="post" action="/licence" class="formulaire-licence">
+    <label>Clé de licence <input type="text" name="cle" required autocomplete="off" spellcheck="false" maxlength="200"
+      placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"></label>
+    <p class="discret">Elle figure dans l'e-mail de confirmation de votre achat (expéditeur : Lemon Squeezy).
+      L'activation demande une connexion à Internet.</p>
+    <button type="submit" class="bouton bouton-principal">Activer</button>
+  </form>
+  {% else %}
+  <div class="actions">
+    <form method="post" action="/licence/verifier"><button class="bouton bouton-principal" type="submit">Vérifier maintenant</button></form>
+  </div>
+  {% endif %}
+  {% if etat.statut != "absente" %}
+  <p class="discret">Vos données restent accessibles : <a href="/resultats">consultez et exportez vos résultats</a>
+    (Excel ou CSV), ou supprimez des prospects.</p>
+  {% endif %}
+  {% if lien_achat %}<p><a class="bouton bouton-principal" href="{{ lien_achat }}" target="_blank" rel="noopener">Acheter une licence</a></p>{% endif %}
+</section>
+{% endif %}
+
+<section class="carte">
+  <h2>Comment ça marche</h2>
+  <p class="discret">La clé est vérifiée en ligne au démarrage puis une fois par jour. Seuls la clé et le nom de cet
+    ordinateur sont envoyés au serveur de licences (Lemon Squeezy) ; vos prospects ne quittent jamais votre ordinateur.
+    Sans Internet, l'application reste utilisable {{ tolerance }} jours après la dernière vérification réussie.
+    En cas de remboursement, la licence est désactivée.</p>
+</section>
+{% endblock %}

@@ -51,12 +51,14 @@ jobs:
             try { $r = Invoke-WebRequest -Uri http://127.0.0.1:8765/a-propos -UseBasicParsing -TimeoutSec 5
                   if ($r.Content -match "Chasseur de sites") { $ok = $true; break } } catch {}
           }
+          $licence = curl.exe -s -o NUL -w "%{redirect_url}" http://127.0.0.1:8765/analyses
           taskkill /IM ChasseurDeSites.exe /F /T | Out-Null
+          if ($licence -notmatch "/licence$") { Write-Error "Sans licence, l'application devrait demander une clé (reçu : $licence)"; exit 1 }
           Get-Content "$env:USERPROFILE\.chasseur-de-sites\console.log" -ErrorAction SilentlyContinue
           if (-not $ok) { Write-Error "L'interface n'a pas répondu"; exit 1 }
           if (-not (Test-Path "$env:USERPROFILE\.chasseur-de-sites\navigateurs\.chromium-installe")) {
             Write-Error "Chromium n'a pas été téléchargé"; exit 1 }
-          Write-Output "Application lancée, Chromium installé, interface OK"
+          Write-Output "Application lancée, Chromium installé, interface OK, licence exigée"
       - name: Page de vente (ZIP)
         shell: pwsh
         run: Compress-Archive -Path site/* -DestinationPath dist/ChasseurDeSites-site.zip
@@ -130,10 +132,12 @@ jobs:
             if curl -s --max-time 5 http://127.0.0.1:8765/a-propos | grep -q "Chasseur de sites"; then OK=1; break; fi
             kill -0 $PID 2>/dev/null || break
           done
+          LICENCE=$(curl -s -o /dev/null -w "%{redirect_url}" http://127.0.0.1:8765/analyses || true)
           kill $PID 2>/dev/null || true
+          case "$LICENCE" in */licence) ;; *) echo "Sans licence, l'application devrait demander une clé (reçu : $LICENCE)"; exit 1;; esac
           test $OK = 1 || { echo "L'interface n'a pas répondu"; exit 1; }
           test -f ~/.chasseur-de-sites/navigateurs/.chromium-installe || { echo "Chromium n'a pas été téléchargé"; exit 1; }
-          echo "Application lancée, Chromium installé, interface OK"
+          echo "Application lancée, Chromium installé, interface OK, licence exigée"
       - name: Archive
         run: ditto -c -k --keepParent dist/ChasseurDeSites.app dist/ChasseurDeSites-mac-${{ matrix.label }}.zip
       - uses: actions/upload-artifact@v4

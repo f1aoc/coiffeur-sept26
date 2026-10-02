@@ -20,11 +20,14 @@
       <a href="/reglages" {% if actif == "reglages" %}aria-current="page"{% endif %}>Réglages</a>
     </nav>
   </header>
+  {% set l = licence() %}
+  {% if l.hors_ligne_depuis_longtemps %}<p class="bandeau-licence" role="status">Licence non vérifiée depuis plusieurs jours :
+    connectez-vous à Internet (blocage dans {{ l.jours_restants }} jour{{ "s" if l.jours_restants > 1 }}). <a href="/licence">Détails</a></p>{% endif %}
   <main>
     {% block contenu %}{% endblock %}
   </main>
   <footer class="pied">Chasseur de sites by ptabountchikoff {{ VERSION }} · application locale, vos données restent sur cet ordinateur ·
-    <a href="/oppositions">Liste d'opposition</a> · <a href="/a-propos">À propos</a></footer>
+    <a href="/oppositions">Liste d'opposition</a> · <a href="/licence">Licence</a> · <a href="/a-propos">À propos</a></footer>
   <dialog id="visionneuse" aria-label="Capture agrandie">
     <form method="dialog"><button class="fermer" aria-label="Fermer">×</button></form>
     <img alt="">

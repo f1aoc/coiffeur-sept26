@@ -222,3 +222,8 @@ input[type="email"], input[type="url"], input[type="tel"] {
 .zone-danger .bouton-danger { background: var(--casse); border-color: var(--casse); color: #fff; }
 pre.journal { background: #111827; color: #e5e7eb; padding: 0.75rem; border-radius: 6px; overflow-x: auto; font-size: 0.8rem; max-height: 22rem; }
 .recherche .champ { max-width: 32rem; }
+
+/* Licence */
+.formulaire-licence { display: grid; gap: 0.6rem; max-width: 34rem; }
+.formulaire-licence input { width: 100%; font-family: ui-monospace, monospace; }
+.bandeau-licence { background: #fff4e5; border-bottom: 1px solid #f5c58a; padding: 0.5rem 1rem; text-align: center; font-size: 0.95rem; }

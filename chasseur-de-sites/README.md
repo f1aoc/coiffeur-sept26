@@ -29,7 +29,10 @@ Trois possibilités ; choisissez-en **une**.
    bloque (application non notariée) : Réglages Système → Confidentialité et sécurité → **Ouvrir quand même**.
 3. Une petite fenêtre « Chasseur de sites » s'ouvre. **Premier lancement** : elle télécharge le navigateur d'analyse
    (Chromium, environ 150 Mo), une seule fois. Puis l'interface s'ouvre dans votre navigateur.
-4. **Gardez la petite fenêtre ouverte** (vous pouvez la réduire) : « Quitter » ou la fermer arrête l'application.
+4. **Licence** : collez la clé reçue par e-mail après l'achat (expéditeur : Lemon Squeezy) puis **Activer**.
+   Elle est revérifiée en ligne une fois par jour ; sans Internet, l'application reste utilisable 14 jours.
+   Changement d'ordinateur : écran **Licence → Libérer**, puis activez la clé sur le nouvel ordinateur.
+5. **Gardez la petite fenêtre ouverte** (vous pouvez la réduire) : « Quitter » ou la fermer arrête l'application.
    Relancer l'application quand elle tourne déjà rouvre simplement l'interface.
 
 ### B. Avec Python (pour suivre les mises à jour)
@@ -188,7 +191,45 @@ refuse les requêtes venant d'autres sites.
 
 ---
 
-## 9. Page de vente
+## 9. Vendre : licences Lemon Squeezy
+
+Chaque copie vendue est protégée par une clé de licence Lemon Squeezy : sans clé valable, l'application n'ouvre que
+l'écran Licence ; après un **remboursement**, la clé est désactivée et, à la vérification suivante (au démarrage puis
+toutes les 24 h), les analyses, recherches et rapports se bloquent. Le client peut toujours consulter, exporter
+(Excel, CSV) et supprimer ses données. Sans Internet, l'application reste utilisable 14 jours après la dernière
+vérification réussie. Même règle en ligne de commande (`chasseur licence activer CLE`, `chasseur licence liberer`).
+
+**Mise en place, une seule fois :**
+
+1. Créez un compte sur [lemonsqueezy.com](https://www.lemonsqueezy.com), puis votre boutique (Store).
+2. **Products → New product** : « Chasseur de sites », prix unique, fichier ou lien de téléchargement.
+   Dans l'onglet de la variante, cochez **Generate license keys** ; *Activation limit* : 2 (ordinateurs par
+   licence) ; *License length* : illimitée.
+3. Notez l'**ID de la boutique** (Settings → Stores) et l'**ID du produit** (dans l'adresse de sa page), puis
+   reportez-les dans `chasseur/licence.py` (`STORE_ID`, `PRODUITS`, `LIEN_ACHAT`) — ou envoyez-les-moi.
+   Sans eux, n'importe quelle clé d'une autre boutique Lemon Squeezy ouvrirait le logiciel.
+4. Lien de paiement du produit (bouton **Share**) → à coller dans la page de vente (`site/index.html`) ;
+   page de retour après paiement → `merci.html`.
+5. Testez en **mode test** de Lemon Squeezy : achat avec une carte de test, activation, puis remboursement depuis
+   Orders → la clé passe à *disabled* et l'application se bloque après « Vérifier maintenant ».
+
+**À ajouter à vos conditions de vente** (à faire valider par un juriste) : « Chaque licence est personnelle et
+valable pour 2 ordinateurs. Elle est vérifiée en ligne périodiquement (seuls la clé et le nom de l'ordinateur sont
+transmis). En cas de remboursement, la licence est désactivée et le logiciel cesse de fonctionner ; vos données
+restent sur votre ordinateur et peuvent être exportées. »
+
+**Limites à connaître :**
+- Aucune protection côté client n'est inviolable ; celle-ci empêche surtout « j'achète, je me fais rembourser et
+  je garde le logiciel ».
+- Le **code source de ce dépôt est public** : quelqu'un d'un peu technique pourrait reconstruire le logiciel
+  sans contrôle de licence. Pour l'éviter, rendez le dépôt privé et distribuez les exécutables via Lemon Squeezy
+  (fichier livré après paiement) plutôt que par les liens publics de la release.
+- Depuis le code source (pas l'exécutable), `CHASSEUR_SANS_LICENCE=1` désactive le contrôle : c'est le mode
+  développement et tests. L'exécutable l'ignore toujours.
+
+---
+
+## 10. Page de vente
 
 `site/` contient la page de vente (`index.html` + `assets/`) et la page de remerciement après achat
 (`merci.html` : boutons de téléchargement Windows / Mac et guide de démarrage, non référencée par Google ;
@@ -197,12 +238,12 @@ hébergeur statique (Netlify, Vercel, GitHub Pages, FTP). Elle est aussi publié
 `ChasseurDeSites-site.zip`.
 
 Avant de publier, modifiez les lignes marquées `À MODIFIER` : le prix et le lien d'achat (lien de paiement
-Stripe / PayPal ou e-mail) dans `index.html`, l'adresse e-mail du support dans `merci.html`.
+Lemon Squeezy) dans `index.html`, l'adresse e-mail du support dans `merci.html`.
 Les captures (`assets/app-screenshot.jpg`, `assets/rapport-exemple.jpg`) montrent des données fictives.
 
 ---
 
-## 10. Pour les développeurs
+## 11. Pour les développeurs
 
 ```bash
 pytest                    # tests hors ligne (réponses simulées, pages locales dans un vrai Chromium)

@@ -23,6 +23,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from chasseur import __version__, planification, rgpd
+from chasseur import licence as lic
 from chasseur.journal import configurer as configurer_journal
 from chasseur.bonus import a_bonus
 from chasseur.config import charger_config
@@ -92,15 +93,19 @@ def creer_templates() -> Jinja2Templates:
     return templates
 
 
-def entretenir(stockage: Stockage, gestionnaire: GestionnaireScans, purge: bool) -> tuple[int, list[int]]:
-    """Purge RGPD (si demandée) et lancement des relances planifiées dues ; renvoie (purgés, scans lancés)."""
+def entretenir(
+    stockage: Stockage, gestionnaire: GestionnaireScans, purge: bool, licence_active: bool = True
+) -> tuple[int, list[int]]:
+    """Purge RGPD (si demandée) et lancement des relances planifiées dues ; renvoie (purgés, scans lancés).
+
+    Sans licence active, la purge continue (protection des données) mais aucune relance n'est lancée."""
     purges, lances = 0, []
     with stockage.session() as s:
         if purge:
             purges = rgpd.purger(stockage, s)
             if purges:
                 journal.warning("purge automatique : %s prospect(s) non contacté(s) supprimé(s)", purges)
-        for scan in planification.scans_dus(s):
+        for scan in planification.scans_dus(s) if licence_active else []:
             if any(gestionnaire.en_cours(x.id) for x in planification.serie(s, scan)):
                 continue  # la relance précédente n'est pas finie
             lances.append(planification.creer_relance(s, scan).id)
@@ -109,14 +114,21 @@ def entretenir(stockage: Stockage, gestionnaire: GestionnaireScans, purge: bool)
     return purges, lances
 
 
-async def boucle_entretien(stockage: Stockage, gestionnaire: GestionnaireScans, intervalle: float) -> None:
-    """Toutes les `intervalle` secondes : relances planifiées ; une fois par jour : purge."""
+async def boucle_entretien(
+    stockage: Stockage, gestionnaire: GestionnaireScans, intervalle: float, licence: lic.Licence
+) -> None:
+    """Toutes les `intervalle` secondes : licence (au démarrage puis toutes les 24 h), relances planifiées ;
+    une fois par jour : purge."""
     derniere_purge = 0.0
+    premier_tour = True
     while True:
         try:
+            if premier_tour or licence.verification_due():
+                await asyncio.to_thread(licence.verifier)
+            premier_tour = False
             boucle = asyncio.get_running_loop()
             purge = boucle.time() - derniere_purge > 24 * 3600 or not derniere_purge
-            entretenir(stockage, gestionnaire, purge)
+            entretenir(stockage, gestionnaire, purge, licence.etat().utilisable)
             if purge:
                 derniere_purge = boucle.time()
         except Exception as e:  # noqa: BLE001 — l'entretien ne doit jamais arrêter l'application
@@ -130,8 +142,10 @@ def creer_app(
     chemin_config: str | Path | None = None,
     hotes: list[str] | None = None,
     intervalle_entretien: float = 300,
+    licence: lic.Licence | None = None,
 ) -> FastAPI:
     stockage = stockage or Stockage()
+    licence = licence or lic.licence_par_defaut(stockage.dossier)
     fichier_journal = configurer_journal(stockage.dossier)
     gestionnaire = gestionnaire or GestionnaireScans(stockage, chemin_config=chemin_config)
 
@@ -150,7 +164,7 @@ def creer_app(
     @asynccontextmanager
     async def cycle_de_vie(app: FastAPI):
         gestionnaire.au_demarrage()
-        entretien = asyncio.get_running_loop().create_task(boucle_entretien(stockage, gestionnaire, intervalle_entretien))
+        entretien = asyncio.get_running_loop().create_task(boucle_entretien(stockage, gestionnaire, intervalle_entretien, licence))
         yield
         entretien.cancel()
         await gestionnaire.arreter()
@@ -164,6 +178,8 @@ def creer_app(
     app.state.chemin_config = chemin_config
     app.state.moteur_pdf = moteur_pdf
     app.state.fichier_journal = fichier_journal
+    app.state.licence = licence
+    app.state.templates.env.globals["licence"] = licence.etat
 
     @app.exception_handler(Exception)
     async def erreur_interne(request: Request, exc: Exception):
@@ -182,6 +198,14 @@ def creer_app(
                 return PlainTextResponse("Requête refusée : elle ne vient pas de l'application.", status_code=403)
         return await suivant(request)
 
+    from chasseur.web.routes_licence import chemin_libre, refus
+
+    @app.middleware("http")
+    async def controle_licence(request: Request, suivant):
+        if not chemin_libre(request.method, request.url.path) and not licence.etat().utilisable:
+            return refus(request)
+        return await suivant(request)
+
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=hotes_autorises)
 
     stockage.dossier_captures.mkdir(parents=True, exist_ok=True)
@@ -191,12 +215,14 @@ def creer_app(
     from chasseur.web import (
         routes_analyses,
         routes_conformite,
+        routes_licence,
         routes_rapports,
         routes_recherche,
         routes_reglages,
         routes_resultats,
     )
 
+    app.include_router(routes_licence.routeur)
     app.include_router(routes_recherche.routeur)
     app.include_router(routes_conformite.routeur)
     app.include_router(routes_rapports.routeur)
