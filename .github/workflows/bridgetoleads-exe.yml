@@ -26,12 +26,17 @@ jobs:
       - name: Build BridgeToLeads.exe
         run: >
           pyinstaller --onefile --windowed --name BridgeToLeads
-          --paths tools/prospection --hidden-import find_no_website --hidden-import brand_icon
+          --paths tools/prospection --hidden-import find_no_website --hidden-import brand_icon --hidden-import licence
           --hidden-import openpyxl --hidden-import certifi --icon tools/prospection/assets/bridgetoleads.ico
           tools/prospection/bridgetoleads.pyw
 
       - name: Smoke test (CLI module imports in the build env)
         run: python tools/prospection/find_no_website.py --help
+
+      - name: Licence tests (Lemon Squeezy, simulated responses)
+        run: |
+          pip install pytest
+          python -m pytest -q tools/prospection/tests
 
       - name: Zip the sales page
         shell: pwsh
@@ -88,7 +93,7 @@ jobs:
         run: >
           pyinstaller --windowed --name BridgeToLeads
           --osx-bundle-identifier com.ptabountchikoff.bridgetoleads
-          --paths tools/prospection --hidden-import find_no_website --hidden-import brand_icon
+          --paths tools/prospection --hidden-import find_no_website --hidden-import brand_icon --hidden-import licence
           --hidden-import openpyxl --hidden-import certifi --icon tools/prospection/assets/bridgetoleads.png
           tools/prospection/bridgetoleads.pyw
 

@@ -22,6 +22,7 @@ from tkinter import font as tkfont
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from brand_icon import ICON_PNG_B64  # noqa: E402
 from find_no_website import PlacesError, clean_api_key, find_leads, write_xlsx  # noqa: E402
+import licence as lic  # noqa: E402
 
 # ---------- Brand: change these to rebrand the app ----------
 
@@ -52,6 +53,7 @@ C = {
 
 CONFIG_PATH = Path.home() / ".bridgetoleads.json"
 OLD_CONFIG_PATH = Path.home() / ".lead_finder.json"  # settings saved by the app's previous name
+LICENCE_DIR = Path.home() / ".bridgetoleads"  # licence.json (clé Lemon Squeezy, fichier signé)
 
 OCCUPATIONS = [
     "coiffeur", "barbier", "institut de beauté", "onglerie", "esthéticienne",
@@ -194,6 +196,8 @@ class App(tk.Tk):
         self.api_key = tk.StringVar(value=os.environ.get("GOOGLE_MAPS_API_KEY") or self.cfg.get("api_key", ""))
         self.remember_key = tk.BooleanVar(value=bool(self.cfg.get("api_key")))
         self.show_key = tk.BooleanVar(value=False)
+        self.licence = lic.licence_par_defaut(LICENCE_DIR)
+        self.licence_dlg = None
 
         self._init_styles()
         self._build_header()
@@ -203,8 +207,7 @@ class App(tk.Tk):
         self._build_main(body)
         self._refresh_key_badge()
         self.after(100, self._poll_events)
-        if not self.api_key.get():
-            self.after(500, self.open_settings)
+        self.after(400, self._first_launch)
 
     # ---------- Styles ----------
 
@@ -246,6 +249,9 @@ class App(tk.Tk):
         self.settings_btn = PillButton(self.header, "⚙  Clé API", self.open_settings, color="white",
                                        hover="#FDE68A", fg=C["violet_dark"], font=self.f["label"],
                                        height=36, parent_bg=GRADIENT[-1])
+        self.licence_btn = PillButton(self.header, "✦  Licence", self.open_licence, color="white",
+                                      hover="#FDE68A", fg=C["violet_dark"], font=self.f["label"],
+                                      height=36, parent_bg=GRADIENT[-1])
         self.header.bind("<Configure>", lambda e: self._draw_header())
 
     def _draw_header(self):
@@ -263,8 +269,11 @@ class App(tk.Tk):
         c.create_text(104, h // 2 + 18, text=TAGLINE, fill="white", font=self.f["tagline"], anchor="w")
         edge = gradient_at(1.0)
         self.settings_btn.config(bg=edge)
+        self.licence_btn.config(bg=edge)
         c.create_window(w - 24, h // 2, window=self.settings_btn, anchor="e")
-        c.create_text(w - 24 - int(self.settings_btn["width"]) - 16, h // 2, text=self._key_badge_text(),
+        licence_x = w - 24 - int(self.settings_btn["width"]) - 10
+        c.create_window(licence_x, h // 2, window=self.licence_btn, anchor="e")
+        c.create_text(licence_x - int(self.licence_btn["width"]) - 16, h // 2, text=self._key_badge_text(),
                       fill="white", font=self.f["label"], anchor="e", tags="badge")
 
     def _key_badge_text(self):
@@ -438,6 +447,11 @@ class App(tk.Tk):
     # ---------- Actions ----------
 
     def start_search(self):
+        etat = self.licence.etat()
+        if not etat.utilisable:
+            messagebox.showwarning("Licence requise", etat.message)
+            self.open_licence()
+            return
         key = clean_api_key(self.api_key.get())
         occupation = self.occupation.get().strip()
         cities = [c.strip() for c in self.cities.get("1.0", "end").replace(",", "\n").splitlines() if c.strip()]
@@ -493,6 +507,10 @@ class App(tk.Tk):
                     self.status.set(payload)
                 elif kind == "done":
                     self._show_results(*payload)
+                elif kind == "licence":
+                    self._licence_checked(payload)
+                elif kind == "licence_action":
+                    self._licence_action_done(*payload)
                 elif kind == "error":
                     self._finish()
                     for var in self.stat_vars.values():
@@ -503,6 +521,141 @@ class App(tk.Tk):
         except queue.Empty:
             pass
         self.after(100, self._poll_events)
+
+    # ---------- Licence (Lemon Squeezy) ----------
+
+    def _first_launch(self):
+        """Licence d'abord, puis clé Google ; vérification en ligne en arrière-plan, puis toutes les heures."""
+        self._verify_licence_async()
+        self.after(3_600_000, self._licence_tick)
+        if not self.licence.etat().utilisable:
+            self.open_licence()
+        elif not self.api_key.get():
+            self.open_settings()
+
+    def _licence_tick(self):
+        if self.licence.verification_due():
+            self._verify_licence_async()
+        self.after(3_600_000, self._licence_tick)
+
+    def _verify_licence_async(self):
+        threading.Thread(target=lambda: self.events.put(("licence", self.licence.verifier())), daemon=True).start()
+
+    def _licence_checked(self, etat):
+        if self.licence_dlg is not None:
+            self._fill_licence_dialog()
+        if etat.statut in (lic.DESACTIVEE, lic.EXPIREE, lic.A_VERIFIER, lic.INVALIDE):
+            self.status.set("Licence inactive : les recherches sont bloquées.")
+            if self.licence_dlg is None:
+                messagebox.showwarning("Licence inactive", etat.message)
+                self.open_licence()
+        elif etat.hors_ligne_depuis_longtemps:
+            self.status.set(f"Licence non vérifiée depuis plusieurs jours : connectez-vous à Internet "
+                            f"(blocage dans {etat.jours_restants} jour(s)).")
+
+    def _run_licence_action(self, action, *args):
+        """Appel réseau dans un fil secondaire ; le résultat revient par la file d'événements."""
+        def work():
+            try:
+                result = action(*args)
+                self.events.put(("licence_action", (True, "", result)))
+            except lic.ErreurLicence as e:
+                self.events.put(("licence_action", (False, str(e), None)))
+        threading.Thread(target=work, daemon=True).start()
+
+    def _licence_action_done(self, ok, message, etat):
+        if self.licence_dlg is None:
+            return
+        self._fill_licence_dialog()
+        if not ok:
+            messagebox.showerror("Licence", message, parent=self.licence_dlg)
+        elif isinstance(etat, lic.Etat) and etat.utilisable:
+            name = f", {etat.client}" if etat.client else ""
+            messagebox.showinfo("Licence", f"Merci{name} ! Votre licence est active.", parent=self.licence_dlg)
+            self.licence_dlg.destroy()
+            if not self.api_key.get():
+                self.open_settings()
+        elif etat is None:  # libérée
+            messagebox.showinfo("Licence", "Licence libérée : vous pouvez l'activer sur un autre ordinateur.",
+                                parent=self.licence_dlg)
+
+    def open_licence(self):
+        if self.licence_dlg is not None and self.licence_dlg.winfo_exists():
+            self.licence_dlg.lift()
+            return
+        dlg = self.licence_dlg = tk.Toplevel(self)
+        dlg.title(f"Licence {APP_NAME}")
+        dlg.configure(bg=C["card"])
+        dlg.resizable(False, False)
+        dlg.transient(self)
+        try:
+            dlg.iconphoto(False, self._icon)
+        except (tk.TclError, AttributeError):
+            pass
+
+        def closed(_e=None):
+            if _e is None or _e.widget is dlg:
+                self.licence_dlg = None
+        dlg.bind("<Destroy>", closed)
+        self.licence_pad = tk.Frame(dlg, bg=C["card"])
+        self.licence_pad.pack(padx=28, pady=24)
+        self.licence_key = tk.StringVar()
+        self._fill_licence_dialog()
+
+    def _fill_licence_dialog(self):
+        pad = self.licence_pad
+        for child in pad.winfo_children():
+            child.destroy()
+        etat = self.licence.etat()
+        title = "✔ Licence active" if etat.utilisable else (
+            f"Activez {APP_NAME}" if etat.statut == lic.ABSENTE else "⚠ Licence inactive")
+        tk.Label(pad, text=title, font=self.f["h2"], bg=C["card"], fg=C["ink"]).pack(anchor="w")
+        tk.Frame(pad, bg=C["pink"], height=3, width=48).pack(anchor="w", pady=(6, 12))
+        if etat.utilisable:
+            lines = []
+            if etat.client:
+                lines.append(f"Titulaire : {etat.client}" + (f" ({etat.email})" if etat.email else ""))
+            lines.append(f"Clé : {etat.cle_masquee}")
+            if etat.derniere_verification:
+                lines.append("Dernière vérification : " + etat.derniere_verification.astimezone().strftime("%d/%m/%Y à %H:%M"))
+            if etat.hors_ligne_depuis_longtemps:
+                lines.append(f"⚠ Non vérifiée récemment : connectez-vous à Internet (blocage dans {etat.jours_restants} jour(s)).")
+            tk.Label(pad, text="\n".join(lines), font=self.f["body"], bg=C["card"], fg=C["ink"], justify="left"
+                     ).pack(anchor="w", pady=(0, 16))
+            row = tk.Frame(pad, bg=C["card"])
+            row.pack(anchor="e")
+            PillButton(row, "Libérer (changer d'ordinateur)", self._liberer, color=C["disabled"], hover=C["muted"],
+                       font=self.f["button"], height=42).pack(side="left", padx=(0, 10))
+            PillButton(row, "Vérifier maintenant", lambda: self._run_licence_action(self.licence.verifier),
+                       color=C["violet"], hover=C["violet_dark"], font=self.f["button"], height=42).pack(side="left")
+            return
+        tk.Label(pad, text=etat.message, font=self.f["body"], bg=C["card"], fg=C["ink"], wraplength=440,
+                 justify="left").pack(anchor="w", pady=(0, 12))
+        if etat.statut in (lic.ABSENTE, lic.INVALIDE):
+            entry = ttk.Entry(pad, textvariable=self.licence_key, width=52, font=self.f["body"])
+            entry.pack(fill="x")
+            tk.Label(pad, text="Elle figure dans l'e-mail de confirmation de votre achat (expéditeur : Lemon Squeezy).\n"
+                               "L'activation demande une connexion à Internet.",
+                     font=self.f["small"], bg=C["card"], fg=C["muted"], justify="left").pack(anchor="w", pady=(8, 16))
+            action = ("Activer", lambda: self._run_licence_action(self.licence.activer, self.licence_key.get()))
+            entry.focus_set()
+            self.licence_dlg.bind("<Return>", lambda e: action[1]())
+        else:
+            action = ("Vérifier maintenant", lambda: self._run_licence_action(self.licence.verifier))
+        row = tk.Frame(pad, bg=C["card"])
+        row.pack(fill="x")
+        if lic.LIEN_ACHAT:
+            link = tk.Label(row, text="Acheter une licence →", font=self.f["label"], bg=C["card"],
+                            fg=C["pink_dark"], cursor="hand2")
+            link.pack(side="left")
+            link.bind("<Button-1>", lambda e: webbrowser.open(lic.LIEN_ACHAT))
+        PillButton(row, action[0], action[1], color=C["violet"], hover=C["violet_dark"],
+                   font=self.f["button"], height=42).pack(side="right")
+
+    def _liberer(self):
+        if messagebox.askyesno("Libérer la licence", "Libérer la licence de cet ordinateur ? Vous pourrez "
+                               "l'activer sur un autre ordinateur.", parent=self.licence_dlg):
+            self._run_licence_action(self.licence.liberer)
 
     def _finish(self):
         self.progress.stop()

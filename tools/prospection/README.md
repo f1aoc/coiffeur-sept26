@@ -32,6 +32,29 @@ for resale, edit the constants at the top of `bridgetoleads.pyw`
 `python3 tools/prospection/assets/make_icon.py` (needs Pillow): it rewrites
 `assets/bridgetoleads.ico` (the .exe icon) and `brand_icon.py` (window icon).
 
+### Licence (Lemon Squeezy)
+
+Each copy is protected by a Lemon Squeezy licence key (`licence.py`, standard library only, same module as
+Chasseur de sites). On first launch the app asks for the key; it is re-checked online at startup and every
+24 h; offline, the app keeps working 14 days after the last successful check. After a **refund**, Lemon Squeezy
+disables the key and the next check blocks searches (results already on screen can still be exported).
+"Licence" button in the header: status, "Vérifier maintenant", "Libérer" (move to another computer).
+The signed licence file lives in `~/.bridgetoleads/licence.json`.
+
+One-time setup:
+
+1. In Lemon Squeezy, create the product "BridgeToLeads" (single payment), tick **Generate license keys**,
+   activation limit 2, unlimited length.
+2. Put your **store ID** and **product ID** in `licence.py` (`STORE_ID`, `PRODUITS`) and your payment link in
+   `LIEN_ACHAT` — without them, a key from any other Lemon Squeezy store would unlock the app.
+3. Test in Lemon Squeezy **test mode**: buy, activate, refund from Orders, then "Vérifier maintenant": blocked.
+
+Running from source with `BRIDGETOLEADS_SANS_LICENCE=1` skips the check (development only; the .exe / .app
+always ignore it). The command-line tool `find_no_website.py` has no licence check: it is not part of the
+packaged app. Note that this repository is public, so a technical user could rebuild the app without the
+check; making it private and delivering the files through Lemon Squeezy closes that gap.
+Tests: `python -m pytest tools/prospection/tests`.
+
 ### Sales page
 
 `site/` holds a static French sales page for BridgeToLeads (`index.html` +
