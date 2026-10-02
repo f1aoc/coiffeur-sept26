@@ -33,7 +33,7 @@ jobs:
       - name: Smoke test (CLI module imports in the build env)
         run: python tools/prospection/find_no_website.py --help
 
-      - name: Licence tests (Lemon Squeezy, simulated responses)
+      - name: Licence tests (simulated licence server)
         run: |
           pip install pytest
           python -m pytest -q tools/prospection/tests

@@ -53,7 +53,7 @@ C = {
 
 CONFIG_PATH = Path.home() / ".bridgetoleads.json"
 OLD_CONFIG_PATH = Path.home() / ".lead_finder.json"  # settings saved by the app's previous name
-LICENCE_DIR = Path.home() / ".bridgetoleads"  # licence.json (clé Lemon Squeezy, fichier signé)
+LICENCE_DIR = Path.home() / ".bridgetoleads"  # licence.json (clé de licence, fichier signé)
 
 OCCUPATIONS = [
     "coiffeur", "barbier", "institut de beauté", "onglerie", "esthéticienne",
@@ -522,7 +522,7 @@ class App(tk.Tk):
             pass
         self.after(100, self._poll_events)
 
-    # ---------- Licence (Lemon Squeezy) ----------
+    # ---------- Licence (paiement Stripe, serveur de licences) ----------
 
     def _first_launch(self):
         """Licence d'abord, puis clé Google ; vérification en ligne en arrière-plan, puis toutes les heures."""
@@ -544,7 +544,7 @@ class App(tk.Tk):
     def _licence_checked(self, etat):
         if self.licence_dlg is not None:
             self._fill_licence_dialog()
-        if etat.statut in (lic.DESACTIVEE, lic.EXPIREE, lic.A_VERIFIER, lic.INVALIDE):
+        if etat.statut in (lic.DESACTIVEE, lic.A_VERIFIER, lic.INVALIDE):
             self.status.set("Licence inactive : les recherches sont bloquées.")
             if self.licence_dlg is None:
                 messagebox.showwarning("Licence inactive", etat.message)
@@ -634,7 +634,7 @@ class App(tk.Tk):
         if etat.statut in (lic.ABSENTE, lic.INVALIDE):
             entry = ttk.Entry(pad, textvariable=self.licence_key, width=52, font=self.f["body"])
             entry.pack(fill="x")
-            tk.Label(pad, text="Elle figure dans l'e-mail de confirmation de votre achat (expéditeur : Lemon Squeezy).\n"
+            tk.Label(pad, text="Elle s'affiche sur la page « Merci » juste après votre paiement (elle commence par « BTL- »).\n"
                                "L'activation demande une connexion à Internet.",
                      font=self.f["small"], bg=C["card"], fg=C["muted"], justify="left").pack(anchor="w", pady=(8, 16))
             action = ("Activer", lambda: self._run_licence_action(self.licence.activer, self.licence_key.get()))

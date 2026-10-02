@@ -32,28 +32,24 @@ for resale, edit the constants at the top of `bridgetoleads.pyw`
 `python3 tools/prospection/assets/make_icon.py` (needs Pillow): it rewrites
 `assets/bridgetoleads.ico` (the .exe icon) and `brand_icon.py` (window icon).
 
-### Licence (Lemon Squeezy)
+### Licence (Stripe + licence server)
 
-Each copy is protected by a Lemon Squeezy licence key (`licence.py`, standard library only, same module as
-Chasseur de sites). On first launch the app asks for the key; it is re-checked online at startup and every
-24 h; offline, the app keeps working 14 days after the last successful check. After a **refund**, Lemon Squeezy
-disables the key and the next check blocks searches (results already on screen can still be exported).
-"Licence" button in the header: status, "Vérifier maintenant", "Libérer" (move to another computer).
-The signed licence file lives in `~/.bridgetoleads/licence.json`.
+Each copy is protected by a licence key (`licence.py`, standard library only, same module as Chasseur de sites).
+Customers pay through a Stripe payment link; Stripe redirects them to `site/merci.html`, which shows the key
+(`BTL-…`) fetched from the licence server (`serveur-licences/` on branch `claude/kind-volta-486eo6`, a free
+Cloudflare Worker that reads Stripe directly — setup guide in its README). On first launch the app asks for the
+key; it is re-checked online at startup and every 24 h; offline, the app keeps working 14 days after the last
+successful check. After a full **refund** or a dispute in Stripe, the next check blocks searches (results already
+on screen can still be exported). 2 computers per licence. "Licence" button in the header: status,
+"Vérifier maintenant", "Libérer" (move to another computer). Signed licence file: `~/.bridgetoleads/licence.json`.
 
-One-time setup:
-
-1. In Lemon Squeezy, create the product "BridgeToLeads" (single payment), tick **Generate license keys**,
-   activation limit 2, unlimited length.
-2. Put your **store ID** and **product ID** in `licence.py` (`STORE_ID`, `PRODUITS`) and your payment link in
-   `LIEN_ACHAT` — without them, a key from any other Lemon Squeezy store would unlock the app.
-3. Test in Lemon Squeezy **test mode**: buy, activate, refund from Orders, then "Vérifier maintenant": blocked.
+Setup: deploy the licence server, then set `SERVEUR` (server address) and `LIEN_ACHAT` (Stripe payment link) in
+`licence.py`, and `SERVEUR_LICENCES` in `site/merci.html`.
 
 Running from source with `BRIDGETOLEADS_SANS_LICENCE=1` skips the check (development only; the .exe / .app
 always ignore it). The command-line tool `find_no_website.py` has no licence check: it is not part of the
-packaged app. Note that this repository is public, so a technical user could rebuild the app without the
-check; making it private and delivering the files through Lemon Squeezy closes that gap.
-Tests: `python -m pytest tools/prospection/tests`.
+packaged app. This repository is public, so a technical user could rebuild the app without the check; making it
+private and hosting the downloads elsewhere closes that gap. Tests: `python -m pytest tools/prospection/tests`.
 
 ### Sales page
 

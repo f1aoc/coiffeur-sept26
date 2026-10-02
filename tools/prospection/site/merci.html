@@ -157,6 +157,17 @@
       .step { grid-template-columns: 1fr; gap: 14px; }
       .nav a.back span { display: none; }
     }
+
+    /* ---------- Clé de licence ---------- */
+    .licence-card { margin-top: 26px; background: var(--card); border-radius: 22px; padding: clamp(22px, 4vw, 32px);
+      box-shadow: 0 0 0 2px var(--border); }
+    .licence-card h2 { font-size: 1.3rem; }
+    .licence-card p { color: var(--muted); margin: 8px 0 0; }
+    .cle-box { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 16px; }
+    .cle-box code { flex: 1 1 260px; min-width: 0; overflow-wrap: anywhere; font-size: 1.05rem; font-weight: 700;
+      background: var(--bg); border: 2px dashed var(--violet); border-radius: 12px; padding: 12px 16px; color: var(--ink); }
+    .cle-box .btn { padding: 12px 20px; font-size: .95rem; }
+    .cle-attente { font-style: italic; }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation: none !important; transition: none !important; }
       .check path { stroke-dashoffset: 0; }
@@ -203,6 +214,21 @@
       </div>
     </section>
 
+
+    <!-- Clé de licence : affichée après le paiement Stripe.
+         Dans Stripe (lien de paiement → « Après le paiement » → rediriger vers votre site), indiquez :
+         https://VOTRE-SITE/…/merci.html?session_id={CHECKOUT_SESSION_ID} -->
+    <section class="licence-card" id="licence" aria-live="polite">
+      <h2>Votre clé de licence</h2>
+      <p id="cle-texte" class="cle-attente">Récupération de votre clé…</p>
+      <div class="cle-box" id="cle-box" hidden>
+        <code id="cle-valeur"></code>
+        <button class="btn btn-primary" type="button" id="cle-copier">Copier</button>
+      </div>
+      <p id="cle-aide" hidden><b>Conservez-la</b> (notez-la ou faites une capture d'écran) : le logiciel vous la demande au premier
+        lancement. Elle est valable sur 2 ordinateurs.</p>
+    </section>
+
     <section class="section">
       <div class="section-head">
         <span class="eyebrow">Guide de démarrage</span>
@@ -246,7 +272,7 @@
         <article class="step">
           <div>
             <h3>Activez votre licence, puis collez la clé Google</h3>
-            <p>Au premier lancement, la fenêtre <b>« Activez BridgeToLeads »</b> s'ouvre : collez la <b>clé de licence</b> reçue dans l'e-mail de confirmation de votre achat (expéditeur : <b>Lemon Squeezy</b>) et cliquez sur <span class="kbd">Activer</span> (connexion à Internet nécessaire). Elle est valable sur 2 ordinateurs.</p>
+            <p>Au premier lancement, la fenêtre <b>« Activez BridgeToLeads »</b> s'ouvre : collez la <b>clé de licence</b> affichée <a class="link" href="#licence">plus haut sur cette page</a> (elle commence par « BTL- ») et cliquez sur <span class="kbd">Activer</span> (connexion à Internet nécessaire). Elle est valable sur 2 ordinateurs.</p>
             <p>Ensuite, la fenêtre <b>« Clé API »</b> s'ouvre toute seule. Collez votre clé, cochez <b>« Mémoriser sur cet ordinateur »</b> et cliquez sur <b>Enregistrer</b>. En haut à droite s'affiche alors <b>« ✔ Clé configurée »</b>.</p>
           </div>
         </article>
@@ -272,6 +298,32 @@
 
   <script>
     document.getElementById("year").textContent = new Date().getFullYear();
+
+    // Clé de licence : demandée au serveur de licences grâce au numéro de paiement Stripe (session_id).
+    // À MODIFIER : adresse de votre serveur de licences (la même que SERVEUR dans le logiciel)
+    const SERVEUR_LICENCES = "";
+    (async () => {
+      const texte = document.getElementById("cle-texte");
+      const session = new URLSearchParams(location.search).get("session_id");
+      const dire = (m) => { texte.textContent = m; texte.classList.remove("cle-attente"); };
+      if (!session) return dire("Votre clé de licence s'affiche ici juste après votre paiement. Vous ne la voyez pas ? Écrivez au support avec l'adresse e-mail de votre achat.");
+      if (!SERVEUR_LICENCES) return dire("Serveur de licences non configuré : contactez le support avec l'adresse e-mail de votre achat.");
+      try {
+        const r = await fetch(`${SERVEUR_LICENCES.replace(/\/$/, "")}/cle?session_id=${encodeURIComponent(session)}`);
+        const d = await r.json();
+        if (!r.ok || !d.cle) throw new Error(d.erreur || r.status);
+        document.getElementById("cle-valeur").textContent = d.cle;
+        document.getElementById("cle-box").hidden = false;
+        document.getElementById("cle-aide").hidden = false;
+        dire(d.email ? `Merci${d.nom ? " " + d.nom : ""} ! Voici la clé de votre achat (${d.email}) :` : "Voici la clé de votre achat :");
+        document.getElementById("cle-copier").addEventListener("click", async (e) => {
+          try { await navigator.clipboard.writeText(d.cle); e.target.textContent = "Copiée ✓"; }
+          catch { getSelection().selectAllChildren(document.getElementById("cle-valeur")); }
+        });
+      } catch (e) {
+        dire("Votre clé n'a pas pu être récupérée pour le moment. Rechargez la page dans une minute ; si le problème continue, écrivez au support avec l'adresse e-mail de votre achat.");
+      }
+    })();
 
     // Put the visitor's platform first.
     if (/Mac/i.test(navigator.platform || navigator.userAgent)) {

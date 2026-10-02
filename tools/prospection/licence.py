@@ -1,13 +1,14 @@
-"""Licence Lemon Squeezy : activation, vérification périodique, désactivation après remboursement.
+"""Licence : activation, vérification périodique, désactivation après remboursement (paiement Stripe).
 
 Fonctionnement :
-- à l'achat, Lemon Squeezy envoie au client une clé de licence ;
-- « activer » enregistre cet ordinateur auprès de Lemon Squeezy (API License, sans clé secrète) ;
-- le logiciel revérifie la clé au démarrage puis toutes les 24 h ; si Lemon Squeezy répond que la clé
-  est désactivée (remboursement), expirée ou inconnue, l'application se bloque ;
-- sans Internet, elle reste utilisable TOLERANCE_JOURS jours après la dernière vérification réussie.
+- après le paiement Stripe, la page « Merci » affiche au client sa clé de licence (serveur-licences/) ;
+- « activer » enregistre cet ordinateur auprès du serveur de licences (2 ordinateurs par licence) ;
+- le logiciel revérifie la clé au démarrage puis toutes les 24 h ; le serveur interroge Stripe : si le
+  paiement a été remboursé ou contesté, il répond « désactivée » et le logiciel se bloque ;
+- sans Internet, il reste utilisable TOLERANCE_JOURS jours après la dernière vérification réussie.
 
-Ce module n'utilise que la bibliothèque standard : il peut être copié tel quel dans un autre logiciel.
+Ce module n'utilise que la bibliothèque standard : il peut être copié tel quel dans un autre logiciel
+(changer NOM_LOGICIEL, PRODUIT, _SEL et la variable de développement).
 Ce n'est pas inviolable (rien ne l'est côté client) : le but est d'empêcher « j'achète, je me fais
 rembourser et je garde le logiciel ».
 """
@@ -29,26 +30,28 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Callable
 
-# --- À MODIFIER : identifiants Lemon Squeezy de VOTRE boutique et de VOTRE produit -------------------
-# Ils empêchent qu'une clé achetée pour un autre produit (ou dans une autre boutique) ouvre ce logiciel.
-# Où les trouver : tableau de bord Lemon Squeezy → Settings → Stores (ID de la boutique) ;
-# Products → votre produit → l'ID figure dans l'adresse de la page. 0 = pas de contrôle (à éviter).
-STORE_ID = 0
-PRODUITS: tuple[int, ...] = ()
-# Lien d'achat affiché sur l'écran de licence (lien de paiement Lemon Squeezy de votre produit).
+# --- À MODIFIER -------------------------------------------------------------------------------------
+# Adresse de VOTRE serveur de licences (Cloudflare Worker, voir serveur-licences/README.md),
+# par exemple "https://licences.votre-nom.workers.dev".
+SERVEUR = ""
+# Lien de paiement Stripe du logiciel (affiché sur l'écran de licence).
 LIEN_ACHAT = ""
 # -----------------------------------------------------------------------------------------------------
 
 NOM_LOGICIEL = "BridgeToLeads"
-API = "https://api.lemonsqueezy.com/v1/licenses"
+PRODUIT = "bridgetoleads"  # même code que dans la variable PRODUITS du serveur
+VARIABLE_DEV = "BRIDGETOLEADS_SANS_LICENCE"
 TOLERANCE_JOURS = 14  # utilisable hors ligne pendant ce délai après la dernière vérification réussie
 INTERVALLE = timedelta(hours=24)  # revérification en ligne
 FICHIER = "licence.json"
-_SEL = b"bridgetoleads/licence/v1"
+_SEL = b"bridgetoleads/licence/v2"
 
-ACTIVE, ABSENTE, DESACTIVEE, EXPIREE, INVALIDE, A_VERIFIER = (
-    "active", "absente", "desactivee", "expiree", "invalide", "a_verifier",
-)
+ACTIVE, ABSENTE, DESACTIVEE, INVALIDE, A_VERIFIER = "active", "absente", "desactivee", "invalide", "a_verifier"
+
+MESSAGES_BLOCAGE = {
+    DESACTIVEE: "Cette licence a été désactivée (paiement remboursé ou contesté). Les recherches sont bloquées ; "
+                "les résultats déjà affichés peuvent encore être exportés.",
+}
 
 
 class ErreurLicence(Exception):
@@ -56,7 +59,7 @@ class ErreurLicence(Exception):
 
 
 class HorsLigne(Exception):
-    """Lemon Squeezy injoignable (pas d'Internet, pare-feu…)."""
+    """Serveur de licences injoignable (pas d'Internet, pare-feu, panne)."""
 
 
 Transport = Callable[[str, dict], tuple[int, dict]]
@@ -64,29 +67,31 @@ Transport = Callable[[str, dict], tuple[int, dict]]
 
 def transport_urllib(url: str, donnees: dict, timeout: float = 15.0) -> tuple[int, dict]:
     """POST application/x-www-form-urlencoded → (code HTTP, JSON). Respecte les proxys du système."""
+    if not url.startswith("https://") and not url.startswith("http://127.0.0.1"):
+        raise HorsLigne("serveur de licences non configuré")
     corps = urllib.parse.urlencode(donnees).encode()
     requete = urllib.request.Request(url, data=corps, method="POST", headers={
         "Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent": f"{NOM_LOGICIEL.replace(' ', '')}-licence/1.0",
+        "User-Agent": f"{NOM_LOGICIEL.replace(' ', '')}-licence/2.0",
     })
     try:
         with urllib.request.urlopen(requete, timeout=timeout) as r:
             return r.status, json.loads(r.read() or b"{}")
-    except urllib.error.HTTPError as e:  # 400 / 404 / 422 : réponse JSON avec « error »
+    except urllib.error.HTTPError as e:
+        if e.code >= 500:  # serveur ou Stripe en panne : comme hors ligne (délai de tolérance)
+            raise HorsLigne(f"serveur de licences indisponible (HTTP {e.code})") from e
         try:
             return e.code, json.loads(e.read() or b"{}")
         except ValueError:
-            if e.code >= 500:
-                raise HorsLigne(f"Lemon Squeezy indisponible (HTTP {e.code})") from e
             return e.code, {}
     except (urllib.error.URLError, OSError, ValueError) as e:
         raise HorsLigne(str(getattr(e, "reason", e))) from e
 
 
 def identifiant_machine() -> str:
-    """Empreinte stable et anonyme de l'ordinateur (aucune donnée personnelle envoyée)."""
+    """Empreinte stable et anonyme de l'ordinateur (16 caractères hexadécimaux, aucune donnée personnelle)."""
     brut = f"{uuid.getnode()}|{platform.node()}|{platform.system()}"
-    return hashlib.sha256(brut.encode()).hexdigest()[:32]
+    return hashlib.sha256(brut.encode()).hexdigest()[:16]
 
 
 def masquer(cle: str) -> str:
@@ -121,19 +126,19 @@ def _maintenant() -> datetime:
 
 
 def licence_desactivee_pour_developpement() -> bool:
-    """Lancé depuis le code source (pas l'exécutable) avec BRIDGETOLEADS_SANS_LICENCE=1 : tests et développement."""
-    return not getattr(sys, "frozen", False) and os.environ.get("BRIDGETOLEADS_SANS_LICENCE") == "1"
+    """Lancé depuis le code source (pas l'exécutable) avec la variable de développement à 1 : tests."""
+    return not getattr(sys, "frozen", False) and os.environ.get(VARIABLE_DEV) == "1"
 
 
 class Licence:
     def __init__(self, dossier: str | Path, transport: Transport | None = None,
-                 maintenant: Callable[[], datetime] = _maintenant, store_id: int | None = None,
-                 produits: tuple[int, ...] | None = None, machine: str | None = None):
+                 maintenant: Callable[[], datetime] = _maintenant, serveur: str | None = None,
+                 produit: str | None = None, machine: str | None = None):
         self.chemin = Path(dossier) / FICHIER
         self.transport = transport or transport_urllib
         self.maintenant = maintenant
-        self.store_id = STORE_ID if store_id is None else store_id
-        self.produits = PRODUITS if produits is None else produits
+        self.serveur = (SERVEUR if serveur is None else serveur).rstrip("/")
+        self.produit = produit or PRODUIT
         self.machine = machine or identifiant_machine()
 
     # --- fichier local signé ------------------------------------------------------------------------
@@ -166,19 +171,15 @@ class Licence:
         """État d'après le fichier local, sans appel réseau."""
         d = self._lire()
         if d is None:
-            return Etat(ABSENTE, "Saisissez la clé de licence reçue par e-mail après votre achat.")
+            return Etat(ABSENTE, "Saisissez la clé de licence affichée après votre achat (page « Merci »).")
         if d.get("altere"):
             return Etat(ABSENTE, "Le fichier de licence a été modifié ou vient d'un autre ordinateur : "
                                  "saisissez à nouveau votre clé de licence.")
         commun = dict(cle=d.get("cle", ""), client=d.get("client", ""), email=d.get("email", ""))
         statut = d.get("statut", INVALIDE)
         verifie = datetime.fromisoformat(d["verifie_le"]) if d.get("verifie_le") else None
-        if statut == DESACTIVEE:
-            return Etat(DESACTIVEE, "Cette licence a été désactivée (par exemple après un remboursement). "
-                                    "Les recherches sont bloquées ; les résultats déjà affichés peuvent encore être exportés.",
-                        derniere_verification=verifie, **commun)
-        if statut == EXPIREE:
-            return Etat(EXPIREE, "Cette licence a expiré.", derniere_verification=verifie, **commun)
+        if statut in MESSAGES_BLOCAGE:
+            return Etat(statut, MESSAGES_BLOCAGE[statut], derniere_verification=verifie, **commun)
         if statut != ACTIVE or verifie is None:
             return Etat(INVALIDE, d.get("message") or "Cette clé de licence n'est pas valable.", **commun)
         maintenant = self.maintenant()
@@ -194,52 +195,37 @@ class Licence:
 
     def verification_due(self) -> bool:
         d = self._lire()
-        if not d or d.get("altere") or d.get("statut") not in (ACTIVE,):
+        if not d or d.get("altere") or d.get("statut") != ACTIVE:
             return False
         verifie = datetime.fromisoformat(d["verifie_le"]) if d.get("verifie_le") else None
         return verifie is None or self.maintenant() - verifie >= INTERVALLE or verifie > self.maintenant()
 
-    # --- appels Lemon Squeezy -------------------------------------------------------------------------
+    # --- serveur de licences --------------------------------------------------------------------------
 
-    def _controler_produit(self, reponse: dict) -> None:
-        meta = reponse.get("meta") or {}
-        if self.store_id and meta.get("store_id") != self.store_id:
-            raise ErreurLicence(f"Cette clé de licence ne correspond pas à {NOM_LOGICIEL}.")
-        if self.produits and meta.get("product_id") not in self.produits:
-            raise ErreurLicence(f"Cette clé de licence est celle d'un autre logiciel, pas de {NOM_LOGICIEL}.")
-
-    @staticmethod
-    def _statut_lemon(reponse: dict) -> str:
-        return ((reponse.get("license_key") or {}).get("status") or "").lower()
+    def _appel(self, action: str, cle: str) -> tuple[int, dict]:
+        return self.transport(f"{self.serveur}/{action}", {"cle": cle, "produit": self.produit, "machine": self.machine})
 
     def activer(self, cle: str) -> Etat:
-        cle = cle.strip()
-        if len(cle) < 8:
-            raise ErreurLicence("Collez la clé de licence complète, telle qu'elle figure dans l'e-mail de Lemon Squeezy.")
-        nom = f"{NOM_LOGICIEL} – {platform.node() or 'ordinateur'}"[:180]
+        cle = "".join(cle.split())  # espaces et retours à la ligne collés par erreur
+        if len(cle) < 12:
+            raise ErreurLicence("Collez la clé de licence complète, telle qu'elle est affichée après votre achat.")
         try:
-            code, r = self.transport(f"{API}/activate", {"license_key": cle, "instance_name": nom})
+            code, r = self._appel("activer", cle)
         except HorsLigne as e:
             raise ErreurLicence("Impossible de joindre le serveur de licences : vérifiez votre connexion à Internet, "
                                 "puis réessayez.") from e
-        if not r.get("activated"):
-            erreur = (r.get("error") or "").lower()
-            if "limit" in erreur:
+        if not r.get("valide"):
+            statut = r.get("statut")
+            if statut == "limite":
                 raise ErreurLicence("Cette clé est déjà utilisée sur le nombre maximal d'ordinateurs. Libérez-la sur "
                                     "l'ancien ordinateur (bouton « Licence » → « Libérer »), ou contactez le support.")
-            statut = self._statut_lemon(r)
-            if statut == "disabled":
-                raise ErreurLicence("Cette licence a été désactivée (par exemple après un remboursement).")
-            if statut == "expired":
-                raise ErreurLicence("Cette licence a expiré.")
-            raise ErreurLicence("Clé de licence inconnue : vérifiez qu'elle est copiée en entier, sans espace.")
-        self._controler_produit(r)
-        meta = r.get("meta") or {}
-        self._ecrire({
-            "cle": cle, "instance": (r.get("instance") or {}).get("id", ""), "statut": ACTIVE,
-            "verifie_le": self.maintenant().isoformat(), "client": meta.get("customer_name", ""),
-            "email": meta.get("customer_email", ""), "produit": meta.get("product_name", ""),
-        })
+            if statut == "desactivee":
+                raise ErreurLicence("Cette licence a été désactivée (paiement remboursé ou contesté).")
+            if statut == "autre_produit":
+                raise ErreurLicence(f"Cette clé de licence est celle d'un autre logiciel, pas de {NOM_LOGICIEL}.")
+            raise ErreurLicence("Clé de licence inconnue : vérifiez qu'elle est copiée en entier.")
+        self._ecrire({"cle": cle, "statut": ACTIVE, "verifie_le": self.maintenant().isoformat(),
+                      "client": r.get("nom", ""), "email": r.get("email", "")})
         return self.etat()
 
     def verifier(self) -> Etat:
@@ -248,32 +234,25 @@ class Licence:
         if not d or d.get("altere") or not d.get("cle"):
             return self.etat()
         try:
-            code, r = self.transport(f"{API}/validate", {"license_key": d["cle"], "instance_id": d.get("instance", "")})
+            code, r = self._appel("verifier", d["cle"])
         except HorsLigne:
             return self.etat()
-        statut_lemon = self._statut_lemon(r)
-        if r.get("valid") and statut_lemon in ("active", "inactive", ""):
-            try:
-                self._controler_produit(r)
-            except ErreurLicence as e:
-                self._ecrire({**d, "statut": INVALIDE, "message": str(e)})
-                return self.etat()
-            self._ecrire({**d, "statut": ACTIVE, "verifie_le": self.maintenant().isoformat(), "message": ""})
-        elif statut_lemon == "disabled":
+        if r.get("valide"):
+            self._ecrire({**d, "statut": ACTIVE, "verifie_le": self.maintenant().isoformat(), "message": "",
+                          "client": r.get("nom") or d.get("client", ""), "email": r.get("email") or d.get("email", "")})
+        elif r.get("statut") == "desactivee":
             self._ecrire({**d, "statut": DESACTIVEE})
-        elif statut_lemon == "expired":
-            self._ecrire({**d, "statut": EXPIREE})
-        elif code in (400, 404, 422) or r.get("valid") is False:
+        elif r.get("statut") in ("machine_inconnue", "inconnue", "autre_produit", "machine_invalide"):
             self._ecrire({**d, "statut": INVALIDE, "message": "Cette licence n'est plus reconnue pour cet ordinateur : "
                                                               "saisissez à nouveau votre clé."})
-        return self.etat()
+        return self.etat()  # réponse inattendue : on ne change rien
 
     def liberer(self) -> None:
-        """Désactive cet ordinateur chez Lemon Squeezy (pour installer le logiciel ailleurs) et oublie la clé."""
+        """Retire cet ordinateur de la licence (pour l'activer ailleurs) et oublie la clé."""
         d = self._lire()
-        if d and not d.get("altere") and d.get("cle") and d.get("instance"):
+        if d and not d.get("altere") and d.get("cle"):
             try:
-                self.transport(f"{API}/deactivate", {"license_key": d["cle"], "instance_id": d["instance"]})
+                self._appel("liberer", d["cle"])
             except HorsLigne as e:
                 raise ErreurLicence("Impossible de joindre le serveur de licences : connectez-vous à Internet pour "
                                     "libérer la licence.") from e
