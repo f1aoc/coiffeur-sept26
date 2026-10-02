@@ -16,7 +16,7 @@ bridgetoleads/          ← page de vente BridgeToLeads (index.html + merci.html
 chasseur-de-sites/      ← page de vente Chasseur de sites (index.html + merci.html)
 ```
 
-Avant de publier, cherchez `À MODIFIER` dans les fichiers : prix, liens d'achat (liens de paiement Lemon Squeezy) et adresse e-mail.
+Avant de publier, cherchez `À MODIFIER` dans les fichiers : prix, liens d'achat (liens de paiement Stripe), adresse du serveur de licences (merci.html) et adresse e-mail.
 
 ## Ajouter un nouveau logiciel
 
