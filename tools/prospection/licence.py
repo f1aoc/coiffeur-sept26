@@ -33,9 +33,9 @@ from typing import Callable
 # --- À MODIFIER -------------------------------------------------------------------------------------
 # Adresse de VOTRE serveur de licences (Cloudflare Worker, voir serveur-licences/README.md),
 # par exemple "https://licences.votre-nom.workers.dev".
-SERVEUR = ""
+SERVEUR = "https://licences.patrick-tabountchikoff.workers.dev"
 # Lien de paiement Stripe du logiciel (affiché sur l'écran de licence).
-LIEN_ACHAT = ""
+LIEN_ACHAT = "https://buy.stripe.com/test_28EaEYeh51Ia5Sz74JcfK01"
 # -----------------------------------------------------------------------------------------------------
 
 NOM_LOGICIEL = "BridgeToLeads"
