@@ -196,3 +196,12 @@ test("diagnostic : variables, permissions Stripe et produits des derniers paieme
   const texte = JSON.stringify(corps);
   for (const secret of [ENV.STRIPE_SECRET_KEY, ENV.LICENCE_SECRET, "cs_test_", "contact@"]) assert.ok(!texte.includes(secret), secret);
 });
+
+test("PRODUITS accepté en type JSON (objet) ou avec des guillemets typographiques", async () => {
+  for (const PRODUITS of [JSON.parse(ENV.PRODUITS), ENV.PRODUITS.replaceAll('"', "”")]) {
+    const { session } = stripe.payer({ produit: BTL });
+    const r = await appel(`/cle?session_id=${session}`, undefined, { ...ENV, PRODUITS });
+    assert.equal(r.status, 200);
+    assert.match(r.corps.cle, /^BTL-/);
+  }
+});

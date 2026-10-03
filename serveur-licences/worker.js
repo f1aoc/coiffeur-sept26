@@ -111,8 +111,11 @@ async function stripe(env, methode, chemin, params = null) {
 }
 
 function produits(env) {
+  // Cloudflare type « JSON » : déjà un objet. Type « Text » : du texte, éventuellement avec des guillemets typographiques.
+  if (env.PRODUITS && typeof env.PRODUITS === "object") return env.PRODUITS;
   try {
-    return JSON.parse(env.PRODUITS || "{}");
+    const liste = JSON.parse(String(env.PRODUITS || "{}").replace(/[“”«»„″]/g, '"').trim());
+    return liste && typeof liste === "object" && !Array.isArray(liste) ? liste : {};
   } catch {
     return {};
   }
