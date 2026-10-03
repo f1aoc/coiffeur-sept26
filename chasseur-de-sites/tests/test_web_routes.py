@@ -114,16 +114,17 @@ def test_temps_restant_affiche(fabrique_web):
 
 
 def test_reprise_d_un_scan_interrompu(fabrique_web, stockage):
-    web = fabrique_web(duree=0.2)
-    scan_id = lancer_scan(web, "Coupure", "nom;url\n" + "\n".join(f"S{i};https://s{i}.test" for i in range(20)))
+    # 50 sites de 0,5 s, 10 en parallèle : environ 2,5 s de scan, interrompu bien avant la fin même sur une machine lente
+    web = fabrique_web(duree=0.5)
+    scan_id = lancer_scan(web, "Coupure", "nom;url\n" + "\n".join(f"S{i};https://s{i}.test" for i in range(50)))
     time.sleep(0.3)
     web.__exit__(None, None, None)  # l'application est fermée pendant le scan
     web2 = fabrique_web()
     fragment = web2.get(f"/analyses/{scan_id}/progression").text
-    faits = int(re.search(r"<strong>(\d+) / 20</strong>", fragment)[1])
-    assert "Interrompu" in fragment and "Reprendre" in fragment and faits < 20
+    faits = int(re.search(r"<strong>(\d+) / 50</strong>", fragment)[1])
+    assert "Interrompu" in fragment and "Reprendre" in fragment and faits < 50
     web2.post(f"/analyses/{scan_id}/reprendre")
-    assert "<strong>20 / 20</strong>" in attendre_fin(web2, scan_id)
+    assert "<strong>50 / 50</strong>" in attendre_fin(web2, scan_id)
 
 
 # --- Résultats ------------------------------------------------------------------
