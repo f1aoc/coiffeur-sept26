@@ -169,6 +169,7 @@
     .cle-box .btn { padding: 12px 20px; font-size: .95rem; }
     .cle-attente { font-style: italic; }
     .cle-box[hidden], .licence-card [hidden] { display: none; }
+    .licence-card .cle-logiciel { margin: 18px 0 -6px; font-weight: 700; color: var(--ink); }
     .licence-card .cle-detail { font-size: .8rem; overflow-wrap: anywhere; opacity: .8; }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -228,7 +229,7 @@
         <button class="btn btn-primary" type="button" id="cle-copier">Copier</button>
       </div>
       <p id="cle-aide" hidden><b>Conservez-la</b> (notez-la ou faites une capture d'écran) : le logiciel vous la demande au premier
-        lancement. Elle est valable sur 2 ordinateurs.</p>
+        lancement. Chaque clé est valable sur 2 ordinateurs.</p>
       <p id="cle-detail" class="cle-detail" hidden></p>
     </section>
 
@@ -305,6 +306,12 @@
     // Clé de licence : demandée au serveur de licences grâce au numéro de paiement Stripe (session_id).
     // À MODIFIER : adresse de votre serveur de licences (la même que SERVEUR dans le logiciel)
     const SERVEUR_LICENCES = "https://licences.patrick-tabountchikoff.workers.dev";
+    // Achat groupé : chaque logiciel renvoie vers sa propre page Merci (boutons de téléchargement), même paiement.
+    const CE_LOGICIEL = "bridgetoleads";
+    const LOGICIELS = {
+      "chasseur-de-sites": { nom: "Chasseur de sites", page: "../chasseur-de-sites/merci.html" },
+      "bridgetoleads": { nom: "BridgeToLeads", page: "../bridgetoleads/merci.html" },
+    };
     (async () => {
       const texte = document.getElementById("cle-texte");
       const session = new URLSearchParams(location.search).get("session_id");
@@ -329,14 +336,42 @@
       try { d = await r.json(); } catch { d = {}; }
       if (!r.ok || !d.cle) return echec(`${d.erreur || "HTTP " + r.status}${d.detail ? " — " + d.detail : ""}`);
       {
-        document.getElementById("cle-valeur").textContent = d.cle;
-        document.getElementById("cle-box").hidden = false;
-        document.getElementById("cle-aide").hidden = false;
-        dire(d.email ? `Merci${d.nom ? ", " + d.nom : ""} ! Voici la clé de votre achat (${d.email}) :` : "Voici la clé de votre achat :");
-        document.getElementById("cle-copier").addEventListener("click", async (e) => {
-          try { await navigator.clipboard.writeText(d.cle); e.target.textContent = "Copiée ✓"; }
-          catch { getSelection().selectAllChildren(document.getElementById("cle-valeur")); }
-        });
+        // Un achat peut contenir plusieurs logiciels : une clé (et un encadré) par logiciel.
+        const licences = d.licences && d.licences.length ? d.licences : [{ cle: d.cle, produit: d.produit }];
+        const modele = document.getElementById("cle-box");
+        for (const l of licences) {
+          const box = modele.cloneNode(true);
+          box.removeAttribute("id");
+          box.hidden = false;
+          const code = box.querySelector("code");
+          code.removeAttribute("id");
+          code.textContent = l.cle;
+          const info = LOGICIELS[l.produit];
+          if (licences.length > 1 && info) {
+            const titre = document.createElement("p");
+            titre.className = "cle-logiciel";
+            titre.textContent = info.nom;
+            if (l.produit !== CE_LOGICIEL) {
+              const a = document.createElement("a");
+              a.href = `${info.page}?session_id=${encodeURIComponent(session)}`;
+              a.textContent = `Télécharger ${info.nom} →`;
+              titre.append(" · ", a);
+            }
+            modele.parentNode.insertBefore(titre, modele);
+          }
+          modele.parentNode.insertBefore(box, modele);
+          const bouton = box.querySelector("button");
+          bouton.removeAttribute("id");
+          bouton.addEventListener("click", async () => {
+            try { await navigator.clipboard.writeText(l.cle); bouton.textContent = "Copiée ✓"; }
+            catch { getSelection().selectAllChildren(code); }
+          });
+        }
+        const aide = document.getElementById("cle-aide");
+        if (licences.length > 1) aide.querySelector("b").textContent = "Conservez-les";
+        aide.hidden = false;
+        const intro = licences.length > 1 ? "Voici les clés de votre achat" : "Voici la clé de votre achat";
+        dire(d.email ? `Merci${d.nom ? ", " + d.nom : ""} ! ${intro} (${d.email}) :` : `${intro} :`);
       }
       function echec(cause) {
         dire("Votre clé n'a pas pu être récupérée pour le moment. Rechargez la page dans une minute ; si le problème continue, écrivez au support avec l'adresse e-mail de votre achat.");
