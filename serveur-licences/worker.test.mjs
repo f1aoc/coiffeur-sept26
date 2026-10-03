@@ -72,7 +72,7 @@ test("activation, vérification et limite de 2 ordinateurs", async () => {
   const a3 = await appel("/activer", { cle, produit: "chasseur-de-sites", machine: PC3 });
   assert.equal(a3.status, 409);
   assert.equal(a3.corps.statut, "limite");
-  assert.equal(stripe.paiements.get(pi).metadata.instances, `${PC1},${PC2}`);
+  assert.equal(stripe.paiements.get(pi).metadata["instances_chasseur-de-sites"], `${PC1},${PC2}`);
   assert.equal((await appel("/verifier", { cle, produit: "chasseur-de-sites", machine: PC1 })).corps.statut, "active");
   assert.equal((await appel("/verifier", { cle, produit: "chasseur-de-sites", machine: PC3 })).corps.statut, "machine_inconnue");
 });
@@ -204,4 +204,43 @@ test("PRODUITS accepté en type JSON (objet) ou avec des guillemets typographiqu
     assert.equal(r.status, 200);
     assert.match(r.corps.cle, /^BTL-/);
   }
+});
+
+test("achat groupé des deux logiciels : une clé par logiciel, 2 ordinateurs chacun", async () => {
+  const { session, pi } = stripe.payer({ produit: [CDS, BTL] });
+  const { status, corps } = await appel(`/cle?session_id=${session}`);
+  assert.equal(status, 200);
+  assert.deepEqual(corps.licences.map((l) => l.produit), ["chasseur-de-sites", "bridgetoleads"]);
+  const [cds, btl] = corps.licences.map((l) => l.cle);
+  assert.match(cds, /^CDS-/);
+  assert.match(btl, /^BTL-/);
+  assert.equal(corps.cle, cds); // anciennes pages Merci : la première clé
+  assert.equal(stripe.paiements.get(pi).metadata.licence_cle, `${cds} , ${btl}`);
+  // Limites séparées : 2 PC pour Chasseur de sites ET 2 PC pour BridgeToLeads
+  for (const machine of [PC1, PC2]) {
+    assert.equal((await appel("/activer", { cle: cds, produit: "chasseur-de-sites", machine })).corps.valide, true);
+    assert.equal((await appel("/activer", { cle: btl, produit: "bridgetoleads", machine })).corps.valide, true);
+  }
+  assert.equal((await appel("/activer", { cle: btl, produit: "bridgetoleads", machine: PC3 })).corps.statut, "limite");
+  // Une clé ne vaut que pour son logiciel
+  assert.equal((await appel("/activer", { cle: cds, produit: "bridgetoleads", machine: PC1 })).corps.statut, "autre_produit");
+  // Remboursement partiel d'un seul logiciel : blocage manuel via la métadonnée « bloquer »
+  stripe.paiements.get(pi).metadata.bloquer = "bridgetoleads";
+  assert.equal((await appel("/verifier", { cle: btl, produit: "bridgetoleads", machine: PC1 })).corps.statut, "desactivee");
+  assert.equal((await appel("/verifier", { cle: cds, produit: "chasseur-de-sites", machine: PC1 })).corps.statut, "active");
+  // Remboursement total : les deux désactivées
+  stripe.rembourser(pi);
+  assert.equal((await appel("/verifier", { cle: cds, produit: "chasseur-de-sites", machine: PC1 })).corps.statut, "desactivee");
+});
+
+test("clés émises avant les achats groupés : leurs ordinateurs déjà activés restent reconnus", async () => {
+  const { cle, pi } = await acheter();
+  Object.assign(stripe.paiements.get(pi).metadata, { instances: PC1, produit: "chasseur-de-sites" });
+  assert.equal((await appel("/verifier", { cle, produit: "chasseur-de-sites", machine: PC1 })).corps.statut, "active");
+});
+
+test("un produit inconnu dans le panier n'empêche pas la clé du logiciel reconnu", async () => {
+  const { session } = stripe.payer({ produit: ["prod_Goodies", BTL] });
+  const { corps } = await appel(`/cle?session_id=${session}`);
+  assert.deepEqual(corps.licences.map((l) => l.produit), ["bridgetoleads"]);
 });

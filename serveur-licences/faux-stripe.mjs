@@ -23,7 +23,7 @@ export function creerFauxStripe(cleSecrete = "sk_test_faux") {
       id: session, created: 1790000000 + compteur, success_url: "https://ptabountchikoff.fr/merci.html?session_id={CHECKOUT_SESSION_ID}",
       payment_status: paye ? "paid" : "unpaid", payment_intent: pi,
       customer_details: { name: nom, email },
-      line_items: { data: [{ price: { id: `price_${compteur}`, product: produit } }] },
+      line_items: { data: [produit].flat().map((p, i) => ({ price: { id: `price_${compteur}_${i}`, product: p } })) },
     });
     return { session, pi };
   }

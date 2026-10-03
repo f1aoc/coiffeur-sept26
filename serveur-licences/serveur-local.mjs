@@ -1,6 +1,6 @@
 // Serveur de licences local, avec un faux Stripe en mémoire : tests de bout en bout des logiciels.
 //   node serveur-licences/serveur-local.mjs [port]   → affiche « PRET <port> »
-// Routes de test : GET /_test/payer?produit=prod_… → { session, pi } ; GET /_test/rembourser?pi=…
+// Routes de test : GET /_test/payer?produit=prod_…[&produit=prod_…] → { session, pi } ; GET /_test/rembourser?pi=…
 import http from "node:http";
 
 import { creerFauxStripe } from "./faux-stripe.mjs";
@@ -25,7 +25,7 @@ const serveur = http.createServer(async (req, res) => {
     res.writeHead(status, { "Content-Type": "application/json" });
     res.end(JSON.stringify(corps));
   };
-  if (url.pathname === "/_test/payer") return envoyer(200, stripe.payer({ produit: url.searchParams.get("produit") }));
+  if (url.pathname === "/_test/payer") return envoyer(200, stripe.payer({ produit: url.searchParams.getAll("produit") }));
   if (url.pathname === "/_test/rembourser") {
     stripe.rembourser(url.searchParams.get("pi"));
     return envoyer(200, { ok: true });

@@ -4,13 +4,18 @@
  * Stripe sert de base de données : la clé de licence et les ordinateurs activés sont rangés dans les
  * « metadata » du paiement (PaymentIntent). Aucun autre stockage, aucun webhook.
  *
- *   GET  /cle?session_id=cs_…   page « Merci » après paiement → { cle, produit, nom, email }
+ *   GET  /cle?session_id=cs_…   page « Merci » après paiement → { cle, produit, licences: [{ cle, produit }], nom, email }
+ *                               (une clé par logiciel acheté : un même paiement peut en contenir plusieurs)
  *   GET  /diagnostic            contrôle de la configuration (variables, clé Stripe, derniers produits payés)
  *   POST /activer   cle, produit, machine   → { valide, statut, nom, email }
  *   POST /verifier  cle, produit, machine   → { valide, statut }
  *   POST /liberer   cle, produit, machine   → { libere }
  *
- * Statuts : active · desactivee (remboursé ou contesté) · limite · machine_inconnue · inconnue · autre_produit.
+ * Statuts : active · desactivee (remboursé, contesté ou bloqué) · limite · machine_inconnue · inconnue · autre_produit.
+ *
+ * Métadonnées du paiement : licence_cle (les clés), instances_<code> (ordinateurs activés, par logiciel),
+ * bloquer (facultatif, à saisir à la main : codes de logiciels séparés par des virgules, ex. « bridgetoleads »,
+ * pour désactiver une seule licence après un remboursement partiel).
  *
  * Variables (Cloudflare → Worker → Settings → Variables and Secrets) :
  *   STRIPE_SECRET_KEY  secret : clé Stripe restreinte (voir README)
@@ -160,16 +165,22 @@ async function cle(sessionId, env) {
   }
   const session = s.corps;
   if (session.payment_status !== "paid" || !session.payment_intent) return [402, { erreur: "non_payee" }];
-  const prix = session.line_items?.data?.[0]?.price;
-  const idProduit = typeof prix?.product === "string" ? prix.product : prix?.product?.id;
-  const conf = produits(env)[idProduit];
-  if (!conf) return [400, { erreur: "produit_inconnu", detail: `${idProduit || "?"} absent de la variable PRODUITS` }];
+  // Une ligne par produit acheté (ventes croisées, « Add another product ») : une clé par logiciel reconnu.
+  const ids = (session.line_items?.data || [])
+    .map((ligne) => (typeof ligne.price?.product === "string" ? ligne.price.product : ligne.price?.product?.id))
+    .filter(Boolean);
+  const confs = [...new Set(ids)].map((id) => produits(env)[id]).filter(Boolean);
+  if (!confs.length) return [400, { erreur: "produit_inconnu", detail: `${ids.join(", ") || "?"} absent de la variable PRODUITS` }];
   const pi = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent.id;
-  const cleLicence = await fabriquerCle(env, conf, pi);
+  const licences = [];
+  for (const conf of confs) licences.push({ cle: await fabriquerCle(env, conf, pi), produit: conf.code });
   // Visible dans le tableau de bord Stripe (paiement → métadonnées), pour retrouver la clé d'un client.
-  await stripe(env, "POST", `/payment_intents/${pi}`, { "metadata[licence_cle]": cleLicence, "metadata[produit]": conf.code });
+  await stripe(env, "POST", `/payment_intents/${pi}`, {
+    "metadata[licence_cle]": licences.map((l) => l.cle).join(" , "),
+    "metadata[produit]": licences.map((l) => l.produit).join(","),
+  });
   return [200, {
-    cle: cleLicence, produit: conf.code,
+    cle: licences[0].cle, produit: licences[0].produit, licences,
     nom: session.customer_details?.name || "", email: session.customer_details?.email || "",
   }];
 }
@@ -195,16 +206,21 @@ async function licence(action, d, env) {
   if (p.status === 404) return [404, { valide: false, statut: "inconnue" }];
   const paiement = p.corps;
   const charge = paiement.latest_charge && typeof paiement.latest_charge === "object" ? paiement.latest_charge : {};
-  const instances = String(paiement.metadata?.instances || "").split(",").filter((x) => MACHINE.test(x));
+  const meta = paiement.metadata || {};
+  // Chaque logiciel a sa propre liste d'ordinateurs ; « instances » : clés émises avant les achats groupés.
+  const champ = `instances_${conf.code}`;
+  const ancien = meta[champ] === undefined && meta.produit === conf.code ? meta.instances : undefined;
+  const instances = String(meta[champ] ?? ancien ?? "").split(",").filter((x) => MACHINE.test(x));
   const client = { nom: charge.billing_details?.name || "", email: charge.billing_details?.email || "" };
-  const enregistrer = (liste) => stripe(env, "POST", `/payment_intents/${pi}`, { "metadata[instances]": liste.join(",") });
+  const enregistrer = (liste) => stripe(env, "POST", `/payment_intents/${pi}`, { [`metadata[${champ}]`]: liste.join(",") });
+  const bloque = String(meta.bloquer || "").split(",").map((x) => x.trim().toLowerCase()).includes(conf.code);
 
   if (action === "liberer") {
     if (instances.includes(machine)) await enregistrer(instances.filter((x) => x !== machine));
     return [200, { libere: true }];
   }
-  // Remboursement total ou contestation (chargeback) : licence désactivée.
-  if (paiement.status !== "succeeded" || charge.refunded === true || charge.disputed === true) {
+  // Remboursement total, contestation (chargeback) ou blocage manuel : licence désactivée.
+  if (paiement.status !== "succeeded" || charge.refunded === true || charge.disputed === true || bloque) {
     return [200, { valide: false, statut: "desactivee" }];
   }
   if (action === "activer") {

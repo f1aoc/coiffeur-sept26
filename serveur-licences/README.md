@@ -177,11 +177,18 @@ Les produits, liens et clés du mode test **n'existent pas** en mode réel.
 - **Retrouver la clé d'un client** : Stripe → **Payments** → recherchez son adresse e-mail → ouvrez le
   paiement → **Metadata** → `licence_cle`.
 - **Libérer un ordinateur** (client qui a changé de PC sans cliquer sur « Libérer ») : même endroit,
-  **Metadata** → bouton **Edit** → supprimez la ligne `instances` → **Save**. Le client réactive ensuite la clé
-  sur ses ordinateurs actuels.
+  **Metadata** → bouton **Edit** → supprimez la ligne `instances_chasseur-de-sites` ou `instances_bridgetoleads`
+  (ou `instances` pour les toutes premières clés) → **Save**. Le client réactive ensuite la clé sur ses
+  ordinateurs actuels.
+- **Achat des deux logiciels en une fois** (produit ajouté au lien de paiement, vente croisée) : la page
+  « Merci » affiche **une clé par logiciel**, chacune valable sur 2 ordinateurs. `licence_cle` contient alors
+  les deux clés.
 - **Ce qui désactive une licence** : un remboursement **total** (**Refund** du montant complet) ou une
   contestation (**Dispute**) du paiement. Un remboursement **partiel** (geste commercial) ne désactive pas la
   licence.
+- **Rembourser un seul des deux logiciels d'un achat groupé** : faites le remboursement partiel, puis dans
+  **Metadata** → **Edit** → **+ Add metadata** : clé `bloquer`, valeur `bridgetoleads` (ou `chasseur-de-sites`)
+  → **Save**. Seule cette licence est désactivée (pour les deux : `chasseur-de-sites,bridgetoleads`).
 
 ## Pour les développeurs
 
