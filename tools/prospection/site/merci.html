@@ -170,6 +170,9 @@
     .cle-attente { font-style: italic; }
     .cle-box[hidden], .licence-card [hidden] { display: none; }
     .licence-card .cle-logiciel { margin: 18px 0 -6px; font-weight: 700; color: var(--ink); }
+    .licence-card .cle-dl { margin-top: 12px; }
+    .licence-card .cle-dl .btn { padding: 11px 18px; font-size: .92rem; }
+    .licence-card .cle-guide { display: inline-block; margin-top: 10px; font-size: .9rem; }
     .licence-card .cle-detail { font-size: .8rem; overflow-wrap: anywhere; opacity: .8; }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -308,10 +311,14 @@
     const SERVEUR_LICENCES = "https://licences.patrick-tabountchikoff.workers.dev";
     // Achat groupé : chaque logiciel renvoie vers sa propre page Merci (boutons de téléchargement), même paiement.
     const CE_LOGICIEL = "bridgetoleads";
+    const TELECHARGEMENTS = "https://github.com/f1aoc/coiffeur-sept26/releases/download";
     const LOGICIELS = {
-      "chasseur-de-sites": { nom: "Chasseur de sites", page: "../chasseur-de-sites/merci.html" },
-      "bridgetoleads": { nom: "BridgeToLeads", page: "../bridgetoleads/merci.html" },
+      "chasseur-de-sites": { nom: "Chasseur de sites", page: "../chasseur-de-sites/merci.html",
+        fichiers: `${TELECHARGEMENTS}/chasseurdesites-latest/ChasseurDeSites` },
+      "bridgetoleads": { nom: "BridgeToLeads", page: "../bridgetoleads/merci.html",
+        fichiers: `${TELECHARGEMENTS}/bridgetoleads-latest/BridgeToLeads` },
     };
+    const SUR_MAC = /Mac/i.test(navigator.platform || navigator.userAgent);
     (async () => {
       const texte = document.getElementById("cle-texte");
       const session = new URLSearchParams(location.search).get("session_id");
@@ -351,15 +358,37 @@
             const titre = document.createElement("p");
             titre.className = "cle-logiciel";
             titre.textContent = info.nom;
-            if (l.produit !== CE_LOGICIEL) {
-              const a = document.createElement("a");
-              a.href = `${info.page}?session_id=${encodeURIComponent(session)}`;
-              a.textContent = `Télécharger ${info.nom} →`;
-              titre.append(" · ", a);
-            }
             modele.parentNode.insertBefore(titre, modele);
           }
           modele.parentNode.insertBefore(box, modele);
+          // Achat groupé : les boutons de téléchargement de chaque logiciel sous sa clé.
+          if (info && licences.length > 1) {
+            const dl = document.createElement("div");
+            dl.className = "dl-buttons cle-dl";
+            const boutons = [
+              ["win", ".exe", "Windows", "10 / 11"],
+              ["mac", "-mac-apple-silicon.zip", "Mac", "puce Apple M1–M4"],
+              ["mac", "-mac-intel.zip", "Mac", "Intel"],
+            ];
+            if (SUR_MAC) boutons.push(boutons.shift());
+            boutons.forEach(([os, fin, nom, detail], i) => {
+              const a = document.createElement("a");
+              a.className = `btn ${i === 0 ? "btn-primary" : "btn-ghost"}`;
+              a.href = info.fichiers + fin;
+              a.append(`${nom} `);
+              a.title = `Télécharger ${info.nom} (${nom} ${detail})`;
+              const petit = document.createElement("small");
+              petit.textContent = detail;
+              a.append(petit);
+              dl.append(a);
+            });
+            const guide = document.createElement("a");
+            guide.className = "link cle-guide";
+            guide.href = `${info.page}?session_id=${encodeURIComponent(session)}`;
+            guide.textContent = `Guide d'installation de ${info.nom} →`;
+            modele.parentNode.insertBefore(dl, modele);
+            if (l.produit !== CE_LOGICIEL) modele.parentNode.insertBefore(guide, modele);
+          }
           const bouton = box.querySelector("button");
           bouton.removeAttribute("id");
           bouton.addEventListener("click", async () => {
