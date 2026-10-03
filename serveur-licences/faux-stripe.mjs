@@ -7,7 +7,8 @@ export function creerFauxStripe(cleSecrete = "sk_test_faux") {
   const sessions = new Map();
   const paiements = new Map();
   let compteur = 0;
-  const etat = { panne: false, appels: [] };
+  // interdits : chemins refusés en 403, comme une clé restreinte à qui il manque une permission
+  const etat = { panne: false, appels: [], interdits: [] };
 
   function payer({ produit, nom = "Agence Durand", email = "contact@agence-durand.fr", paye = true } = {}) {
     compteur += 1;
@@ -19,7 +20,8 @@ export function creerFauxStripe(cleSecrete = "sk_test_faux") {
         billing_details: { name: nom, email } },
     });
     sessions.set(session, {
-      id: session, payment_status: paye ? "paid" : "unpaid", payment_intent: pi,
+      id: session, created: 1790000000 + compteur, success_url: "https://ptabountchikoff.fr/merci.html?session_id={CHECKOUT_SESSION_ID}",
+      payment_status: paye ? "paid" : "unpaid", payment_intent: pi,
       customer_details: { name: nom, email },
       line_items: { data: [{ price: { id: `price_${compteur}`, product: produit } }] },
     });
@@ -38,6 +40,14 @@ export function creerFauxStripe(cleSecrete = "sk_test_faux") {
     if (etat.panne) return new Response("{}", { status: 503 });
     if ((options.headers?.Authorization || "") !== `Bearer ${cleSecrete}`) {
       return Response.json({ error: { message: "Invalid API Key" } }, { status: 401 });
+    }
+    if (etat.interdits.some((chemin) => u.pathname.startsWith(chemin))) {
+      return Response.json({ error: { message: `The provided key does not have the required permissions for ${u.pathname}` } }, { status: 403 });
+    }
+    const liste = { "/v1/checkout/sessions": sessions, "/v1/payment_intents": paiements, "/v1/charges": new Map() }[u.pathname];
+    if (liste) {
+      const limite = Number(u.searchParams.get("limit") || 10);
+      return Response.json({ object: "list", data: [...liste.values()].reverse().slice(0, limite) });
     }
     let m;
     if ((m = u.pathname.match(/^\/v1\/checkout\/sessions\/([^/]+)$/))) {

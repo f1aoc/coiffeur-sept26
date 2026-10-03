@@ -139,3 +139,60 @@ test("routes inconnues et préflight CORS", async () => {
   const r = await worker.fetch(new Request("https://licences.test/cle", { method: "OPTIONS" }), ENV);
   assert.equal(r.status, 204);
 });
+
+test("erreurs de configuration : la page Merci reçoit la cause exacte", async () => {
+  const { session } = stripe.payer({ produit: CDS });
+  const sansCle = await appel(`/cle?session_id=${session}`, undefined, { ...ENV, STRIPE_SECRET_KEY: "" });
+  assert.equal(sansCle.status, 500);
+  assert.equal(sansCle.corps.erreur, "config_stripe_secret_key");
+  assert.equal((await appel(`/cle?session_id=${session}`, undefined, { ...ENV, PRODUITS: "{pas du json" })).corps.erreur, "config_produits");
+  const mauvaiseCle = await appel(`/cle?session_id=${session}`, undefined, { ...ENV, STRIPE_SECRET_KEY: "rk_test_autre" });
+  assert.equal(mauvaiseCle.status, 500);
+  assert.equal(mauvaiseCle.corps.erreur, "cle_stripe_refusee");
+  stripe.etat.interdits.push("/v1/checkout/sessions");
+  const permission = await appel(`/cle?session_id=${session}`);
+  assert.equal(permission.corps.erreur, "cle_stripe_refusee");
+  assert.match(permission.corps.detail, /required permissions/);
+  // Pour les logiciels, une erreur de configuration reste un 5xx : « hors ligne », jamais « licence désactivée ».
+  const { cle } = await acheter();
+  assert.equal((await appel("/verifier", { cle, produit: "chasseur-de-sites", machine: PC1 }, { ...ENV, STRIPE_SECRET_KEY: "" })).status, 500);
+});
+
+test("produit inconnu et session absente : le détail dit quoi corriger", async () => {
+  const autre = stripe.payer({ produit: "prod_AutreChose" });
+  assert.match((await appel(`/cle?session_id=${autre.session}`)).corps.detail, /prod_AutreChose/);
+  assert.match((await appel("/cle?session_id=cs_test_inexistante0")).corps.detail, /mode test/);
+  assert.match((await appel("/cle?session_id=")).corps.detail, /CHECKOUT_SESSION_ID/);
+});
+
+test("CORS : plusieurs adresses, « / » final et majuscules tolérés", async () => {
+  const env = { ...ENV, ORIGINE_SITE: "https://Ptabountchikoff.fr/, https://www.ptabountchikoff.fr" };
+  const depuis = async (origine) => (await worker.fetch(new Request("https://licences.test/", { headers: { Origin: origine } }), env))
+    .headers.get("access-control-allow-origin");
+  assert.equal(await depuis("https://ptabountchikoff.fr"), "https://ptabountchikoff.fr");
+  assert.equal(await depuis("https://www.ptabountchikoff.fr"), "https://www.ptabountchikoff.fr");
+  assert.equal(await depuis("https://pirate.example"), "https://ptabountchikoff.fr");
+  const ouvert = await worker.fetch(new Request("https://licences.test/", { headers: { Origin: "https://x.fr" } }), { ...ENV, ORIGINE_SITE: "" });
+  assert.equal(ouvert.headers.get("access-control-allow-origin"), "*");
+});
+
+test("diagnostic : variables, permissions Stripe et produits des derniers paiements, sans secret", async () => {
+  stripe.payer({ produit: CDS });
+  const inconnu = stripe.payer({ produit: "prod_Oublie" });
+  stripe.sessions.get(inconnu.session).success_url = "https://ptabountchikoff.fr/merci.html";
+  stripe.etat.interdits.push("/v1/charges");
+  const { status, corps } = await appel("/diagnostic");
+  assert.equal(status, 200);
+  assert.equal(corps.STRIPE_SECRET_KEY, "présente (mode test)");
+  assert.equal(corps.LICENCE_SECRET, "présente");
+  assert.equal(corps.PRODUITS.length, 2);
+  assert.equal(corps.stripe["Checkout Sessions (Read)"], "ok");
+  assert.match(corps.stripe["Charges (Read)"], /^REFUSÉ/);
+  assert.equal(corps.derniers_paiements[0].produit, "prod_Oublie");
+  assert.match(corps.derniers_paiements[0].reconnu, /^NON/);
+  assert.match(corps.derniers_paiements[0].redirection, /SANS \?session_id/);
+  assert.equal(corps.derniers_paiements[1].reconnu, "chasseur-de-sites");
+  assert.match(corps.derniers_paiements[1].redirection, /session_id ok/);
+  const texte = JSON.stringify(corps);
+  for (const secret of [ENV.STRIPE_SECRET_KEY, ENV.LICENCE_SECRET, "cs_test_", "contact@"]) assert.ok(!texte.includes(secret), secret);
+});

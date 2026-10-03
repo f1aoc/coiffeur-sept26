@@ -140,13 +140,34 @@ les logiciels. (Pour info, les emplacements sont : `SERVEUR` et `LIEN_ACHAT` dan
 5. Dans le logiciel : **Licence → Vérifier maintenant** → « Licence inactive », analyses (ou recherches)
    bloquées.
 
+### La clé ne s'affiche pas sur la page « Merci » ?
+
+1. Ouvrez dans votre navigateur l'adresse de votre serveur suivie de **`/diagnostic`**, par exemple
+   `https://licences.VOTRE-NOM.workers.dev/diagnostic`. Elle vérifie tout, sans rien afficher de secret :
+
+   | Ligne | Ce qui doit s'afficher | Sinon |
+   |---|---|---|
+   | `STRIPE_SECRET_KEY` | `présente (mode test)` | ajoutez/corrigez le secret (étape 5) |
+   | `LICENCE_SECRET` | `présente` | ajoutez le secret (étape 5) |
+   | `PRODUITS` | vos deux `prod_…` | corrigez la valeur JSON (étape 5) |
+   | `stripe` | `ok` sur les 3 lignes | `REFUSÉ` : ajoutez la permission nommée à la clé restreinte (étape 4) |
+   | `derniers_paiements` → `reconnu` | `chasseur-de-sites` ou `bridgetoleads` | `NON` : le `prod_…` affiché n'est pas dans `PRODUITS` |
+   | `derniers_paiements` → `redirection` | votre page merci.html suivie de `(session_id ok)` | corrigez **After payment** du lien (étape 3) |
+
+   Après chaque modification dans Cloudflare, cliquez sur **Deploy**.
+2. La page « Merci » affiche aussi, en petit, un **Détail technique** qui donne la cause. Par exemple
+   `connexion_impossible — page https://…` : l'adresse affichée doit figurer dans `ORIGINE_SITE` (plusieurs
+   adresses possibles, séparées par des virgules, par exemple `https://monsite.fr, https://www.monsite.fr`).
+3. Une fois corrigé, rechargez simplement la page « Merci » du paiement : la clé apparaît (inutile de repayer).
+
 ## Étape 8 — Passer en réel
 
 Les produits, liens et clés du mode test **n'existent pas** en mode réel.
 
 1. Désactivez **Test mode** (ou quittez la sandbox).
 2. Refaites les étapes **2, 3 et 4** en mode réel : vous obtenez de nouveaux `prod_…`, de nouveaux liens
-   `https://buy.stripe.com/…` et une clé restreinte `rk_live_…`.
+   `https://buy.stripe.com/…` et une clé restreinte `rk_live_…`. Sur chaque lien, cochez aussi
+   **Require customers to accept your terms of service** (case CGV sur la page de paiement).
 3. Dans Cloudflare (**Settings → Variables and Secrets**), modifiez `STRIPE_SECRET_KEY` (clé `rk_live_…`) et
    `PRODUITS` (nouveaux `prod_…`), puis **Deploy**. **Gardez le même `LICENCE_SECRET`.**
 4. Envoyez-moi les deux nouveaux liens de paiement réels : je mets à jour les pages de vente.

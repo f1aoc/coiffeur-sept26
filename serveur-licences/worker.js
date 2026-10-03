@@ -5,6 +5,7 @@
  * « metadata » du paiement (PaymentIntent). Aucun autre stockage, aucun webhook.
  *
  *   GET  /cle?session_id=cs_…   page « Merci » après paiement → { cle, produit, nom, email }
+ *   GET  /diagnostic            contrôle de la configuration (variables, clé Stripe, derniers produits payés)
  *   POST /activer   cle, produit, machine   → { valide, statut, nom, email }
  *   POST /verifier  cle, produit, machine   → { valide, statut }
  *   POST /liberer   cle, produit, machine   → { libere }
@@ -15,7 +16,11 @@
  *   STRIPE_SECRET_KEY  secret : clé Stripe restreinte (voir README)
  *   LICENCE_SECRET     secret : longue chaîne aléatoire qui signe les clés (ne jamais la changer ensuite)
  *   PRODUITS           texte JSON : {"prod_…": {"code": "chasseur-de-sites", "prefixe": "CDS", "limite": 2}, …}
- *   ORIGINE_SITE       texte : adresse de votre site (ex. https://ptabountchikoff.fr), pour la page Merci
+ *   ORIGINE_SITE       texte : adresse de votre site (ex. https://ptabountchikoff.fr), pour la page Merci ;
+ *                      plusieurs adresses possibles, séparées par des virgules
+ *
+ * Erreur de configuration (variable absente, clé Stripe refusée) : réponse 500 { erreur, detail } qui dit
+ * quoi corriger. Les logiciels traitent toute réponse 5xx comme « hors ligne » : les clients ne sont pas bloqués.
  */
 
 const STRIPE = "https://api.stripe.com/v1";
@@ -26,7 +31,8 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const cors = {
-      "Access-Control-Allow-Origin": env.ORIGINE_SITE || "*",
+      "Access-Control-Allow-Origin": origineAutorisee(env, request.headers.get("Origin")),
+      Vary: "Origin",
       "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type",
     };
@@ -37,6 +43,8 @@ export default {
         reponse = await cle(url.searchParams.get("session_id") || "", env);
       } else if (request.method === "POST" && ["/activer", "/verifier", "/liberer"].includes(url.pathname)) {
         reponse = await licence(url.pathname.slice(1), await lireCorps(request), env);
+      } else if (request.method === "GET" && url.pathname === "/diagnostic") {
+        reponse = await diagnostic(env);
       } else if (url.pathname === "/") {
         reponse = [200, { service: "licences ptabountchikoff", ok: true }];
       } else {
@@ -44,11 +52,45 @@ export default {
       }
       return json(reponse[0], reponse[1], cors);
     } catch (e) {
+      if (e instanceof ErreurConfig) return json(500, { erreur: e.code, detail: e.detail }, cors);
       // Stripe injoignable ou en panne : le logiciel le traite comme « hors ligne » (délai de tolérance).
       return json(502, { erreur: "stripe_indisponible" }, cors);
     }
   },
 };
+
+// --- Configuration -----------------------------------------------------------------------------------
+
+class ErreurConfig extends Error {
+  constructor(code, detail) {
+    super(`${code} : ${detail}`);
+    this.code = code;
+    this.detail = detail;
+  }
+}
+
+/** Sans espaces, sans « / » final, en minuscules : « https://Site.fr/ » et « https://site.fr » sont la même adresse. */
+function normaliserOrigine(texte) {
+  return String(texte || "").trim().replace(/\/+$/, "").toLowerCase();
+}
+
+function origines(env) {
+  return String(env.ORIGINE_SITE || "").split(",").map(normaliserOrigine).filter(Boolean);
+}
+
+function origineAutorisee(env, origine) {
+  const liste = origines(env);
+  if (!liste.length || liste.includes("*")) return "*";
+  return liste.includes(normaliserOrigine(origine)) ? origine : liste[0];
+}
+
+function exigerConfig(env) {
+  if (!env.STRIPE_SECRET_KEY) throw new ErreurConfig("config_stripe_secret_key", "variable STRIPE_SECRET_KEY absente");
+  if (!env.LICENCE_SECRET) throw new ErreurConfig("config_licence_secret", "variable LICENCE_SECRET absente");
+  if (!Object.keys(produits(env)).length) {
+    throw new ErreurConfig("config_produits", "variable PRODUITS absente ou JSON invalide");
+  }
+}
 
 // --- Stripe -------------------------------------------------------------------------------------------
 
@@ -60,7 +102,12 @@ async function stripe(env, methode, chemin, params = null) {
   }
   const r = await fetch(STRIPE + chemin, options);
   if (r.status >= 500) throw new Error(`Stripe HTTP ${r.status}`);
-  return { status: r.status, corps: await r.json() };
+  const corps = await r.json();
+  // 401 : clé invalide ; 403 : permission manquante (le message de Stripe la nomme).
+  if (r.status === 401 || r.status === 403) {
+    throw new ErreurConfig("cle_stripe_refusee", corps.error?.message || `Stripe HTTP ${r.status}`);
+  }
+  return { status: r.status, corps };
 }
 
 function produits(env) {
@@ -99,14 +146,21 @@ async function lireCle(env, texte) {
 // --- Page « Merci » : la clé du paiement qui vient d'avoir lieu ----------------------------------------
 
 async function cle(sessionId, env) {
-  if (!/^cs_[A-Za-z0-9_]{10,200}$/.test(sessionId)) return [400, { erreur: "session_invalide" }];
+  if (!/^cs_[A-Za-z0-9_]{10,200}$/.test(sessionId)) {
+    return [400, { erreur: "session_invalide", detail: "adresse de redirection Stripe sans ?session_id={CHECKOUT_SESSION_ID}" }];
+  }
+  exigerConfig(env);
   const s = await stripe(env, "GET", `/checkout/sessions/${sessionId}?expand[]=line_items`);
-  if (s.status === 404) return [404, { erreur: "session_inconnue" }];
+  if (s.status === 404) {
+    const mode = sessionId.startsWith("cs_test_") ? "test" : "réel";
+    return [404, { erreur: "session_inconnue", detail: `paiement en mode ${mode} : la clé Stripe du serveur doit être du même mode et du même compte` }];
+  }
   const session = s.corps;
   if (session.payment_status !== "paid" || !session.payment_intent) return [402, { erreur: "non_payee" }];
   const prix = session.line_items?.data?.[0]?.price;
-  const conf = produits(env)[typeof prix?.product === "string" ? prix.product : prix?.product?.id];
-  if (!conf) return [400, { erreur: "produit_inconnu" }];
+  const idProduit = typeof prix?.product === "string" ? prix.product : prix?.product?.id;
+  const conf = produits(env)[idProduit];
+  if (!conf) return [400, { erreur: "produit_inconnu", detail: `${idProduit || "?"} absent de la variable PRODUITS` }];
   const pi = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent.id;
   const cleLicence = await fabriquerCle(env, conf, pi);
   // Visible dans le tableau de bord Stripe (paiement → métadonnées), pour retrouver la clé d'un client.
@@ -126,6 +180,7 @@ async function lireCorps(request) {
 }
 
 async function licence(action, d, env) {
+  exigerConfig(env);
   const trouve = await lireCle(env, d.cle);
   if (!trouve) return [404, { valide: false, statut: "inconnue" }];
   const { conf, pi } = trouve;
@@ -158,6 +213,59 @@ async function licence(action, d, env) {
   }
   if (!instances.includes(machine)) return [200, { valide: false, statut: "machine_inconnue" }];
   return [200, { valide: true, statut: "active", ...client }];
+}
+
+// --- Diagnostic : ce qu'il faut corriger, sans rien révéler de secret ------------------------------------
+
+async function diagnostic(env) {
+  const cleStripe = String(env.STRIPE_SECRET_KEY || "");
+  const liste = produits(env);
+  const rapport = {
+    STRIPE_SECRET_KEY: !cleStripe ? "ABSENTE"
+      : /^(rk|sk)_test_/.test(cleStripe) ? "présente (mode test)"
+      : /^(rk|sk)_live_/.test(cleStripe) ? "présente (mode réel)"
+      : "INVALIDE : doit commencer par rk_test_ ou rk_live_",
+    LICENCE_SECRET: !env.LICENCE_SECRET ? "ABSENTE"
+      : String(env.LICENCE_SECRET).length < 20 ? "TROP COURTE (40 caractères conseillés)" : "présente",
+    PRODUITS: Object.keys(liste).length
+      ? Object.entries(liste).map(([id, p]) => `${id} → ${p.code} (${p.prefixe})`)
+      : "ABSENTE ou JSON INVALIDE",
+    ORIGINE_SITE: origines(env).length ? origines(env) : "non renseignée (toutes les adresses acceptées)",
+  };
+  if (!cleStripe) return [200, rapport];
+  // Les 5 derniers paiements par lien Stripe : leur produit est-il reconnu ? (ni nom, ni e-mail, ni identifiant de session)
+  const essais = { "Checkout Sessions (Read)": "/checkout/sessions?limit=5&expand[]=data.line_items", "Charges (Read)": "/charges?limit=1", "PaymentIntents": "/payment_intents?limit=1" };
+  rapport.stripe = {};
+  let sessions = [];
+  for (const [nom, chemin] of Object.entries(essais)) {
+    try {
+      const r = await stripe(env, "GET", chemin);
+      rapport.stripe[nom] = "ok";
+      if (nom.startsWith("Checkout")) sessions = r.corps.data || [];
+    } catch (e) {
+      rapport.stripe[nom] = e instanceof ErreurConfig ? `REFUSÉ : ${e.detail}` : "Stripe injoignable";
+    }
+  }
+  rapport.derniers_paiements = sessions.map((s) => {
+    const prix = s.line_items?.data?.[0]?.price;
+    const id = typeof prix?.product === "string" ? prix.product : prix?.product?.id;
+    return {
+      date: s.created ? new Date(s.created * 1000).toISOString().slice(0, 16).replace("T", " ") : "",
+      payee: s.payment_status === "paid",
+      produit: id || "?",
+      reconnu: liste[id] ? liste[id].code : "NON : ajoutez ce prod_… dans PRODUITS",
+      redirection: redirection(s.success_url),
+    };
+  });
+  return [200, rapport];
+}
+
+/** Page vers laquelle Stripe renvoie le client, sans la partie après « ? » (elle peut contenir le numéro de session). */
+function redirection(adresse) {
+  if (!adresse) return "AUCUNE : Stripe affiche sa propre page de confirmation (réglage After payment du lien)";
+  const page = adresse.split("?")[0];
+  const avecSession = adresse.includes("{CHECKOUT_SESSION_ID}") || /session_id=cs_/.test(adresse);
+  return avecSession ? `${page} (session_id ok)` : `${page} SANS ?session_id={CHECKOUT_SESSION_ID}`;
 }
 
 function json(status, corps, entetes) {

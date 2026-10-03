@@ -13,6 +13,7 @@ export const ENV_TEST = {
     prod_ChasseurDeSites: { code: "chasseur-de-sites", prefixe: "CDS", limite: 2 },
     prod_BridgeToLeads: { code: "bridgetoleads", prefixe: "BTL", limite: 2 },
   }),
+  ORIGINE_SITE: process.env.ORIGINE_SITE || "",
 };
 
 const stripe = creerFauxStripe(ENV_TEST.STRIPE_SECRET_KEY);
@@ -32,7 +33,8 @@ const serveur = http.createServer(async (req, res) => {
   let corps = "";
   for await (const morceau of req) corps += morceau;
   const requete = new Request(`http://localhost${req.url}`, {
-    method: req.method, headers: { "Content-Type": req.headers["content-type"] || "" },
+    method: req.method,
+    headers: { "Content-Type": req.headers["content-type"] || "", Origin: req.headers.origin || "" },
     body: ["GET", "HEAD"].includes(req.method) ? undefined : corps,
   });
   const reponse = await worker.fetch(requete, ENV_TEST);
