@@ -1,0 +1,54 @@
+# Site complet ptabountchikoff : vitrine + page de vente BridgeToLeads + page de vente Chasseur de sites,
+# en un seul ZIP publié dans la release « chasseurdesites-latest ».
+# Relancé à chaque modification de la vitrine ou des pages de vente de Chasseur de sites, et par le workflow
+# BridgeToLeads après la publication de sa page de vente (pour toujours embarquer la dernière version).
+name: Site complet ptabountchikoff
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/kind-volta-486eo6]
+    paths:
+      - "vitrine/**"
+      - "chasseur-de-sites/site/**"
+      - ".github/workflows/site-complet.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: site-complet
+  cancel-in-progress: true
+
+jobs:
+  vitrine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemblage du site complet
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p public/bridgetoleads public/chasseur-de-sites
+          cp -r vitrine/* public/
+          cp -r chasseur-de-sites/site/* public/chasseur-de-sites/
+          gh release download bridgetoleads-latest --repo "${{ github.repository }}" --pattern BridgeToLeads-site.zip --dir /tmp
+          unzip -q /tmp/BridgeToLeads-site.zip -d public/bridgetoleads
+          test -f public/index.html && test -f public/bridgetoleads/index.html && test -f public/chasseur-de-sites/index.html
+          # Garde-fou : les deux boutons d'achat doivent pointer vers Stripe
+          grep -q "buy.stripe.com" public/bridgetoleads/index.html || { echo "Page BridgeToLeads sans lien Stripe"; exit 1; }
+          grep -q "buy.stripe.com" public/chasseur-de-sites/index.html || { echo "Page Chasseur de sites sans lien Stripe"; exit 1; }
+          (cd public && zip -qr ../ptabountchikoff-site-complet.zip .)
+          unzip -l ptabountchikoff-site-complet.zip | tail -3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ptabountchikoff-site-complet
+          path: ptabountchikoff-site-complet.zip
+          retention-days: 30
+      - name: Publication dans la release « Chasseur de sites »
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: chasseurdesites-latest
+          target_commitish: ${{ github.sha }}
+          files: ptabountchikoff-site-complet.zip
+          prerelease: true

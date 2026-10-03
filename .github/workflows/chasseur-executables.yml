@@ -10,7 +10,6 @@ on:
   push:
     paths:
       - "chasseur-de-sites/**"
-      - "vitrine/**"
       - "serveur-licences/**"
       - ".github/workflows/chasseur-executables.yml"
 
@@ -162,35 +161,4 @@ jobs:
           tag_name: chasseurdesites-latest
           target_commitish: ${{ github.sha }}
           files: chasseur-de-sites/dist/ChasseurDeSites-mac-${{ matrix.label }}.zip
-          prerelease: true
-
-  # Vitrine ptabountchikoff : un seul ZIP prêt à mettre en ligne
-  #   index.html (vitrine) + bridgetoleads/ (page de vente BridgeToLeads) + chasseur-de-sites/ (page de vente)
-  vitrine:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Assemblage du site complet
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          mkdir -p public/bridgetoleads public/chasseur-de-sites
-          cp -r vitrine/* public/
-          cp -r chasseur-de-sites/site/* public/chasseur-de-sites/
-          gh release download bridgetoleads-latest --repo "${{ github.repository }}" --pattern BridgeToLeads-site.zip --dir /tmp
-          unzip -q /tmp/BridgeToLeads-site.zip -d public/bridgetoleads
-          test -f public/index.html && test -f public/bridgetoleads/index.html && test -f public/chasseur-de-sites/index.html
-          (cd public && zip -qr ../ptabountchikoff-site-complet.zip .)
-          unzip -l ptabountchikoff-site-complet.zip | tail -3
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ptabountchikoff-site-complet
-          path: ptabountchikoff-site-complet.zip
-          retention-days: 30
-      - name: Publication dans la release « Chasseur de sites »
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: chasseurdesites-latest
-          target_commitish: ${{ github.sha }}
-          files: ptabountchikoff-site-complet.zip
           prerelease: true
