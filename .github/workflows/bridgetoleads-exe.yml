@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: write
+  actions: write   # relancer l'assemblage du site complet (workflow site-complet.yml)
 
 jobs:
   build:
@@ -119,3 +120,14 @@ jobs:
           target_commitish: ${{ github.sha }}
           files: dist/BridgeToLeads-mac-${{ matrix.label }}.zip
           prerelease: true
+
+  # Le site complet (vitrine + pages de vente) embarque la page de vente BridgeToLeads publiée ci-dessus :
+  # on relance son assemblage pour qu'il prenne toujours la dernière version.
+  site-complet:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Relancer l'assemblage du site complet
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run site-complet.yml --repo "${{ github.repository }}" --ref claude/kind-volta-486eo6
