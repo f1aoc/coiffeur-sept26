@@ -26,3 +26,13 @@ Avant de publier, cherchez `À MODIFIER` dans les fichiers : prix, liens d'achat
    couleurs.
 3. Facultatif : ajoutez un bloc « zoom » (`<div class="spotlight …">`) et un lien dans le pied de page.
 4. Tant qu'il n'est pas prêt, la carte « Le prochain arrive » et la section « À venir » annoncent la suite.
+
+## Pages légales
+
+- `cgv.html` : conditions générales de vente et mentions légales.
+- `confidentialite.html` : politique de confidentialité.
+
+Les informations encore inconnues sont **surlignées en jaune** (classe `a-completer`) : adresse, SIRET, forme
+juridique, hébergeur, médiateur de la consommation. Remplacez-les dès que possible. Dans Stripe
+(**Settings → Business → Public details**), indiquez `https://www.vorelik.com/cgv.html` comme **Terms of service URL**
+et `https://www.vorelik.com/confidentialite.html` comme **Privacy policy URL**.
