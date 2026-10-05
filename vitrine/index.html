@@ -30,6 +30,8 @@
       /* Chasseur de sites */
       --cds-1: #1F5FBF; --cds-2: #0EA5E9; --cds-3: #F97316;
       --cds: linear-gradient(120deg, var(--cds-1), var(--cds-2) 70%);
+      --aex-1: #059669; --aex-2: #0E7490;
+      --aex: linear-gradient(120deg, var(--aex-1), var(--aex-2) 70%);
       /* Marque ombrelle */
       --aurora: linear-gradient(100deg, #A78BFA 0%, #F472B6 30%, #FB923C 55%, #38BDF8 80%, #818CF8 100%);
       --radius: 22px;
@@ -64,6 +66,7 @@
     .btn-glass:hover { background: rgba(255, 255, 255, .12); }
     .btn-btl { background: var(--btl); color: #fff; box-shadow: 0 14px 30px -12px rgba(236, 72, 153, .65); }
     .btn-cds { background: var(--cds); color: #fff; box-shadow: 0 14px 30px -12px rgba(31, 95, 191, .7); }
+    .btn-aex { background: var(--aex); color: #fff; box-shadow: 0 14px 30px -12px rgba(5, 150, 105, .6); }
     .btn-dark { background: var(--ink); color: #fff; }
 
     /* ---------- Navigation ---------- */
@@ -134,6 +137,7 @@
     .product::before { content: ""; position: absolute; inset: 0 0 auto; height: 6px; border-radius: 26px 26px 0 0; }
     .product.btl::before { background: var(--btl); }
     .product.cds::before { background: var(--cds); }
+    .product.aex::before { background: var(--aex); }
     .product-top { display: flex; align-items: center; gap: 14px; }
     .product-top img { width: 58px; height: 58px; border-radius: 16px; box-shadow: 0 10px 24px -10px rgba(15, 23, 51, .5); }
     .product h3 { font-size: 1.4rem; font-weight: 800; }
@@ -143,6 +147,7 @@
     .product li { display: flex; gap: 10px; }
     .product.btl li::before { content: "✔"; font-weight: 800; color: var(--btl-2); }
     .product.cds li::before { content: "✔"; font-weight: 800; color: var(--cds-1); }
+    .product.aex li::before { content: "✔"; font-weight: 800; color: var(--aex-1); }
     .product .foot { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
     .price { font-weight: 800; font-size: 1.5rem; }
     .price small { display: block; font-size: .75rem; font-weight: 500; color: var(--muted); }
@@ -151,6 +156,7 @@
 
     .product.soon { background: transparent; box-shadow: none; border: 2px dashed #C7D0E4; justify-content: center; text-align: center; align-items: center; }
     .product.soon:hover { transform: none; }
+    .catalog > .product.soon { grid-column: 1 / -1; }
     .soon-mark { width: 64px; height: 64px; border-radius: 18px; background: var(--aurora); display: grid; place-items: center; font-size: 1.8rem; color: var(--night); margin-bottom: 18px; animation: pulse 2.6s ease-in-out infinite; }
     @keyframes pulse { 50% { transform: scale(1.08) rotate(6deg); } }
     .product.soon p { color: var(--muted); margin: 10px 0 22px; }
@@ -364,6 +370,26 @@
             </div>
           </article>
 
+          <!-- ===== Logiciel : Audit express ===== -->
+          <article class="product aex reveal">
+            <div class="product-top">
+              <img src="assets/audit-express-icone.png" width="58" height="58" alt="">
+              <div><h3>Audit express</h3><span class="by">by ptabountchikoff</span></div>
+            </div>
+            <p class="pitch">Auditez un site en moins d'une minute et envoyez un rapport qui fait signer.</p>
+            <ul>
+              <li>Note de A à F et les 3 priorités, sans jargon</li>
+              <li>Rapport PDF à votre marque, avant / après</li>
+              <li>Audits en série depuis vos fichiers ou vos exports</li>
+            </ul>
+            <div class="chips"><span>Windows</span><span>Mac</span><span>Rapport PDF</span></div>
+            <div class="foot" style="margin-top:26px">
+              <!-- À MODIFIER : prix d'Audit express -->
+              <div class="price">67&nbsp;€<small>paiement unique</small></div>
+              <a class="btn btn-aex" href="audit-express/">Découvrir →</a>
+            </div>
+          </article>
+
           <!-- ===== Emplacement « à venir » =====
                Pour ajouter un logiciel : copiez un bloc <article class="product …"> ci-dessus, changez le nom,
                l'icône (dans assets/), les textes, le prix et le lien, puis collez-le avant ce bloc.
@@ -516,6 +542,7 @@
         <ul>
           <li><a href="bridgetoleads/">BridgeToLeads</a></li>
           <li><a href="chasseur-de-sites/">Chasseur de sites</a></li>
+          <li><a href="audit-express/">Audit express</a></li>
           <li><a href="#a-venir">Prochainement…</a></li>
         </ul>
       </div>

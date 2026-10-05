@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Audit express — L'audit de site clair et professionnel en moins d'une minute</title>
+  <meta name="description" content="Audit express note un site de A à F, repère les 3 problèmes qui lui font perdre des clients et prépare un rapport PDF à vos couleurs, compréhensible par un dirigeant de TPE.">
+  <meta property="og:title" content="Audit express — Un audit de site professionnel en moins d'une minute">
+  <meta property="og:description" content="Note de A à F, 3 priorités et rapport PDF à votre marque : de quoi transformer un prospect en rendez-vous.">
+  <meta property="og:image" content="assets/app-screenshot.jpg">
+  <link rel="icon" type="image/png" href="assets/icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --blue: #059669;
+      --blue-dark: #047857;
+      --sky: #0E7490;
+      --orange: #F97316;
+      --red: #DC2626;
+      --teal: #0D9488;
+      --yellow: #FDE68A;
+      --ink: #0F1E3D;
+      --muted: #56627A;
+      --bg: #F4F9F7;
+      --card: #FFFFFF;
+      --border: #DCEBE5;
+      --gradient: linear-gradient(120deg, var(--blue) 0%, var(--sky) 100%);
+      --radius: 20px;
+      --shadow: 0 20px 50px -20px rgba(4, 120, 87, .35);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    img { max-width: 100%; height: auto; display: block; }
+    a { color: inherit; }
+    .wrap { width: min(1140px, 100% - 32px); margin-inline: auto; }
+    .gradient-text { background: var(--gradient); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .hot { color: var(--orange); }
+    .eyebrow { display: inline-block; font-size: .8rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--blue); }
+    h1, h2, h3 { line-height: 1.15; margin: 0; letter-spacing: -.02em; }
+    h2 { font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 800; margin-top: 10px; }
+    .section { padding: clamp(64px, 10vw, 110px) 0; }
+    .section-head { max-width: 700px; margin: 0 auto clamp(36px, 6vw, 56px); text-align: center; }
+    .section-head p { color: var(--muted); font-size: 1.1rem; margin: 14px 0 0; }
+
+    /* ---------- Boutons ---------- */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+      padding: 15px 28px; border-radius: 999px;
+      font-weight: 700; font-size: 1rem; text-decoration: none;
+      transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+      border: 0; cursor: pointer;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn-primary { background: var(--blue); color: #fff; box-shadow: 0 12px 30px -10px rgba(5, 150, 105, .6); }
+    .btn-primary:hover { background: var(--blue-dark); }
+    .btn-ghost { background: #fff; color: var(--blue-dark); box-shadow: inset 0 0 0 2px var(--border); }
+    .btn-ghost:hover { box-shadow: inset 0 0 0 2px var(--blue); }
+    .btn-white { background: #fff; color: var(--blue-dark); }
+    .btn-white:hover { background: var(--yellow); }
+
+    /* ---------- Navigation ---------- */
+    .nav {
+      position: sticky; top: 0; z-index: 20;
+      background: rgba(244, 249, 247, .85);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid transparent; transition: border-color .2s ease;
+    }
+    .nav.scrolled { border-bottom-color: var(--border); }
+    .nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 72px; gap: 16px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.2rem; text-decoration: none; white-space: nowrap; }
+    .brand img { width: 36px; height: 36px; border-radius: 10px; }
+    .by { font-size: .72rem; font-weight: 500; font-style: italic; color: var(--muted); margin-left: -4px; align-self: flex-end; padding-bottom: 5px; }
+    .nav-links { display: flex; align-items: center; gap: 28px; }
+    .nav-links a { text-decoration: none; font-weight: 500; color: var(--muted); }
+    .nav-links a:hover { color: var(--blue); }
+    .nav .btn { padding: 11px 20px; font-size: .95rem; }
+    .nav-links a.btn { color: #fff; font-weight: 700; }
+    .short { display: none; }
+
+    /* ---------- En-tête ---------- */
+    .hero { position: relative; padding: clamp(48px, 8vw, 90px) 0 clamp(64px, 10vw, 120px); overflow: hidden; }
+    .blob { position: absolute; border-radius: 50%; filter: blur(70px); opacity: .4; z-index: 0; pointer-events: none; }
+    .blob.one { width: 460px; height: 460px; background: var(--sky); top: -120px; right: -120px; }
+    .blob.two { width: 380px; height: 380px; background: var(--blue); top: 260px; left: -160px; opacity: .25; }
+    .blob.three { width: 300px; height: 300px; background: var(--orange); bottom: -80px; right: 20%; opacity: .2; }
+    .hero .wrap { position: relative; z-index: 1; text-align: center; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #fff; border: 1px solid var(--border); border-radius: 999px;
+      padding: 7px 16px 7px 8px; font-size: .9rem; font-weight: 500; color: var(--muted);
+    }
+    .pill b { background: var(--orange); color: #fff; border-radius: 999px; padding: 3px 10px; font-size: .78rem; }
+    .hero h1 { font-size: clamp(2.3rem, 6vw, 4.2rem); font-weight: 800; margin: 22px auto 0; max-width: 920px; }
+    .hero .lead { font-size: clamp(1.05rem, 2.2vw, 1.25rem); color: var(--muted); max-width: 690px; margin: 22px auto 0; }
+    .hero-ctas { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin-top: 34px; }
+    .trust { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 26px; margin-top: 26px; color: var(--muted); font-size: .92rem; }
+    .trust span::before { content: "✔"; color: var(--teal); font-weight: 800; margin-right: 8px; }
+
+    .screen {
+      margin: clamp(44px, 7vw, 72px) auto 0; max-width: 1000px;
+      border-radius: 18px; background: #fff; padding: 10px;
+      box-shadow: 0 40px 90px -30px rgba(4, 120, 87, .5), 0 0 0 1px var(--border);
+      transform: perspective(1600px) rotateX(6deg); transition: transform .6s ease;
+    }
+    .screen:hover { transform: perspective(1600px) rotateX(0deg); }
+    .screen .bar { display: flex; gap: 7px; padding: 6px 8px 12px; }
+    .screen .bar i { width: 11px; height: 11px; border-radius: 50%; background: #E2E8F0; }
+    .screen .bar i:nth-child(1) { background: #F87171; }
+    .screen .bar i:nth-child(2) { background: #FBBF24; }
+    .screen .bar i:nth-child(3) { background: #34D399; }
+    .screen img { border-radius: 10px; }
+    .screen figcaption { font-size: .8rem; color: var(--muted); text-align: center; padding-top: 10px; }
+
+    /* ---------- Bandeau « pour qui » ---------- */
+    .strip { background: var(--ink); color: #fff; padding: 22px 0; overflow: hidden; }
+    .marquee { display: flex; gap: 48px; width: max-content; animation: scroll 40s linear infinite; }
+    .marquee span { font-weight: 700; font-size: 1.05rem; white-space: nowrap; opacity: .9; }
+    .marquee span::after { content: "✦"; margin-left: 48px; color: var(--orange); }
+    @keyframes scroll { to { transform: translateX(-50%); } }
+
+    /* ---------- Chiffres ---------- */
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+    .stat { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; text-align: center; }
+    .stat b { display: block; font-size: 2.4rem; font-weight: 800; line-height: 1.1; }
+    .stat span { color: var(--muted); }
+
+    /* ---------- Étapes ---------- */
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; counter-reset: step; }
+    .step { background: var(--card); border-radius: var(--radius); padding: 30px; border: 1px solid var(--border); }
+    .step::before {
+      counter-increment: step; content: counter(step);
+      display: grid; place-items: center; width: 48px; height: 48px; border-radius: 14px;
+      font-weight: 800; font-size: 1.3rem; color: #fff; margin-bottom: 18px;
+    }
+    .step:nth-child(1)::before { background: var(--blue); }
+    .step:nth-child(2)::before { background: var(--sky); }
+    .step:nth-child(3)::before { background: var(--orange); }
+    .step h3 { font-size: 1.25rem; }
+    .step p { color: var(--muted); margin: 10px 0 0; }
+
+    /* ---------- Fonctionnalités ---------- */
+    .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+    .feature { background: var(--card); border-radius: var(--radius); padding: 28px; border: 1px solid var(--border); transition: transform .25s ease, box-shadow .25s ease; }
+    .feature:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+    .icon { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; font-size: 1.5rem; margin-bottom: 18px; }
+    .i-red { background: #FDE2E2; color: var(--red); }
+    .i-orange { background: #FFEAD9; color: var(--orange); }
+    .i-blue { background: #D1FAE5; color: var(--blue); }
+    .i-sky { background: #DDF2FC; color: #0284C7; }
+    .i-teal { background: #D5F5F0; color: var(--teal); }
+    .i-yellow { background: #FEF3C7; color: #B45309; }
+    .feature h3 { font-size: 1.12rem; }
+    .feature p { color: var(--muted); margin: 8px 0 0; font-size: .97rem; }
+
+    /* ---------- Rapport PDF ---------- */
+    .duo { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(28px, 5vw, 60px); align-items: center; }
+    .duo ul { list-style: none; padding: 0; margin: 24px 0 0; display: grid; gap: 14px; }
+    .duo li { display: flex; gap: 12px; align-items: flex-start; }
+    .duo li::before {
+      content: "✔"; flex: none; display: grid; place-items: center; width: 26px; height: 26px;
+      border-radius: 8px; background: #D5F5F0; color: var(--teal); font-weight: 800; font-size: .85rem;
+    }
+    .paper { position: relative; max-width: 440px; margin-inline: auto; }
+    .paper img { border-radius: 10px; box-shadow: var(--shadow), 0 0 0 1px var(--border); transform: rotate(1.5deg); }
+    .paper::before { content: ""; position: absolute; inset: 14px -14px -14px 14px; background: #fff; border-radius: 10px; box-shadow: 0 0 0 1px var(--border); transform: rotate(-2deg); z-index: -1; }
+    .paper figcaption { font-size: .8rem; color: var(--muted); text-align: center; margin-top: 22px; }
+
+    /* ---------- Trio avec BridgeToLeads et Chasseur de sites ---------- */
+    .combo { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+    .combo article { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; }
+    .combo h3 { font-size: 1.15rem; }
+    .combo p { color: var(--muted); margin: 8px 0 0; }
+    .combo .tag { display: inline-block; font-size: .78rem; font-weight: 700; border-radius: 999px; padding: 3px 10px; margin-bottom: 12px; }
+
+    /* ---------- Tarif ---------- */
+    .pricing { display: grid; place-items: center; }
+    .price-card { position: relative; width: min(480px, 100%); background: var(--card); border-radius: 28px; padding: 40px 36px; box-shadow: var(--shadow); }
+    .price-card::before { content: ""; position: absolute; inset: -3px; border-radius: 30px; z-index: -1; background: linear-gradient(120deg, var(--blue), var(--sky) 60%, var(--orange)); }
+    .price-tag { display: inline-block; background: var(--yellow); color: var(--ink); font-weight: 700; font-size: .8rem; border-radius: 999px; padding: 4px 12px; }
+    .price { font-size: 3.6rem; font-weight: 800; line-height: 1; margin: 18px 0 4px; }
+    .price small { font-size: 1rem; font-weight: 500; color: var(--muted); }
+    .price-card ul { list-style: none; padding: 0; margin: 26px 0 30px; display: grid; gap: 12px; }
+    .price-card li { display: flex; gap: 12px; }
+    .price-card li::before { content: "✔"; color: var(--orange); font-weight: 800; }
+    .price-card .btn { width: 100%; }
+    .fine { font-size: .82rem; color: var(--muted); margin-top: 16px; text-align: center; }
+
+    /* ---------- FAQ ---------- */
+    .faq { max-width: 780px; margin: 0 auto; display: grid; gap: 14px; }
+    .faq details { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 0 24px; }
+    .faq details[open] { border-color: var(--blue); }
+    .faq summary { list-style: none; cursor: pointer; padding: 20px 0; font-weight: 700; font-size: 1.05rem; display: flex; justify-content: space-between; gap: 16px; }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::after { content: "+"; color: var(--blue); font-size: 1.5rem; line-height: 1; transition: transform .2s ease; }
+    .faq details[open] summary::after { transform: rotate(45deg); }
+    .faq details p { margin: 0 0 20px; color: var(--muted); }
+
+    /* ---------- Appel final ---------- */
+    .cta-band { background: linear-gradient(120deg, var(--blue-dark) 0%, var(--blue) 50%, var(--sky) 100%); color: #fff; border-radius: 32px; padding: clamp(40px, 7vw, 72px) clamp(24px, 6vw, 72px); text-align: center; }
+    .cta-band h2 { color: #fff; }
+    .cta-band p { font-size: 1.15rem; opacity: .95; max-width: 560px; margin: 16px auto 30px; }
+
+    footer { padding: 40px 0 50px; color: var(--muted); font-size: .9rem; }
+    footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; align-items: center; }
+
+    /* ---------- Apparition au défilement ---------- */
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease; }
+    .reveal.in { opacity: 1; transform: none; }
+    .no-js .reveal { opacity: 1; transform: none; }
+
+    /* ---------- Mobile ---------- */
+    @media (max-width: 900px) {
+      .steps, .features { grid-template-columns: 1fr 1fr; }
+      .duo, .combo { grid-template-columns: 1fr; }
+      .nav-links a:not(.btn) { display: none; }
+    }
+    @media (max-width: 620px) {
+      .nav .by { display: none; }
+      .long { display: none; }
+      .short { display: inline; }
+      .nav .btn { padding: 9px 18px; }
+      .pill { font-size: .8rem; }
+      .steps, .features, .stats { grid-template-columns: 1fr; }
+      .screen { transform: none; }
+      .hero-ctas .btn { width: 100%; }
+      .price { font-size: 3rem; }
+      .paper { max-width: calc(100% - 24px); }
+    }
+    @media (max-width: 400px) {
+      .brand { font-size: 1rem; gap: 8px; }
+      .brand img { width: 30px; height: 30px; }
+      .nav .btn { padding: 8px 14px; font-size: .9rem; }
+      footer .brand { flex-wrap: wrap; white-space: normal; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+      .reveal { opacity: 1; transform: none; }
+      .screen { transform: none; }
+    }
+  </style>
+</head>
+<body class="no-js">
+
+  <nav class="nav" id="nav">
+    <div class="wrap">
+      <a class="brand" href="#top"><img src="assets/icon.png" alt="">Audit express<small class="by">by ptabountchikoff</small></a>
+      <div class="nav-links">
+        <a href="#comment">Comment ça marche</a>
+        <a href="#rapport">Le rapport</a>
+        <a href="#tarif">Tarif</a>
+        <a href="#faq">FAQ</a>
+        <a class="btn btn-primary" href="#tarif"><span class="long">Obtenir Audit express</span><span class="short">Acheter</span></a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero" id="top">
+    <div class="blob one"></div><div class="blob two"></div><div class="blob three"></div>
+    <div class="wrap">
+      <span class="pill"><b>Nouveau</b> Logiciel d'audit de sites pour Windows et Mac</span>
+      <h1>Un audit de site clair et professionnel… <span class="gradient-text">en moins d'une minute.</span></h1>
+      <p class="lead">Tapez l'adresse d'un site : Audit express le note de A à F, repère <b>les 3 problèmes qui lui font perdre des clients</b> et prépare un rapport PDF à vos couleurs, que n'importe quel commerçant comprend.</p>
+      <div class="hero-ctas">
+        <a class="btn btn-primary" href="#tarif">Obtenir Audit express →</a>
+        <a class="btn btn-ghost" href="#rapport">Voir un exemple de rapport</a>
+      </div>
+      <div class="trust">
+        <span>Rapport PDF à votre nom et à vos couleurs</span>
+        <span>Sans jargon : écrit pour les dirigeants</span>
+        <span>Vos données restent sur votre ordinateur</span>
+      </div>
+      <figure class="screen reveal">
+        <div class="bar"><i></i><i></i><i></i></div>
+        <img src="assets/app-screenshot.jpg" width="1600" height="1000"
+             alt="Audit express : note globale C sur 100, notes par catégorie (performance, mobile, Google, sécurité, légal, accessibilité, contact) et aperçu du rapport PDF">
+        <figcaption>Aperçu de l'application (entreprise fictive)</figcaption>
+      </figure>
+    </div>
+  </header>
+
+  <div class="strip" aria-label="Pour qui ?">
+    <div class="marquee">
+      <span>Créateurs de sites web</span><span>Agences web</span><span>Freelances</span><span>Consultants SEO</span>
+      <span>Webmasters</span><span>Infogérants</span><span>Graphistes</span><span>Commerciaux</span>
+      <span>Créateurs de sites web</span><span>Agences web</span><span>Freelances</span><span>Consultants SEO</span>
+      <span>Webmasters</span><span>Infogérants</span><span>Graphistes</span><span>Commerciaux</span>
+    </div>
+  </div>
+
+  <section class="section" id="comment">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Comment ça marche</span>
+        <h2>Du site au rendez-vous en <span class="gradient-text">3 étapes</span></h2>
+        <p>Un dirigeant ne signe pas pour « un meilleur SEO ». Il signe quand il voit, noir sur blanc, ce que son site lui fait perdre.</p>
+      </div>
+      <div class="steps">
+        <article class="step reveal">
+          <h3>Tapez l'adresse du site</h3>
+          <p>Celle d'un prospect, d'un client ou d'un concurrent. Ou importez une liste entière (CSV ou Excel) pour auditer des dizaines de sites d'un coup.</p>
+        </article>
+        <article class="step reveal">
+          <h3>L'audit tourne tout seul</h3>
+          <p>Le site est visité comme le ferait un client, sur ordinateur et sur téléphone : vitesse, affichage mobile, Google, sécurité, contact, mentions légales, accessibilité.</p>
+        </article>
+        <article class="step reveal">
+          <h3>Envoyez le rapport</h3>
+          <p>Une note de A à F, les 3 priorités et un rapport PDF à vos couleurs. Retirez un point d'un clic avant l'envoi. L'e-mail d'accompagnement est déjà rédigé.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="fonctionnalites" style="padding-top:0">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Fonctionnalités</span>
+        <h2>Tout ce qu'il faut pour <span class="gradient-text">convaincre sans jargon</span></h2>
+      </div>
+      <div class="features">
+        <article class="feature reveal">
+          <div class="icon i-blue">A</div>
+          <h3>Une note que tout le monde comprend</h3>
+          <p>Note globale de A à F et une note par catégorie. Chaque problème est expliqué simplement, avec ce qu'il coûte en clients et comment le corriger.</p>
+        </article>
+        <article class="feature reveal">
+          <div class="icon i-orange">!</div>
+          <h3>Les 3 priorités</h3>
+          <p>Pas une liste de 80 erreurs techniques : les trois problèmes qui comptent le plus, classés par gravité. De quoi ouvrir la conversation.</p>
+        </article>
+        <article class="feature reveal">
+          <div class="icon i-sky">▣</div>
+          <h3>Rapport PDF à votre marque</h3>
+          <p>Votre logo, vos couleurs, vos coordonnées, un QR code de prise de rendez-vous et votre commentaire. 6 pages lisibles, même imprimées en noir et blanc.</p>
+        </article>
+        <article class="feature reveal">
+          <div class="icon i-yellow">≡</div>
+          <h3>Audits en série</h3>
+          <p>Importez un fichier CSV ou Excel (ou vos exports de Chasseur de sites et BridgeToLeads) : tous les rapports sont prêts dans un seul ZIP, avec un récapitulatif des notes.</p>
+        </article>
+        <article class="feature reveal">
+          <div class="icon i-teal">↗</div>
+          <h3>Rapport avant / après</h3>
+          <p>Après vos travaux, comparez deux audits du même site : la progression de chaque note en 2 pages. La preuve de votre travail, à montrer au client.</p>
+        </article>
+        <article class="feature reveal">
+          <div class="icon i-red">✎</div>
+          <h3>E-mail déjà rédigé</h3>
+          <p>Un message d'accompagnement personnalisé pour chaque audit, avec le nom de l'entreprise et son problème n°1. Vous relisez, vous envoyez.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0">
+    <div class="wrap">
+      <div class="stats">
+        <div class="stat reveal"><b class="gradient-text">37</b><span>contrôles sur chaque site, en 7 catégories</span></div>
+        <div class="stat reveal"><b class="gradient-text">&lt; 1 min</b><span>par audit en général, captures d'écran comprises</span></div>
+        <div class="stat reveal"><b class="gradient-text">0</b><span>chiffre inventé : un contrôle impossible est marqué « non vérifié » et ne compte pas</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="rapport" style="padding-top:0">
+    <div class="wrap duo">
+      <div class="reveal">
+        <span class="eyebrow">Rapport PDF</span>
+        <h2>Le rapport qui <span class="gradient-text">fait signer</span></h2>
+        <p style="color:var(--muted);font-size:1.08rem;margin:16px 0 0">Un document clair, à votre nom, qu'un dirigeant comprend en deux minutes.</p>
+        <ul>
+          <li>Les captures de son site, sur ordinateur et sur téléphone, avec les problèmes entourés</li>
+          <li>Sa note, ses 3 priorités et ses points forts</li>
+          <li>Chaque problème expliqué : pourquoi c'est grave, ce que ça coûte, comment le régler</li>
+          <li>Votre logo, vos coordonnées, votre commentaire et un QR code de rendez-vous</li>
+          <li>En option, une annexe technique avec tous les contrôles</li>
+        </ul>
+      </div>
+      <figure class="paper reveal">
+        <img src="assets/rapport-exemple.jpg" width="910" height="1287" loading="lazy"
+             alt="Page de synthèse d'un rapport : note C, 61 sur 100, notes par catégorie, les 3 priorités et les points forts d'une plomberie">
+        <figcaption>Exemple de rapport (entreprise et agence fictives)</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Le trio gagnant</span>
+        <h2>Vous avez déjà <span class="gradient-text">Chasseur de sites</span> ou <span class="gradient-text">BridgeToLeads</span>&nbsp;?</h2>
+        <p>Audit express importe directement leurs exports : trouvez vos prospects, puis envoyez-leur un audit détaillé.</p>
+      </div>
+      <div class="combo">
+        <article class="reveal">
+          <span class="tag" style="background:#EDE6FF;color:#6D28D9">BridgeToLeads</span>
+          <h3>Les entreprises sans site</h3>
+          <p>Il trouve celles qui n'ont pas de site. Audit express leur prépare un rapport « Vous n'avez pas encore de site » d'une page.</p>
+        </article>
+        <article class="reveal">
+          <span class="tag" style="background:#E3ECFB;color:#174A96">Chasseur de sites</span>
+          <h3>Les sites cassés ou dépassés</h3>
+          <p>Il repère, parmi des centaines d'entreprises, celles dont le site est en panne ou vieillissant.</p>
+        </article>
+        <article class="reveal">
+          <span class="tag" style="background:#D1FAE5;color:#047857">Audit express</span>
+          <h3>L'audit complet, site par site</h3>
+          <p>Il note chaque site de A à F et produit le rapport détaillé qui transforme un prospect en rendez-vous.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="tarif" style="padding-top:0">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Tarif</span>
+        <h2>Un prix simple, <span class="gradient-text">sans abonnement</span></h2>
+        <p>Un seul client signé rembourse largement le logiciel.</p>
+      </div>
+      <div class="pricing">
+        <div class="price-card reveal">
+          <span class="price-tag">Licence à vie</span>
+          <!-- À MODIFIER : votre prix -->
+          <div class="price">67&nbsp;€ <small>paiement unique</small></div>
+          <p style="color:var(--muted);margin:0">Pour 2 ordinateurs, Windows ou Mac. TVA non applicable, art. 293 B du CGI.</p>
+          <ul>
+            <li>Audits illimités, un par un ou par listes entières</li>
+            <li>Rapports PDF à votre marque (mention « Audit express » désactivable)</li>
+            <li>Rapport avant / après et rapport « sans site »</li>
+            <li>E-mail d'accompagnement rédigé pour chaque audit</li>
+            <li>Mises à jour incluses</li>
+          </ul>
+          <!-- Lien de paiement Stripe (mode TEST : à remplacer par le lien réel au lancement) -->
+          <a class="btn btn-primary" href="https://buy.stripe.com/test_cNi5kEgpd5Yq3KragVcfK02">Acheter Audit express →</a>
+          <p class="fine">Les mesures de vitesse viennent de Google PageSpeed. Une clé Google gratuite est conseillée pour auditer beaucoup de sites : sans elle, Google limite le nombre de mesures et la vitesse est alors marquée « non vérifiée ».</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="faq" style="padding-top:0">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">FAQ</span>
+        <h2>Questions fréquentes</h2>
+      </div>
+      <div class="faq">
+        <details class="reveal">
+          <summary>Faut-il savoir coder&nbsp;?</summary>
+          <p>Non. Vous téléchargez le logiciel, vous double-cliquez, et il s'ouvre dans votre navigateur. Tout se fait avec la souris, en français.</p>
+        </details>
+        <details class="reveal">
+          <summary>Que vérifie l'audit exactement&nbsp;?</summary>
+          <p>37 contrôles en 7 catégories : vitesse, affichage sur téléphone, visibilité sur Google, sécurité et technique, facilité de contact, conformité légale (mentions, cookies) et accessibilité. Chaque problème est accompagné de sa preuve.</p>
+        </details>
+        <details class="reveal">
+          <summary>Et si un contrôle ne peut pas être fait&nbsp;?</summary>
+          <p>Il est marqué « non vérifié » et ne compte pas dans la note : Audit express n'invente jamais un résultat. Vous pouvez aussi retirer d'un clic un point du rapport avant de l'envoyer.</p>
+        </details>
+        <details class="reveal">
+          <summary>La clé Google est-elle obligatoire&nbsp;?</summary>
+          <p>Non. Elle est gratuite et conseillée pour les mesures de vitesse (Google PageSpeed) : sans elle, Google limite le nombre de mesures. Elle se crée en quelques minutes ; le guide est sur la page de remerciement.</p>
+        </details>
+        <details class="reveal">
+          <summary>Est-ce que ça fonctionne sur Mac&nbsp;?</summary>
+          <p>Oui. Audit express fonctionne sur Windows 10 / 11 et sur Mac, avec une version pour les Mac à puce Apple (M1 à M4) et une pour les Mac Intel.</p>
+        </details>
+        <details class="reveal">
+          <summary>Windows ou le Mac affiche un avertissement au premier lancement, c'est normal&nbsp;?</summary>
+          <p>Oui, pour les logiciels récents qu'ils ne connaissent pas encore. Sur Windows, cliquez sur « Informations complémentaires » puis « Exécuter quand même ». Sur Mac, ouvrez Réglages Système → Confidentialité et sécurité et cliquez sur « Ouvrir quand même ». Vous ne le ferez qu'une fois.</p>
+        </details>
+        <details class="reveal">
+          <summary>Où sont stockées mes données&nbsp;?</summary>
+          <p>Sur votre ordinateur, et nulle part ailleurs : audits, rapports, logo et réglages. Seule l'adresse du site audité est transmise à Google PageSpeed pour mesurer sa vitesse, et votre clé de licence est vérifiée en ligne une fois par jour.</p>
+        </details>
+        <details class="reveal">
+          <summary>Comment fonctionne la licence&nbsp;?</summary>
+          <p>Juste après le paiement, votre clé de licence s'affiche sur la page de remerciement ; elle est valable sur 2 ordinateurs. Vous la collez au premier lancement, c'est tout. Elle est revérifiée en ligne une fois par jour ; sans Internet, le logiciel reste utilisable 14 jours. Pour changer d'ordinateur, libérez la licence en un clic. En cas de remboursement, la licence est désactivée.</p>
+        </details>
+        <details class="reveal">
+          <summary>Puis-je auditer le site de n'importe qui&nbsp;?</summary>
+          <p>Audit express visite un site comme un internaute : il lit seulement les pages publiques, respecte le fichier robots.txt du site et fait une pause entre deux pages pour ne pas le surcharger. Le rapport est indicatif et ne constitue ni un audit de sécurité ni un avis juridique.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0">
+    <div class="wrap">
+      <div class="cta-band reveal">
+        <h2>Votre prochain rendez-vous commence par un audit</h2>
+        <p>Auditez le site d'un prospect dès aujourd'hui et envoyez-lui un rapport qu'il aura envie de vous montrer.</p>
+        <a class="btn btn-white" href="#tarif">Obtenir Audit express →</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <a class="brand" href="#top"><img src="assets/icon.png" alt="">Audit express<small class="by">by ptabountchikoff</small></a>
+      <span>© <span id="year">2026</span> Audit express by ptabountchikoff · <a href="../cgv.html">CGV et mentions légales</a> · <a href="../confidentialite.html">Confidentialité</a> · Google PageSpeed est une marque de Google LLC.</span>
+    </div>
+  </footer>
+
+  <script>
+    document.body.classList.remove("no-js");
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    const nav = document.getElementById("nav");
+    const onScroll = () => nav.classList.toggle("scrolled", window.scrollY > 8);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+
+    const items = document.querySelectorAll(".reveal");
+    if ("IntersectionObserver" in window) {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+        });
+      }, { threshold: 0.12 });
+      items.forEach((el, i) => { el.style.transitionDelay = (i % 3) * 90 + "ms"; io.observe(el); });
+    } else {
+      items.forEach((el) => el.classList.add("in"));
+    }
+  </script>
+</body>
+</html>
