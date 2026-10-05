@@ -327,6 +327,9 @@
         fichiers: `${TELECHARGEMENTS}/chasseurdesites-latest/ChasseurDeSites` },
       "bridgetoleads": { nom: "BridgeToLeads", page: "../bridgetoleads/merci.html",
         fichiers: `${TELECHARGEMENTS}/bridgetoleads-latest/BridgeToLeads` },
+      "audit-express": { nom: "Audit express", page: "../audit-express/merci.html",
+        fichiers: "https://github.com/f1aoc/audit_express/releases/download/auditexpress-latest/AuditExpress",
+        windows: "https://github.com/f1aoc/audit_express/releases/download/auditexpress-latest/AuditExpress-Windows.zip" },
     };
     const SUR_MAC = /Mac/i.test(navigator.platform || navigator.userAgent);
     (async () => {
@@ -384,7 +387,7 @@
             boutons.forEach(([os, fin, nom, detail], i) => {
               const a = document.createElement("a");
               a.className = `btn ${i === 0 ? "btn-primary" : "btn-ghost"}`;
-              a.href = info.fichiers + fin;
+              a.href = (os === "win" && info.windows) || info.fichiers + fin;  // Audit express : .zip sous Windows
               a.append(`${nom} `);
               a.title = `Télécharger ${info.nom} (${nom} ${detail})`;
               const petit = document.createElement("small");
