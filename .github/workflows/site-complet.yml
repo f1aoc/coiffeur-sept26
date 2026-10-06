@@ -12,6 +12,7 @@ on:
       - "vitrine/**"
       - "chasseur-de-sites/site/**"
       - "audit-express/site/**"
+      - ".github/scripts/**"
       - ".github/workflows/site-complet.yml"
 
 permissions:
@@ -41,7 +42,9 @@ jobs:
           grep -q "buy.stripe.com" public/bridgetoleads/index.html || { echo "Page BridgeToLeads sans lien Stripe"; exit 1; }
           grep -q "buy.stripe.com" public/chasseur-de-sites/index.html || { echo "Page Chasseur de sites sans lien Stripe"; exit 1; }
           grep -q "buy.stripe.com" public/audit-express/index.html || { echo "Page Audit express sans lien Stripe"; exit 1; }
-          for f in cgv.html confidentialite.html; do test -f "public/$f" || { echo "Page $f absente"; exit 1; }; done
+          for f in cgv.html confidentialite.html cookies.html; do test -f "public/$f" || { echo "Page $f absente"; exit 1; }; done
+          # Police hébergée sur le site au lieu de Google Fonts (aucune adresse IP de visiteur transmise à Google)
+          python3 .github/scripts/polices_locales.py public
           if grep -q "a-completer" public/cgv.html public/confidentialite.html; then echo "::warning::CGV ou confidentialité : informations encore à compléter (surlignées en jaune)"; fi
           (cd public && zip -qr ../ptabountchikoff-site-complet.zip .)
           unzip -l ptabountchikoff-site-complet.zip | tail -3
