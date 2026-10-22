@@ -11,6 +11,10 @@ permissions:
   contents: write
   actions: write   # relancer l'assemblage du site complet (workflow site-complet.yml)
 
+env:
+  # Cloudflare R2 (téléchargements de la page Merci) : actif dès que le secret R2_ACCOUNT_ID existe
+  R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+
 jobs:
   build:
     runs-on: windows-latest
@@ -69,6 +73,18 @@ jobs:
             dist/BridgeToLeads.exe
             dist/BridgeToLeads-site.zip
           prerelease: true
+      - name: Copie dans Cloudflare R2 (téléchargements de la page Merci)
+        if: ${{ env.R2_ACCOUNT_ID != '' }}
+        shell: bash
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          AWS_REQUEST_CHECKSUM_CALCULATION: WHEN_REQUIRED
+          AWS_RESPONSE_CHECKSUM_VALIDATION: WHEN_REQUIRED
+        run: >
+          aws s3 cp "dist/BridgeToLeads.exe" "s3://vorelik-telechargements/BridgeToLeads.exe"
+          --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com" --no-progress
 
   build-mac:
     strategy:
@@ -120,6 +136,18 @@ jobs:
           target_commitish: ${{ github.sha }}
           files: dist/BridgeToLeads-mac-${{ matrix.label }}.zip
           prerelease: true
+      - name: Copie dans Cloudflare R2 (téléchargements de la page Merci)
+        if: ${{ env.R2_ACCOUNT_ID != '' }}
+        shell: bash
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          AWS_REQUEST_CHECKSUM_CALCULATION: WHEN_REQUIRED
+          AWS_RESPONSE_CHECKSUM_VALIDATION: WHEN_REQUIRED
+        run: >
+          aws s3 cp "dist/BridgeToLeads-mac-${{ matrix.label }}.zip" "s3://vorelik-telechargements/BridgeToLeads-mac-${{ matrix.label }}.zip"
+          --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com" --no-progress
 
   # Le site complet (vitrine + pages de vente) embarque la page de vente BridgeToLeads publiée ci-dessus :
   # on relance son assemblage pour qu'il prenne toujours la dernière version.
