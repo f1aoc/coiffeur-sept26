@@ -53,6 +53,7 @@ jobs:
           (cd public && zip -qr ../ptabountchikoff-site-complet.zip .)
           unzip -l ptabountchikoff-site-complet.zip | tail -3
       - uses: actions/upload-artifact@v4
+        continue-on-error: true  # quota de stockage GitHub plein : la publication continue
         with:
           name: ptabountchikoff-site-complet
           path: ptabountchikoff-site-complet.zip
