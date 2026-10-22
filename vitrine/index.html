@@ -157,6 +157,23 @@
     .product.soon { background: transparent; box-shadow: none; border: 2px dashed #C7D0E4; justify-content: center; text-align: center; align-items: center; }
     .product.soon:hover { transform: none; }
     .catalog > .product.soon { grid-column: 1 / -1; }
+    /* Pack des trois logiciels : bandeau pleine largeur */
+    .catalog > .product.pack { grid-column: 1 / -1; display: grid; grid-template-columns: auto 1fr auto; gap: 28px; align-items: center; }
+    .product.pack::before { background: linear-gradient(120deg, var(--btl-1), var(--cds-1) 50%, var(--aex-1)); }
+    .pack-icons { display: flex; }
+    .pack-icons img { width: 58px; height: 58px; border-radius: 16px; box-shadow: 0 0 0 4px #fff; }
+    .pack-icons img + img { margin-left: -14px; }
+    .product.pack h3 { margin: 0; }
+    .product.pack .pitch { margin: 6px 0 0; }
+    .pack-price { text-align: right; }
+    .pack-price .price s { font-size: 1rem; font-weight: 500; color: var(--muted); margin-right: 6px; }
+    .pack-price .gain { display: inline-block; margin: 6px 0 12px; font-size: .82rem; font-weight: 700; color: #047857; background: #D1FAE5; border-radius: 999px; padding: 3px 10px; }
+    .btn-pack { background: linear-gradient(120deg, var(--btl-1), var(--cds-1) 50%, var(--aex-1)); color: #fff; box-shadow: 0 14px 30px -12px rgba(31, 95, 191, .6); }
+    @media (max-width: 760px) {
+      .catalog > .product.pack { grid-template-columns: 1fr; text-align: center; }
+      .pack-icons { justify-content: center; }
+      .pack-price { text-align: center; }
+    }
     .soon-mark { width: 64px; height: 64px; border-radius: 18px; background: var(--aurora); display: grid; place-items: center; font-size: 1.8rem; color: var(--night); margin-bottom: 18px; animation: pulse 2.6s ease-in-out infinite; }
     @keyframes pulse { 50% { transform: scale(1.08) rotate(6deg); } }
     .product.soon p { color: var(--muted); margin: 10px 0 22px; }
@@ -345,7 +362,7 @@
             <div class="chips"><span>Windows</span><span>Mac</span><span>Export Excel</span></div>
             <div class="foot" style="margin-top:26px">
               <!-- À MODIFIER : prix de BridgeToLeads -->
-              <div class="price">49&nbsp;€<small>paiement unique</small></div>
+              <div class="price">59&nbsp;€<small>paiement unique</small></div>
               <a class="btn btn-btl" href="bridgetoleads/">Découvrir →</a>
             </div>
           </article>
@@ -365,7 +382,7 @@
             <div class="chips"><span>Windows</span><span>Mac</span><span>Rapport PDF</span></div>
             <div class="foot" style="margin-top:26px">
               <!-- À MODIFIER : prix de Chasseur de sites -->
-              <div class="price">79&nbsp;€<small>paiement unique</small></div>
+              <div class="price">99&nbsp;€<small>paiement unique</small></div>
               <a class="btn btn-cds" href="chasseur-de-sites/">Découvrir →</a>
             </div>
           </article>
@@ -385,8 +402,27 @@
             <div class="chips"><span>Windows</span><span>Mac</span><span>Rapport PDF</span></div>
             <div class="foot" style="margin-top:26px">
               <!-- À MODIFIER : prix d'Audit express -->
-              <div class="price">67&nbsp;€<small>paiement unique</small></div>
+              <div class="price">79&nbsp;€<small>paiement unique</small></div>
               <a class="btn btn-aex" href="audit-express/">Découvrir →</a>
+            </div>
+          </article>
+
+          <!-- ===== Pack des trois logiciels ===== -->
+          <article class="product pack reveal" id="pack">
+            <div class="pack-icons">
+              <img src="assets/bridgetoleads-icone.png" alt=""><img src="assets/chasseur-icone.png" alt=""><img src="assets/audit-express-icone.png" alt="">
+            </div>
+            <div>
+              <h3>Le pack VORELIK : les 3 logiciels</h3>
+              <p class="pitch">BridgeToLeads, Chasseur de sites et Audit express : trouvez les entreprises sans site ou au site
+                dépassé, puis envoyez-leur un audit qui fait signer. Une clé par logiciel, chacune valable sur 2 ordinateurs.</p>
+            </div>
+            <div class="pack-price">
+              <!-- À MODIFIER : prix du pack -->
+              <div class="price"><s>237&nbsp;€</s>179&nbsp;€<small>paiement unique</small></div>
+              <span class="gain">58&nbsp;€ d'économie</span><br>
+              <!-- Lien de paiement Stripe du pack (A_REMPLACER : le lien réel au lancement) -->
+              <a class="btn btn-pack" href="https://buy.stripe.com/A_REMPLACER_PACK">Acheter le pack →</a>
             </div>
           </article>
 

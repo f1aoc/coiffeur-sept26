@@ -45,7 +45,11 @@ jobs:
           for f in cgv.html confidentialite.html cookies.html; do test -f "public/$f" || { echo "Page $f absente"; exit 1; }; done
           # Police hébergée sur le site au lieu de Google Fonts (aucune adresse IP de visiteur transmise à Google)
           python3 .github/scripts/polices_locales.py public
-          if grep -q "a-completer" public/cgv.html public/confidentialite.html; then echo "::warning::CGV ou confidentialité : informations encore à compléter (surlignées en jaune)"; fi
+          # Téléchargements depuis Cloudflare R2 dès que les 9 fichiers y sont (sinon liens GitHub, avec un avertissement)
+          python3 .github/scripts/telechargements_r2.py public
+          test -f public/pack/merci.html || { echo "Page Merci du pack absente"; exit 1; }
+          if grep -q "A_REMPLACER" public/index.html; then echo "::warning::Lien de paiement Stripe du pack encore à renseigner (vitrine/index.html)"; fi
+          if grep -q 'class="a-completer"' public/cgv.html public/confidentialite.html; then echo "::warning::CGV ou confidentialité : informations encore à compléter (surlignées en jaune)"; fi
           (cd public && zip -qr ../ptabountchikoff-site-complet.zip .)
           unzip -l ptabountchikoff-site-complet.zip | tail -3
       - uses: actions/upload-artifact@v4

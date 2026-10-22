@@ -244,3 +244,78 @@ test("un produit inconnu dans le panier n'empêche pas la clé du logiciel recon
   const { corps } = await appel(`/cle?session_id=${session}`);
   assert.deepEqual(corps.licences.map((l) => l.produit), ["bridgetoleads"]);
 });
+
+// --- Pack de logiciels ---------------------------------------------------------------------------------
+
+const AEX = "prod_AuditExpress";
+const PACK = "prod_Pack";
+const ENV_PACK = {
+  ...ENV,
+  PRODUITS: JSON.stringify({
+    [CDS]: { code: "chasseur-de-sites", prefixe: "CDS", limite: 2 },
+    [BTL]: { code: "bridgetoleads", prefixe: "BTL" },
+    [AEX]: { code: "audit-express", prefixe: "AEX", limite: 2 },
+    [PACK]: { pack: ["bridgetoleads", "chasseur-de-sites", "audit-express"] },
+  }),
+};
+
+test("pack : une clé par logiciel, chacune activable sur 2 ordinateurs, désactivées ensemble au remboursement", async () => {
+  const { session, pi } = stripe.payer({ produit: PACK });
+  const r = await appel(`/cle?session_id=${session}`, undefined, ENV_PACK);
+  assert.equal(r.status, 200);
+  assert.deepEqual(r.corps.licences.map((l) => l.produit), ["bridgetoleads", "chasseur-de-sites", "audit-express"]);
+  assert.match(r.corps.licences[2].cle, /^AEX-/);
+  for (const l of r.corps.licences) {
+    const ok = await appel("/activer", { cle: l.cle, produit: l.produit, machine: PC1 }, ENV_PACK);
+    assert.equal(ok.corps.statut, "active", l.produit);
+    await appel("/activer", { cle: l.cle, produit: l.produit, machine: PC2 }, ENV_PACK);
+    assert.equal((await appel("/activer", { cle: l.cle, produit: l.produit, machine: PC3 }, ENV_PACK)).corps.statut, "limite");
+  }
+  stripe.rembourser(pi);
+  for (const l of r.corps.licences) {
+    assert.equal((await appel("/verifier", { cle: l.cle, produit: l.produit, machine: PC1 }, ENV_PACK)).corps.statut, "desactivee");
+  }
+});
+
+test("pack acheté avec un logiciel qu'il contient déjà : pas de clé en double", async () => {
+  const { session } = stripe.payer({ produit: [PACK, AEX] });
+  const r = await appel(`/cle?session_id=${session}`, undefined, ENV_PACK);
+  assert.equal(r.corps.licences.length, 3);
+});
+
+test("diagnostic : le pack est affiché avec ses logiciels", async () => {
+  const r = await appel("/diagnostic", undefined, ENV_PACK);
+  assert.ok(r.corps.PRODUITS.includes(`${PACK} → pack : bridgetoleads, chasseur-de-sites, audit-express`));
+  assert.match(r.corps.TELECHARGEMENTS, /ABSENTE/);
+});
+
+// --- Téléchargements (R2) ------------------------------------------------------------------------------
+
+function fauxR2(fichiers) {
+  const objet = (cle) => fichiers[cle] === undefined ? null
+    : { key: cle, size: fichiers[cle].length, httpEtag: `"${cle}"`, body: new Blob([fichiers[cle]]).stream() };
+  return {
+    get: async (cle) => objet(cle),
+    head: async (cle) => objet(cle),
+    list: async () => ({ objects: Object.keys(fichiers).map((k) => ({ key: k, size: fichiers[k].length })) }),
+  };
+}
+
+test("téléchargement depuis R2 : fichier servi en pièce jointe, noms suspects refusés", async () => {
+  const env = { ...ENV, TELECHARGEMENTS: fauxR2({ "AuditExpress-Windows.zip": "PK-contenu", "BridgeToLeads.exe": "MZ" }) };
+  const r = await worker.fetch(new Request("https://licences.test/telecharger/AuditExpress-Windows.zip"), env);
+  assert.equal(r.status, 200);
+  assert.equal(await r.text(), "PK-contenu");
+  assert.equal(r.headers.get("content-disposition"), 'attachment; filename="AuditExpress-Windows.zip"');
+  assert.equal(r.headers.get("content-type"), "application/zip");
+  const tete = await worker.fetch(new Request("https://licences.test/telecharger/BridgeToLeads.exe", { method: "HEAD" }), env);
+  assert.equal(tete.status, 200);
+  assert.equal(tete.headers.get("content-length"), "2");
+  for (const nom of ["absent.zip", "..%2Fsecret.zip", "notes.txt", "a/b.zip"]) {
+    assert.equal((await worker.fetch(new Request(`https://licences.test/telecharger/${nom}`), env)).status, 404, nom);
+  }
+  const sansR2 = await worker.fetch(new Request("https://licences.test/telecharger/BridgeToLeads.exe"), ENV);
+  assert.equal(sansR2.status, 500);
+  const diag = await appel("/diagnostic", undefined, env);
+  assert.deepEqual(diag.corps.fichiers, ["AuditExpress-Windows.zip (0 Mo)", "BridgeToLeads.exe (0 Mo)"]);
+});

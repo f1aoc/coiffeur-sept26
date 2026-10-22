@@ -7,6 +7,7 @@
  *   GET  /cle?session_id=cs_…   page « Merci » après paiement → { cle, produit, licences: [{ cle, produit }], nom, email }
  *                               (une clé par logiciel acheté : un même paiement peut en contenir plusieurs)
  *   GET  /diagnostic            contrôle de la configuration (variables, clé Stripe, derniers produits payés)
+ *   GET  /telecharger/<fichier> téléchargement d'un logiciel (.exe / .zip) rangé dans Cloudflare R2
  *   POST /activer   cle, produit, machine   → { valide, statut, nom, email }
  *   POST /verifier  cle, produit, machine   → { valide, statut }
  *   POST /liberer   cle, produit, machine   → { libere }
@@ -21,6 +22,9 @@
  *   STRIPE_SECRET_KEY  secret : clé Stripe restreinte (voir README)
  *   LICENCE_SECRET     secret : longue chaîne aléatoire qui signe les clés (ne jamais la changer ensuite)
  *   PRODUITS           texte JSON : {"prod_…": {"code": "chasseur-de-sites", "prefixe": "CDS", "limite": 2}, …}
+ *                      Pack : {"prod_…": {"pack": ["bridgetoleads", "chasseur-de-sites", "audit-express"]}} → une clé par
+ *                      logiciel du pack (chaque code doit aussi figurer dans PRODUITS avec son préfixe).
+ *   TELECHARGEMENTS    liaison R2 (Settings → Bindings → R2 bucket) : le compartiment qui contient les logiciels.
  *   ORIGINE_SITE       texte : adresse de votre site (ex. https://ptabountchikoff.fr), pour la page Merci ;
  *                      plusieurs adresses possibles, séparées par des virgules
  *
@@ -48,6 +52,8 @@ export default {
         reponse = await cle(url.searchParams.get("session_id") || "", env);
       } else if (request.method === "POST" && ["/activer", "/verifier", "/liberer"].includes(url.pathname)) {
         reponse = await licence(url.pathname.slice(1), await lireCorps(request), env);
+      } else if (["GET", "HEAD"].includes(request.method) && url.pathname.startsWith("/telecharger/")) {
+        return await telecharger(decodeURIComponent(url.pathname.slice("/telecharger/".length)), request, env);
       } else if (request.method === "GET" && url.pathname === "/diagnostic") {
         reponse = await diagnostic(env);
       } else if (url.pathname === "/") {
@@ -169,7 +175,7 @@ async function cle(sessionId, env) {
   const ids = (session.line_items?.data || [])
     .map((ligne) => (typeof ligne.price?.product === "string" ? ligne.price.product : ligne.price?.product?.id))
     .filter(Boolean);
-  const confs = [...new Set(ids)].map((id) => produits(env)[id]).filter(Boolean);
+  const confs = logicielsAchetes(env, ids);
   if (!confs.length) return [400, { erreur: "produit_inconnu", detail: `${ids.join(", ") || "?"} absent de la variable PRODUITS` }];
   const pi = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent.id;
   const licences = [];
@@ -183,6 +189,40 @@ async function cle(sessionId, env) {
     cle: licences[0].cle, produit: licences[0].produit, licences,
     nom: session.customer_details?.name || "", email: session.customer_details?.email || "",
   }];
+}
+
+/** Configurations des logiciels achetés, sans doublon ; un pack donne chacun de ses logiciels. */
+function logicielsAchetes(env, ids) {
+  const liste = produits(env);
+  const parCode = new Map(Object.values(liste).filter((p) => p.code && p.prefixe).map((p) => [p.code, p]));
+  const confs = new Map();
+  for (const id of new Set(ids)) {
+    const conf = liste[id];
+    if (!conf) continue;
+    for (const p of Array.isArray(conf.pack) ? conf.pack.map((code) => parCode.get(code)) : [conf]) {
+      if (p && p.code && p.prefixe) confs.set(p.code, p);
+    }
+  }
+  return [...confs.values()];
+}
+
+// --- Téléchargements (Cloudflare R2) ---------------------------------------------------------------------
+
+const FICHIER = /^[A-Za-z0-9][A-Za-z0-9._-]{0,120}\.(exe|zip)$/;
+
+async function telecharger(nom, request, env) {
+  if (!FICHIER.test(nom)) return json(404, { erreur: "introuvable" }, {});
+  if (!env.TELECHARGEMENTS) return json(500, { erreur: "config_telechargements", detail: "liaison R2 TELECHARGEMENTS absente" }, {});
+  const objet = request.method === "HEAD" ? await env.TELECHARGEMENTS.head(nom) : await env.TELECHARGEMENTS.get(nom);
+  if (!objet) return json(404, { erreur: "introuvable" }, {});
+  const entetes = new Headers({
+    "Content-Type": nom.endsWith(".exe") ? "application/vnd.microsoft.portable-executable" : "application/zip",
+    "Content-Disposition": `attachment; filename="${nom}"`,
+    "Content-Length": String(objet.size),
+    "Cache-Control": "public, max-age=300",
+  });
+  if (objet.httpEtag) entetes.set("ETag", objet.httpEtag);
+  return new Response(request.method === "HEAD" ? null : objet.body, { status: 200, headers: entetes });
 }
 
 // --- Activation, vérification, libération --------------------------------------------------------------
@@ -247,10 +287,19 @@ async function diagnostic(env) {
     LICENCE_SECRET: !env.LICENCE_SECRET ? "ABSENTE"
       : String(env.LICENCE_SECRET).length < 20 ? "TROP COURTE (40 caractères conseillés)" : "présente",
     PRODUITS: Object.keys(liste).length
-      ? Object.entries(liste).map(([id, p]) => `${id} → ${p.code} (${p.prefixe})`)
+      ? Object.entries(liste).map(([id, p]) => Array.isArray(p.pack) ? `${id} → pack : ${p.pack.join(", ")}` : `${id} → ${p.code} (${p.prefixe})`)
       : "ABSENTE ou JSON INVALIDE",
     ORIGINE_SITE: origines(env).length ? origines(env) : "non renseignée (toutes les adresses acceptées)",
+    TELECHARGEMENTS: env.TELECHARGEMENTS ? "liaison R2 présente" : "ABSENTE (téléchargements impossibles)",
   };
+  if (env.TELECHARGEMENTS) {
+    try {
+      const liste = await env.TELECHARGEMENTS.list({ limit: 50 });
+      rapport.fichiers = liste.objects.map((o) => `${o.key} (${Math.round(o.size / 1048576)} Mo)`);
+    } catch {
+      rapport.fichiers = "LECTURE IMPOSSIBLE : vérifiez la liaison R2";
+    }
+  }
   if (!cleStripe) return [200, rapport];
   // Les 5 derniers paiements par lien Stripe : leur produit est-il reconnu ? (ni nom, ni e-mail, ni identifiant de session)
   const essais = { "Checkout Sessions (Read)": "/checkout/sessions?limit=5&expand[]=data.line_items", "Charges (Read)": "/charges?limit=1", "PaymentIntents": "/payment_intents?limit=1" };
@@ -272,7 +321,7 @@ async function diagnostic(env) {
       date: s.created ? new Date(s.created * 1000).toISOString().slice(0, 16).replace("T", " ") : "",
       payee: s.payment_status === "paid",
       produit: id || "?",
-      reconnu: liste[id] ? liste[id].code : "NON : ajoutez ce prod_… dans PRODUITS",
+      reconnu: liste[id] ? (liste[id].code || `pack (${(liste[id].pack || []).join(", ")})`) : "NON : ajoutez ce prod_… dans PRODUITS",
       redirection: redirection(s.success_url),
     };
   });

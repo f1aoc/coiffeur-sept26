@@ -16,6 +16,10 @@ on:
 permissions:
   contents: write
 
+env:
+  # Cloudflare R2 (téléchargements de la page Merci) : actif dès que le secret R2_ACCOUNT_ID existe
+  R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+
 jobs:
   serveur-licences:
     runs-on: ubuntu-latest
@@ -99,6 +103,18 @@ jobs:
             chasseur-de-sites/dist/ChasseurDeSites.exe
             chasseur-de-sites/dist/ChasseurDeSites-site.zip
           prerelease: true
+      - name: Copie dans Cloudflare R2 (téléchargements de la page Merci)
+        if: ${{ env.R2_ACCOUNT_ID != '' }}
+        shell: bash
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          AWS_REQUEST_CHECKSUM_CALCULATION: WHEN_REQUIRED
+          AWS_RESPONSE_CHECKSUM_VALIDATION: WHEN_REQUIRED
+        run: >
+          aws s3 cp "dist/ChasseurDeSites.exe" "s3://vorelik-telechargements/ChasseurDeSites.exe"
+          --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com" --no-progress
 
   mac:
     strategy:
@@ -162,3 +178,15 @@ jobs:
           target_commitish: ${{ github.sha }}
           files: chasseur-de-sites/dist/ChasseurDeSites-mac-${{ matrix.label }}.zip
           prerelease: true
+      - name: Copie dans Cloudflare R2 (téléchargements de la page Merci)
+        if: ${{ env.R2_ACCOUNT_ID != '' }}
+        shell: bash
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          AWS_REQUEST_CHECKSUM_CALCULATION: WHEN_REQUIRED
+          AWS_RESPONSE_CHECKSUM_VALIDATION: WHEN_REQUIRED
+        run: >
+          aws s3 cp "dist/ChasseurDeSites-mac-${{ matrix.label }}.zip" "s3://vorelik-telechargements/ChasseurDeSites-mac-${{ matrix.label }}.zip"
+          --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com" --no-progress
