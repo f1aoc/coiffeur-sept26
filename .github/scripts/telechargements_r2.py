@@ -9,6 +9,7 @@ Actions) : une page de vente ne doit jamais proposer un téléchargement qui ne 
 
 import re
 import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -28,7 +29,7 @@ GITHUB = [
 ]
 
 
-def present(fichier: str) -> bool:
+def present(fichier: str, essai: int = 1) -> bool:
     requete = urllib.request.Request(f"{SERVEUR}/{fichier}", method="HEAD", headers={"User-Agent": "vorelik-site/1.0"})
     try:
         with urllib.request.urlopen(requete, timeout=30) as r:
@@ -40,6 +41,9 @@ def present(fichier: str) -> bool:
         return False
     except (urllib.error.URLError, OSError, ValueError) as e:
         print(f"{fichier} : {e}")
+        if essai < 3:  # coupure réseau passagère : nouvel essai
+            time.sleep(5 * essai)
+            return present(fichier, essai + 1)
         return False
 
 
