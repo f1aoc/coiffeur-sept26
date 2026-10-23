@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ptabountchikoff — Logiciels de prospection pour créateurs de sites web</title>
-  <meta name="description" content="BridgeToLeads, Chasseur de sites et les prochains : des logiciels simples, en français, qui trouvent les entreprises qui ont besoin d'un site web, et vous aident à les contacter.">
-  <meta property="og:title" content="ptabountchikoff — Des logiciels qui trouvent vos prochains clients">
+  <title>VORELIK — Logiciels de prospection pour créateurs de sites web</title>
+  <meta name="description" content="BridgeToLeads, Chasseur de sites et Audit express : des logiciels simples, en français, qui trouvent les entreprises qui ont besoin d'un site web, et vous aident à les convaincre.">
+  <meta property="og:title" content="VORELIK — Des logiciels qui trouvent vos prochains clients">
   <meta property="og:description" content="Trouvez les entreprises sans site web ou au site cassé, et décrochez vos prochains contrats.">
   <meta property="og:image" content="assets/chasseur-apercu.jpg">
-  <link rel="icon" type="image/png" href="assets/chasseur-icone.png">
+  <link rel="icon" type="image/png" href="assets/vorelik-logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -72,8 +72,10 @@
     /* ---------- Navigation ---------- */
     .nav { position: fixed; inset: 0 0 auto; z-index: 30; transition: background .25s ease, box-shadow .25s ease; }
     .nav.scrolled { background: rgba(10, 15, 31, .82); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 1px 0 var(--line); }
-    .nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 74px; gap: 16px; }
+    .nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 84px; gap: 16px; }
     .logo { display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; font-weight: 800; font-size: 1.1rem; letter-spacing: -.01em; }
+    .logo img { width: 240px; height: auto; }
+    footer .logo img { width: 200px; }
     .short { display: none; }
     .logo-mark { width: 34px; height: 34px; border-radius: 10px; background: var(--aurora); display: grid; place-items: center; color: #0A0F1F; font-weight: 800; font-size: 1.05rem; }
     .links { display: flex; align-items: center; gap: 26px; }
@@ -112,18 +114,24 @@
     .window .bar { display: flex; gap: 6px; padding: 9px 12px; background: #F1F4FA; }
     .window .bar i { width: 10px; height: 10px; border-radius: 50%; background: #CBD3E3; }
     .window .bar i:nth-child(1) { background: #F87171; } .window .bar i:nth-child(2) { background: #FBBF24; } .window .bar i:nth-child(3) { background: #34D399; }
-    .window.w1 { left: 0; top: 0; transform: rotate(-4deg); }
-    .window.w2 { right: 0; top: 16%; transform: rotate(3deg); }
-    .stage:hover .w1 { transform: rotate(-2deg) translate(-12px, -8px); }
-    .stage:hover .w2 { transform: rotate(1.5deg) translate(12px, 8px); }
+    /* Trois logiciels : deux fenêtres inclinées de part et d'autre, Audit express au premier plan */
+    .window { width: 54%; }
+    .window.w1 { left: 0; top: 2%; transform: rotate(-5deg); z-index: 1; }
+    .window.w2 { right: 0; top: 2%; transform: rotate(5deg); z-index: 1; }
+    .window.w3 { left: 23%; top: 22%; z-index: 2; box-shadow: 0 60px 110px -30px rgba(0, 0, 0, .8), 0 0 0 1px rgba(255, 255, 255, .2); }
+    .stage:hover .w1 { transform: rotate(-7deg) translate(-16px, -6px); }
+    .stage:hover .w2 { transform: rotate(7deg) translate(16px, -6px); }
+    .stage:hover .w3 { transform: translateY(-10px); }
     .tag-float {
       position: absolute; z-index: 2; display: flex; align-items: center; gap: 10px; padding: 10px 16px 10px 10px;
       border-radius: 14px; background: rgba(15, 23, 51, .88); color: #fff; font-weight: 700; font-size: .92rem;
       box-shadow: 0 20px 40px -18px rgba(0, 0, 0, .7), inset 0 0 0 1px var(--line); backdrop-filter: blur(8px);
     }
     .tag-float img { width: 32px; height: 32px; border-radius: 9px; }
-    .tag-float.t1 { left: 4%; bottom: 6%; }
-    .tag-float.t2 { right: 3%; top: 2%; }
+    .tag-float { z-index: 3; }
+    .tag-float.t1 { left: 1%; bottom: 14%; }
+    .tag-float.t2 { right: 1%; bottom: 22%; }
+    .tag-float.t3 { left: 50%; bottom: -2%; transform: translateX(-50%); white-space: nowrap; }
     .hero-fade { height: 120px; background: linear-gradient(to bottom, transparent, var(--paper)); margin-top: -60px; position: relative; }
 
     /* ---------- Catalogue ---------- */
@@ -183,7 +191,7 @@
     .journey .glow.a { top: -200px; left: -200px; opacity: .35; }
     .journey .glow.b { bottom: -220px; top: auto; right: -160px; opacity: .3; }
     .journey .head p { color: var(--soft); }
-    .flow { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 18px; align-items: stretch; }
+    .flow { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr; gap: 14px; align-items: stretch; }
     .flow .card { background: var(--glass); box-shadow: inset 0 0 0 1px var(--line); border-radius: 22px; padding: 26px; }
     .flow .card img { width: 44px; height: 44px; border-radius: 12px; margin-bottom: 16px; }
     .flow .card .emoji { width: 44px; height: 44px; border-radius: 12px; margin-bottom: 16px; display: grid; place-items: center; background: var(--aurora); color: var(--night); font-size: 1.3rem; font-weight: 800; }
@@ -192,6 +200,7 @@
     .flow .arrow { display: grid; place-items: center; font-size: 1.6rem; color: var(--soft); }
     .flow .card.b1 { box-shadow: inset 0 0 0 1px rgba(236, 72, 153, .45); }
     .flow .card.b2 { box-shadow: inset 0 0 0 1px rgba(14, 165, 233, .5); }
+    .flow .card.b3 { box-shadow: inset 0 0 0 1px rgba(5, 150, 105, .6); }
 
     /* ---------- Zoom produit ---------- */
     .spotlight { display: grid; grid-template-columns: 1.05fr 1fr; gap: clamp(28px, 6vw, 72px); align-items: center; }
@@ -204,8 +213,10 @@
     .shot::after { content: ""; position: absolute; inset: 8% -4% -6% 8%; z-index: -1; border-radius: 30px; filter: blur(40px); opacity: .45; }
     .shot.btl::after { background: var(--btl); }
     .shot.cds::after { background: var(--cds); }
+    .shot.aex::after { background: var(--aex); }
     .spotlight .eyebrow.btl { color: var(--btl-2); }
     .spotlight .eyebrow.cds { color: var(--cds-1); }
+    .spotlight .eyebrow.aex { color: var(--aex-1); }
     .spotlight h2 { font-size: clamp(1.7rem, 3.6vw, 2.4rem); margin-top: 10px; }
     .spotlight p { color: var(--muted); font-size: 1.06rem; margin: 16px 0 0; }
     .points { list-style: none; padding: 0; margin: 22px 0 30px; display: grid; gap: 12px; }
@@ -213,7 +224,9 @@
     .points li b { flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; color: #fff; font-size: .8rem; }
     .spotlight.b-btl .points li b { background: var(--btl); }
     .spotlight.b-cds .points li b { background: var(--cds); }
+    .spotlight.b-aex .points li b { background: var(--aex); }
     .grad-btl { background: var(--btl); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .grad-aex { background: var(--aex); -webkit-background-clip: text; background-clip: text; color: transparent; }
     .grad-cds { background: var(--cds); -webkit-background-clip: text; background-clip: text; color: transparent; }
 
     /* ---------- Promesses ---------- */
@@ -256,6 +269,7 @@
 
     @media (max-width: 980px) {
       .catalog { grid-template-columns: 1fr 1fr; }
+      .catalog > .product.aex { grid-column: 1 / -1; }
       .product.soon { grid-column: 1 / -1; }
       .values { grid-template-columns: 1fr 1fr; }
       .flow { grid-template-columns: 1fr; }
@@ -266,10 +280,15 @@
     }
     @media (max-width: 640px) {
       .catalog, .values { grid-template-columns: 1fr; }
+      .catalog > .product.aex { grid-column: auto; }
       footer .wrap { grid-template-columns: 1fr; }
       .ctas .btn { width: 100%; }
-      .stage { height: 250px; }
-      .window { width: 80%; }
+      .stage { height: 260px; }
+      .window { width: 72%; }
+      .window.w3 { left: 14%; top: 26%; }
+      .tag-float.t1, .tag-float.t2 { display: none; }
+      .tag-float.t3 { left: 6px; right: 6px; bottom: 2%; transform: none; justify-content: center; white-space: normal; }
+      .logo img { width: 170px; }
       .tag-float { font-size: .8rem; padding: 7px 12px 7px 7px; }
       .tag-float img { width: 24px; height: 24px; }
       .logo span.long { display: none; }
@@ -280,7 +299,7 @@
       .links .btn { padding: 9px 14px; font-size: .88rem; }
       .links .btn .long { display: none; }
       .links .btn .short { display: inline; }
-      .tag-float.t2 { display: none; }
+      .tag-float.t3 { font-size: .74rem; }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -301,10 +320,10 @@
 
   <nav class="nav" id="nav">
     <div class="wrap">
-      <a class="logo" href="#top"><span class="logo-mark">p</span><span>ptabountchikoff<span class="long" style="font-weight:500;color:var(--soft)"> · logiciels</span></span></a>
+      <a class="logo" href="#top"><img src="assets/vorelik-logo.png" width="240" height="80" alt="VORELIK"></a>
       <div class="links">
         <a href="#logiciels">Logiciels</a>
-        <a href="#parcours">Le duo</a>
+        <a href="#parcours">Le trio</a>
         <a href="#a-venir">À venir</a>
         <a href="#faq">FAQ</a>
         <a class="btn btn-light" href="#logiciels"><span class="long">Voir les logiciels</span><span class="short">Logiciels</span></a>
@@ -315,23 +334,26 @@
   <header class="hero" id="top">
     <div class="glow a"></div><div class="glow b"></div><div class="glow c"></div>
     <div class="wrap">
-      <span class="pill"><b>2 logiciels</b> Pour créateurs de sites, agences et freelances</span>
+      <span class="pill"><b>3 logiciels</b> Pour créateurs de sites, agences et freelances</span>
       <h1>Des logiciels qui trouvent <span class="aurora-text">vos prochains clients.</span></h1>
-      <p class="lead">Les entreprises sans site web, celles dont le site est en panne ou dépassé : nos logiciels les repèrent pour vous, et vous aident à les contacter. Simples, en français, sans abonnement.</p>
+      <p class="lead">Les entreprises sans site web, celles dont le site est en panne ou dépassé : nos logiciels les repèrent pour vous, les auditent en une minute et vous aident à les convaincre. Simples, en français, sans abonnement.</p>
       <div class="ctas">
         <a class="btn btn-light" href="#logiciels">Découvrir les logiciels →</a>
-        <a class="btn btn-glass" href="#parcours">Pourquoi les deux ensemble&nbsp;?</a>
+        <a class="btn btn-glass" href="#parcours">Pourquoi les trois ensemble&nbsp;?</a>
       </div>
       <div class="trust">
         <span>Windows et Mac</span>
         <span>Paiement unique</span>
+        <span>Pack des 3 logiciels : 179&nbsp;€</span>
         <span>Vos données restent chez vous</span>
       </div>
       <div class="stage reveal" aria-hidden="true">
         <div class="window w1"><div class="bar"><i></i><i></i><i></i></div><img src="assets/bridgetoleads-apercu.jpg" width="1180" height="740" alt=""></div>
         <div class="window w2"><div class="bar"><i></i><i></i><i></i></div><img src="assets/chasseur-apercu.jpg" width="1600" height="1003" alt=""></div>
         <div class="tag-float t1"><img src="assets/bridgetoleads-icone.png" alt="">10 commerces sans site trouvés</div>
+        <div class="window w3"><div class="bar"><i></i><i></i><i></i></div><img src="assets/audit-express-apercu.jpg" width="1600" height="1000" alt=""></div>
         <div class="tag-float t2"><img src="assets/chasseur-icone.png" alt="">4 sites cassés repérés</div>
+        <div class="tag-float t3"><img src="assets/audit-express-icone.png" alt="">Audit prêt : note C, 3 priorités</div>
       </div>
     </div>
     <div class="hero-fade"></div>
@@ -446,9 +468,9 @@
         <div class="journey reveal">
           <div class="glow a"></div><div class="glow b"></div>
           <div class="head">
-            <span class="eyebrow" style="color:#F9A8D4">Le duo gagnant</span>
+            <span class="eyebrow" style="color:#F9A8D4">Le trio gagnant</span>
             <h2 style="margin-top:10px;color:#fff">Aucune entreprise de votre secteur <span class="aurora-text">ne vous échappe</span></h2>
-            <p>Deux logiciels, deux types de prospects, un seul objectif : vous faire signer des sites.</p>
+            <p>Deux logiciels pour trouver les prospects, un troisième pour les convaincre : un seul objectif, vous faire signer des sites.</p>
           </div>
           <div class="flow">
             <div class="card b1">
@@ -461,6 +483,12 @@
               <img src="assets/chasseur-icone.png" alt="">
               <h3>Un site qui ne marche plus&nbsp;?</h3>
               <p>Chasseur de sites repère les sites en panne, expirés ou dépassés, preuve à l'appui.</p>
+            </div>
+            <div class="arrow" aria-hidden="true">→</div>
+            <div class="card b3">
+              <img src="assets/audit-express-icone.png" alt="">
+              <h3>La preuve qui convainc</h3>
+              <p>Audit express note leur site de A à F et prépare un rapport PDF à votre marque, prêt à envoyer.</p>
             </div>
             <div class="arrow" aria-hidden="true">=</div>
             <div class="card">
@@ -508,6 +536,23 @@
             <a class="btn btn-cds" href="chasseur-de-sites/">Découvrir Chasseur de sites →</a>
           </div>
         </div>
+
+        <div class="spotlight b-aex">
+          <figure class="shot aex reveal" style="margin:0">
+            <div class="frame"><img src="assets/audit-express-apercu.jpg" width="1600" height="1000" loading="lazy" alt="Audit express : note globale C, notes par catégorie et aperçu du rapport PDF"></div>
+          </figure>
+          <div class="reveal">
+            <span class="eyebrow aex">Audit express</span>
+            <h2>Un <span class="grad-aex">audit qui fait signer</span>, en moins d'une minute</h2>
+            <p>Tapez l'adresse d'un site : Audit express vérifie vitesse, mobile, Google, sécurité, conformité et prise de contact, puis explique tout sans jargon.</p>
+            <ol class="points">
+              <li><b>1</b>Une note de A à F et les 3 priorités à corriger</li>
+              <li><b>2</b>Rapport PDF à votre marque, avec l'e-mail prêt à envoyer</li>
+              <li><b>3</b>Audits en série depuis vos exports BridgeToLeads et Chasseur de sites</li>
+            </ol>
+            <a class="btn btn-aex" href="audit-express/">Découvrir Audit express →</a>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -548,15 +593,15 @@
         <div class="faq">
           <details class="reveal">
             <summary>Quel logiciel choisir&nbsp;?</summary>
-            <p>Vous créez des sites pour des commerces qui n'en ont pas&nbsp;? Commencez par BridgeToLeads. Vous proposez des refontes ou de la maintenance&nbsp;? Chasseur de sites est fait pour vous. Les deux ensemble couvrent toutes les entreprises de votre secteur.</p>
+            <p>Vous créez des sites pour des commerces qui n'en ont pas&nbsp;? Commencez par BridgeToLeads. Vous proposez des refontes ou de la maintenance&nbsp;? Chasseur de sites est fait pour vous. Vous voulez convaincre plus vite avec un rapport clair&nbsp;? Audit express. Le pack des trois (179&nbsp;€) couvre toute la chaîne, de la recherche du prospect à la signature.</p>
           </details>
           <details class="reveal">
             <summary>Faut-il un abonnement&nbsp;?</summary>
-            <p>Non. Chaque logiciel se paie une seule fois, mises à jour incluses. Seules les recherches Google Maps passent par votre propre clé Google, qui offre un quota gratuit chaque mois. Après l'achat, vous recevez une clé de licence valable sur 2 ordinateurs.</p>
+            <p>Non. Chaque logiciel se paie une seule fois, mises à jour incluses. Seules les recherches Google Maps (et les mesures de vitesse d'Audit express) passent par votre propre clé Google, qui offre un quota gratuit chaque mois. Après l'achat, vous recevez une clé de licence valable sur 2 ordinateurs.</p>
           </details>
           <details class="reveal">
             <summary>Ça fonctionne sur Mac&nbsp;?</summary>
-            <p>Oui. Les deux logiciels fonctionnent sur Windows 10 / 11 et sur Mac (puce Apple et Intel).</p>
+            <p>Oui. Les trois logiciels fonctionnent sur Windows 10 / 11 et sur Mac (puce Apple et Intel).</p>
           </details>
           <details class="reveal">
             <summary>Ai-je le droit de contacter ces entreprises&nbsp;?</summary>
@@ -570,7 +615,7 @@
   <footer>
     <div class="wrap">
       <div>
-        <a class="logo" href="#top"><span class="logo-mark">p</span>ptabountchikoff</a>
+        <a class="logo" href="#top"><img src="assets/vorelik-logo.png" width="240" height="80" alt="VORELIK"></a>
         <p style="max-width:340px;margin:14px 0 0">Des logiciels de prospection simples et en français, pour les créateurs de sites web, agences et freelances.</p>
       </div>
       <div>
@@ -592,7 +637,8 @@
           <li><a href="cookies.html">Cookies</a></li>
         </ul>
       </div>
-      <div class="legal">© <span id="year">2026</span> ptabountchikoff · BridgeToLeads et Chasseur de sites by ptabountchikoff · Google Maps est une marque de Google LLC.</div>
+      <div class="legal">© <span id="year">2026</span> VORELIK · Tous droits réservés · Google Maps est une marque de Google LLC.<br>
+        This site is not a part of the Facebook website or Facebook Inc. Additionally, This site is NOT endorsed by Facebook in any way. FACEBOOK is a trademark of FACEBOOK, Inc.</div>
     </div>
   </footer>
 
