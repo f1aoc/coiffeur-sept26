@@ -48,7 +48,9 @@ jobs:
           # Téléchargements depuis Cloudflare R2 dès que les 9 fichiers y sont (sinon liens GitHub, avec un avertissement)
           python3 .github/scripts/telechargements_r2.py public
           test -f public/pack/merci.html || { echo "Page Merci du pack absente"; exit 1; }
-          if grep -q "A_REMPLACER" public/index.html; then echo "::warning::Lien de paiement Stripe du pack encore à renseigner (vitrine/index.html)"; fi
+          # Production : aucun lien de paiement de test, et un vrai lien sur le bouton du pack
+          if grep -rl "buy.stripe.com/test_" public --include=*.html; then echo "Lien de paiement Stripe de TEST dans les pages ci-dessus"; exit 1; fi
+          grep -q "buy.stripe.com/[A-Za-z0-9]" public/index.html || { echo "Bouton du pack sans lien Stripe"; exit 1; }
           if grep -q 'class="a-completer"' public/cgv.html public/confidentialite.html; then echo "::warning::CGV ou confidentialité : informations encore à compléter (surlignées en jaune)"; fi
           (cd public && zip -qr ../ptabountchikoff-site-complet.zip .)
           unzip -l ptabountchikoff-site-complet.zip | tail -3

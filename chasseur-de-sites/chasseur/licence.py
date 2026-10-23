@@ -35,7 +35,7 @@ from typing import Callable
 # par exemple "https://licences.votre-nom.workers.dev".
 SERVEUR = "https://licences.patrick-tabountchikoff.workers.dev"
 # Lien de paiement Stripe du logiciel (affiché sur l'écran de licence).
-LIEN_ACHAT = "https://buy.stripe.com/test_bJe28s0qf2Me4OvfBfcfK00"
+LIEN_ACHAT = "https://buy.stripe.com/cNi5kEgpd5Yq3KragVcfK02"
 # -----------------------------------------------------------------------------------------------------
 
 NOM_LOGICIEL = "Chasseur de sites"
