@@ -29,10 +29,17 @@ GITHUB = [
 
 
 def present(fichier: str) -> bool:
+    requete = urllib.request.Request(f"{SERVEUR}/{fichier}", method="HEAD", headers={"User-Agent": "vorelik-site/1.0"})
     try:
-        with urllib.request.urlopen(urllib.request.Request(f"{SERVEUR}/{fichier}", method="HEAD"), timeout=30) as r:
-            return r.status == 200 and int(r.headers.get("Content-Length") or 0) > 1_000_000
-    except (urllib.error.URLError, OSError, ValueError):
+        with urllib.request.urlopen(requete, timeout=30) as r:
+            taille = int(r.headers.get("Content-Length") or 0)
+            print(f"{fichier} : HTTP {r.status}, {taille} octets")
+            return r.status == 200 and taille > 1_000_000
+    except urllib.error.HTTPError as e:
+        print(f"{fichier} : HTTP {e.code} {e.read(300)!r}")
+        return False
+    except (urllib.error.URLError, OSError, ValueError) as e:
+        print(f"{fichier} : {e}")
         return False
 
 
