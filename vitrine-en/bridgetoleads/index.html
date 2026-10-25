@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BridgeToLeads — Find local businesses with no website</title>
+  <meta name="description" content="BridgeToLeads finds businesses with no website on Google Maps, by trade and city, and gives you a lead list ready to call, exported to Excel.">
+  <meta property="og:title" content="BridgeToLeads — Find local businesses with no website">
+  <meta property="og:description" content="BridgeToLeads finds businesses with no website on Google Maps, by trade and city, and gives you a lead list ready to call, exported to Excel.">
+  <meta property="og:image" content="assets/app-screenshot.png">
+  <link rel="icon" type="image/png" href="assets/icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --violet: #7C3AED;
+      --violet-dark: #6D28D9;
+      --pink: #EC4899;
+      --orange: #F97316;
+      --teal: #0D9488;
+      --yellow: #FDE68A;
+      --ink: #1E1B4B;
+      --muted: #5E5A86;
+      --bg: #F6F3FF;
+      --card: #FFFFFF;
+      --border: #E9E3FB;
+      --gradient: linear-gradient(120deg, var(--violet) 0%, var(--pink) 55%, var(--orange) 100%);
+      --radius: 20px;
+      --shadow: 0 20px 50px -20px rgba(76, 29, 149, .35);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    img { max-width: 100%; display: block; }
+    a { color: inherit; }
+    .wrap { width: min(1140px, 100% - 32px); margin-inline: auto; }
+    .gradient-text {
+      background: var(--gradient);
+      -webkit-background-clip: text; background-clip: text;
+      color: transparent;
+    }
+    .eyebrow {
+      display: inline-block;
+      font-size: .8rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+      color: var(--violet);
+    }
+    h1, h2, h3 { line-height: 1.15; margin: 0; letter-spacing: -.02em; }
+    h2 { font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 800; margin-top: 10px; }
+    .section { padding: clamp(64px, 10vw, 110px) 0; }
+    .section-head { max-width: 680px; margin: 0 auto clamp(36px, 6vw, 56px); text-align: center; }
+    .section-head p { color: var(--muted); font-size: 1.1rem; margin: 14px 0 0; }
+
+    /* ---------- Buttons ---------- */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+      padding: 15px 28px; border-radius: 999px;
+      font-weight: 700; font-size: 1rem; text-decoration: none;
+      transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+      border: 0; cursor: pointer;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn-primary { background: var(--violet); color: #fff; box-shadow: 0 12px 30px -10px rgba(124, 58, 237, .7); }
+    .btn-primary:hover { background: var(--violet-dark); }
+    .btn-ghost { background: #fff; color: var(--violet-dark); box-shadow: inset 0 0 0 2px var(--border); }
+    .btn-ghost:hover { box-shadow: inset 0 0 0 2px var(--violet); }
+    .btn-white { background: #fff; color: var(--violet-dark); }
+    .btn-white:hover { background: var(--yellow); }
+
+    /* ---------- Nav ---------- */
+    .nav {
+      position: sticky; top: 0; z-index: 20;
+      background: rgba(246, 243, 255, .85);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid transparent;
+      transition: border-color .2s ease;
+    }
+    .nav.scrolled { border-bottom-color: var(--border); }
+    .nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 72px; gap: 16px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.2rem; text-decoration: none; }
+    .by { font-size: .72rem; font-weight: 500; font-style: italic; color: var(--muted); margin-left: -4px; align-self: flex-end; padding-bottom: 5px; }
+    .brand img { width: 36px; height: 36px; border-radius: 10px; }
+    .nav-links { display: flex; align-items: center; gap: 28px; }
+    .nav-links a { text-decoration: none; font-weight: 500; color: var(--muted); }
+    .nav-links a:hover { color: var(--violet); }
+    .nav .btn { padding: 11px 20px; font-size: .95rem; }
+    .nav-links a.btn { color: #fff; font-weight: 700; }
+    .brand { white-space: nowrap; }
+    .short { display: none; }
+
+    /* ---------- Hero ---------- */
+    .hero { position: relative; padding: clamp(48px, 8vw, 90px) 0 clamp(64px, 10vw, 120px); overflow: hidden; }
+    .blob { position: absolute; border-radius: 50%; filter: blur(70px); opacity: .45; z-index: 0; pointer-events: none; }
+    .blob.one { width: 460px; height: 460px; background: var(--pink); top: -120px; right: -120px; }
+    .blob.two { width: 380px; height: 380px; background: var(--violet); top: 260px; left: -160px; opacity: .3; }
+    .blob.three { width: 300px; height: 300px; background: var(--orange); bottom: -80px; right: 20%; opacity: .25; }
+    .hero .wrap { position: relative; z-index: 1; text-align: center; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #fff; border: 1px solid var(--border); border-radius: 999px;
+      padding: 7px 16px 7px 8px; font-size: .9rem; font-weight: 500; color: var(--muted);
+    }
+    .pill b { background: var(--gradient); color: #fff; border-radius: 999px; padding: 3px 10px; font-size: .78rem; }
+    .hero h1 { font-size: clamp(2.4rem, 6.4vw, 4.4rem); font-weight: 800; margin: 22px auto 0; max-width: 900px; }
+    .hero .lead { font-size: clamp(1.05rem, 2.2vw, 1.25rem); color: var(--muted); max-width: 660px; margin: 22px auto 0; }
+    .hero-ctas { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin-top: 34px; }
+    .trust { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 26px; margin-top: 26px; color: var(--muted); font-size: .92rem; }
+    .trust span::before { content: "✔"; color: var(--teal); font-weight: 800; margin-right: 8px; }
+
+    .screen {
+      margin: clamp(44px, 7vw, 72px) auto 0; max-width: 1000px;
+      border-radius: 18px; background: #fff; padding: 10px;
+      box-shadow: 0 40px 90px -30px rgba(76, 29, 149, .5), 0 0 0 1px var(--border);
+      transform: perspective(1600px) rotateX(6deg);
+      transition: transform .6s ease;
+    }
+    .screen:hover { transform: perspective(1600px) rotateX(0deg); }
+    .screen .bar { display: flex; gap: 7px; padding: 6px 8px 12px; }
+    .screen .bar i { width: 11px; height: 11px; border-radius: 50%; background: #E5E1F5; }
+    .screen .bar i:nth-child(1) { background: #F87171; }
+    .screen .bar i:nth-child(2) { background: #FBBF24; }
+    .screen .bar i:nth-child(3) { background: #34D399; }
+    .screen img { border-radius: 10px; }
+    .screen figcaption { font-size: .8rem; color: var(--muted); text-align: center; padding-top: 10px; }
+
+    /* ---------- Audience strip ---------- */
+    .strip { background: var(--ink); color: #fff; padding: 22px 0; overflow: hidden; }
+    .marquee { display: flex; gap: 48px; width: max-content; animation: scroll 40s linear infinite; }
+    .marquee span { font-weight: 700; font-size: 1.05rem; white-space: nowrap; opacity: .9; }
+    .marquee span::after { content: "✦"; margin-left: 48px; color: var(--pink); }
+    @keyframes scroll { to { transform: translateX(-50%); } }
+
+    /* ---------- Steps ---------- */
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; counter-reset: step; }
+    .step {
+      background: var(--card); border-radius: var(--radius); padding: 30px;
+      border: 1px solid var(--border); position: relative;
+    }
+    .step::before {
+      counter-increment: step; content: counter(step);
+      display: grid; place-items: center; width: 48px; height: 48px; border-radius: 14px;
+      font-weight: 800; font-size: 1.3rem; color: #fff; margin-bottom: 18px;
+    }
+    .step:nth-child(1)::before { background: var(--violet); }
+    .step:nth-child(2)::before { background: var(--pink); }
+    .step:nth-child(3)::before { background: var(--orange); }
+    .step h3 { font-size: 1.25rem; }
+    .step p { color: var(--muted); margin: 10px 0 0; }
+
+    /* ---------- Features ---------- */
+    .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+    .feature {
+      background: var(--card); border-radius: var(--radius); padding: 28px;
+      border: 1px solid var(--border);
+      transition: transform .25s ease, box-shadow .25s ease;
+    }
+    .feature:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+    .icon {
+      width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center;
+      font-size: 1.5rem; margin-bottom: 18px;
+    }
+    .i-violet { background: #EDE6FF; color: var(--violet); }
+    .i-pink { background: #FFE4F1; color: var(--pink); }
+    .i-orange { background: #FFEAD9; color: var(--orange); }
+    .i-teal { background: #D5F5F0; color: var(--teal); }
+    .feature h3 { font-size: 1.12rem; }
+    .feature p { color: var(--muted); margin: 8px 0 0; font-size: .97rem; }
+
+    /* ---------- Excel preview ---------- */
+    .excel-wrap { display: grid; grid-template-columns: 1fr 1.25fr; gap: clamp(28px, 5vw, 60px); align-items: center; }
+    .excel-wrap ul { list-style: none; padding: 0; margin: 24px 0 0; display: grid; gap: 14px; }
+    .excel-wrap li { display: flex; gap: 12px; align-items: flex-start; }
+    .excel-wrap li::before {
+      content: "✔"; flex: none; display: grid; place-items: center; width: 26px; height: 26px;
+      border-radius: 8px; background: #D5F5F0; color: var(--teal); font-weight: 800; font-size: .85rem;
+    }
+    .sheet {
+      background: #fff; border-radius: 16px; box-shadow: var(--shadow); overflow: hidden;
+      border: 1px solid var(--border); font-size: .88rem;
+    }
+    .sheet-title { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: #107C41; color: #fff; font-weight: 700; }
+    .sheet-scroll { overflow-x: auto; }
+    .sheet table { border-collapse: collapse; width: 100%; min-width: 520px; }
+    .sheet th { background: var(--ink); color: #fff; text-align: left; padding: 10px 12px; font-weight: 700; white-space: nowrap; }
+    .sheet td { padding: 9px 12px; border-bottom: 1px solid #F0ECFB; white-space: nowrap; }
+    .sheet tr.none td { background: #FFF0F7; }
+    .sheet tr.social td { background: #F3EEFF; }
+    .sheet a { color: #0563C1; }
+    .sheet-note { font-size: .8rem; color: var(--muted); padding: 10px 16px; }
+
+    /* ---------- Pricing ---------- */
+    .pricing { display: grid; place-items: center; }
+    .price-card {
+      position: relative; width: min(480px, 100%);
+      background: var(--card); border-radius: 28px; padding: 40px 36px;
+      box-shadow: var(--shadow);
+    }
+    .price-card::before {
+      content: ""; position: absolute; inset: -3px; border-radius: 30px; z-index: -1; background: var(--gradient);
+    }
+    .price-tag { display: inline-block; background: var(--yellow); color: var(--ink); font-weight: 700; font-size: .8rem; border-radius: 999px; padding: 4px 12px; }
+    .price { font-size: 3.6rem; font-weight: 800; line-height: 1; margin: 18px 0 4px; }
+    .price small { font-size: 1rem; font-weight: 500; color: var(--muted); }
+    .price-card ul { list-style: none; padding: 0; margin: 26px 0 30px; display: grid; gap: 12px; }
+    .price-card li { display: flex; gap: 12px; }
+    .price-card li::before { content: "✔"; color: var(--pink); font-weight: 800; }
+    .price-card .btn { width: 100%; }
+    .fine { font-size: .82rem; color: var(--muted); margin-top: 16px; text-align: center; }
+
+    /* ---------- FAQ ---------- */
+    .faq { max-width: 780px; margin: 0 auto; display: grid; gap: 14px; }
+    .faq details { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 0 24px; }
+    .faq details[open] { border-color: var(--violet); }
+    .faq summary {
+      list-style: none; cursor: pointer; padding: 20px 0; font-weight: 700; font-size: 1.05rem;
+      display: flex; justify-content: space-between; gap: 16px;
+    }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::after { content: "+"; color: var(--violet); font-size: 1.5rem; line-height: 1; transition: transform .2s ease; }
+    .faq details[open] summary::after { transform: rotate(45deg); }
+    .faq details p { margin: 0 0 20px; color: var(--muted); }
+
+    /* ---------- Final CTA ---------- */
+    .cta-band {
+      background: var(--gradient); color: #fff; border-radius: 32px;
+      padding: clamp(40px, 7vw, 72px) clamp(24px, 6vw, 72px); text-align: center; position: relative; overflow: hidden;
+    }
+    .cta-band h2 { color: #fff; }
+    .cta-band p { font-size: 1.15rem; opacity: .95; max-width: 560px; margin: 16px auto 30px; }
+
+    footer { padding: 40px 0 50px; color: var(--muted); font-size: .9rem; }
+    footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; align-items: center; }
+
+    /* ---------- Reveal on scroll ---------- */
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease; }
+    .reveal.in { opacity: 1; transform: none; }
+    .no-js .reveal { opacity: 1; transform: none; }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 900px) {
+      .steps, .features { grid-template-columns: 1fr 1fr; }
+      .excel-wrap { grid-template-columns: 1fr; }
+      .nav-links a:not(.btn) { display: none; }
+    }
+    @media (max-width: 620px) {
+      .nav .by { display: none; }
+      .long { display: none; }
+      .short { display: inline; }
+      .nav .btn { padding: 9px 18px; }
+      .pill { font-size: .8rem; }
+      .steps, .features { grid-template-columns: 1fr; }
+      .screen { transform: none; }
+      .hero-ctas .btn { width: 100%; }
+      .price { font-size: 3rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+      .reveal { opacity: 1; transform: none; }
+      .screen { transform: none; }
+    }
+  </style>
+  <link rel="alternate" hreflang="fr" href="https://www.vorelik.com/bridgetoleads/">
+  <link rel="alternate" hreflang="en" href="https://www.vorelik.com/en/bridgetoleads/">
+</head>
+<body class="no-js">
+
+  <nav class="nav" id="nav">
+    <div class="wrap">
+      <a class="brand" href="#top"><img src="assets/icon.png" alt="">BridgeToLeads<small class="by">by VORELIK</small></a>
+      <div class="nav-links">
+        <a href="#how">How it works</a>
+        <a href="#features">Features</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#faq">FAQ</a>
+        <a href="../../bridgetoleads/" lang="fr" title="Version française">FR</a>
+        <a class="btn btn-primary" href="#pricing"><span class="long">Get BridgeToLeads</span><span class="short">Buy</span></a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero" id="top">
+    <div class="blob one"></div><div class="blob two"></div><div class="blob three"></div>
+    <div class="wrap">
+      <span class="pill"><b>New</b> Prospecting software for Windows and Mac</span>
+      <h1>Your next clients <span class="gradient-text">don't have a website yet.</span></h1>
+      <p class="lead">BridgeToLeads finds businesses with no website on Google Maps, by trade and city, and gives you a lead list ready to call, exported to Excel.</p>
+      <div class="hero-ctas">
+        <a class="btn btn-primary" href="#pricing">Get BridgeToLeads →</a>
+        <a class="btn btn-ghost" href="#how">See how it works</a>
+      </div>
+      <div class="trust">
+        <span>Official Google Maps data</span>
+        <span>One-click Excel export</span>
+        <span>No technical skills needed</span>
+      </div>
+      <figure class="screen reveal">
+        <div class="bar"><i></i><i></i><i></i></div>
+        <img src="assets/app-screenshot.png" width="1180" height="740"
+             alt="BridgeToLeads: list of hair salons with no website, with phone, address, rating and number of reviews">
+        <figcaption>App preview (sample data)</figcaption>
+      </figure>
+    </div>
+  </header>
+
+  <div class="strip" aria-label="Who is it for?">
+    <div class="marquee">
+      <span>Web designers</span><span>Web agencies</span><span>Freelancers</span><span>Graphic designers</span>
+      <span>SEO consultants</span><span>Photographers</span><span>Social media managers</span><span>Sales reps</span>
+      <span>Web designers</span><span>Web agencies</span><span>Freelancers</span><span>Graphic designers</span>
+      <span>SEO consultants</span><span>Photographers</span><span>Social media managers</span><span>Sales reps</span>
+    </div>
+  </div>
+
+  <section class="section" id="how">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">How it works</span>
+        <h2>Qualified leads in <span class="gradient-text">3 steps</span></h2>
+        <p>No more hours spent digging through Google Maps one listing at a time.</p>
+      </div>
+      <div class="steps">
+        <article class="step reveal">
+          <h3>Choose a trade</h3>
+          <p>Hair salon, plumber, bakery, auto repair… 29 ready-made trades, or type any trade you want.</p>
+        </article>
+        <article class="step reveal">
+          <h3>Add your cities</h3>
+          <p>One or several cities at once. BridgeToLeads searches Google Maps and removes duplicates.</p>
+        </article>
+        <article class="step reveal">
+          <h3>Export and call</h3>
+          <p>Get name, phone, address, rating and reviews in an Excel file, and start prospecting.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="features" style="padding-top:0">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Features</span>
+        <h2>Everything you need to <span class="gradient-text">prospect smarter</span></h2>
+      </div>
+      <div class="features">
+        <article class="feature reveal">
+          <div class="icon i-pink">✖</div>
+          <h3>Finds businesses with no website</h3>
+          <p>Only businesses with no website show up. Those that already have one are left out automatically.</p>
+        </article>
+        <article class="feature reveal">
+          <div class="icon i-violet">◎</div>
+          <h3>“Facebook only” spotted</h3>
+          <p>A business with only a Facebook, Instagram or Yelp page is a lead too. BridgeToLeads flags it.</p>
+        </article>
+        <article class="feature reveal">
+          <div class="icon i-orange">★</div>
+          <h3>Best leads first</h3>
+          <p>Results sorted by number of Google reviews: established businesses, with a budget, come first.</p>
+        </article>
+        <article class="feature reveal">
+          <div class="icon i-teal">⬇</div>
+          <h3>Ready-to-use Excel export</h3>
+          <p>Clear headers, filters on every column and a clickable Google Maps link for each business.</p>
+        </article>
+        <article class="feature reveal">
+          <div class="icon i-violet">☎</div>
+          <h3>Full contact details</h3>
+          <p>Phone, address, category, rating and number of reviews: everything to prepare your call.</p>
+        </article>
+        <article class="feature reveal">
+          <div class="icon i-pink">✓</div>
+          <h3>Official Google API</h3>
+          <p>BridgeToLeads uses the official Google Places API, not scraping: reliable, up-to-date data.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0">
+    <div class="wrap excel-wrap">
+      <div class="reveal">
+        <span class="eyebrow">Excel export</span>
+        <h2>Your prospecting file, <span class="gradient-text">ready in one click</span></h2>
+        <ul>
+          <li>Filter by city, by rating or by type of existing page</li>
+          <li>Open each Google Maps listing in one click</li>
+          <li>Import the list into your CRM or email tool</li>
+        </ul>
+      </div>
+      <div class="sheet reveal">
+        <div class="sheet-title">▦ leads_hair_salon.xlsx</div>
+        <div class="sheet-scroll">
+          <table>
+            <thead><tr><th>Name</th><th>Website</th><th>Phone</th><th>Reviews</th><th>Google Maps</th></tr></thead>
+            <tbody>
+              <tr class="none"><td>Lone Star Barber Co.</td><td>None</td><td>(512) 555-0142</td><td>212</td><td><a href="#">Open</a></td></tr>
+              <tr class="social"><td>Bella Nails &amp; Spa</td><td>facebook.com only</td><td>(512) 555-0199</td><td>167</td><td><a href="#">Open</a></td></tr>
+              <tr class="none"><td>Hair by Monica</td><td>None</td><td>(214) 555-0137</td><td>141</td><td><a href="#">Open</a></td></tr>
+              <tr class="social"><td>Fresh Cuts Studio</td><td>yelp.com only</td><td>(512) 555-0110</td><td>118</td><td><a href="#">Open</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="sheet-note">Sample generated file (fictitious data)</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="pricing" style="padding-top:0">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Pricing</span>
+        <h2>One simple price, <span class="gradient-text">no subscription</span></h2>
+        <p>A single signed client more than pays for the software.</p>
+      </div>
+      <div class="pricing">
+        <div class="price-card reveal">
+          <span class="price-tag">Lifetime license</span>
+          <!-- À MODIFIER : prix en dollars -->
+          <div class="price">$69 <small>one-time payment</small></div>
+          <p style="color:var(--muted);margin:0">For 2 computers, Windows or Mac. Sold to businesses only. Price in US dollars; any local taxes are the buyer's responsibility.</p>
+          <p style="margin:10px 0 0;font-weight:600"><a href="../#pack">Or all 3 VORELIK apps in a bundle: $199 instead of $267 →</a></p>
+          <ul>
+            <li>Unlimited searches in the app</li>
+            <li>29 ready-made trades + any trade you want</li>
+            <li>Excel export with filters and Google Maps links</li>
+            <li>English and French interface</li>
+            <li>Updates included</li>
+            <li>Help creating your Google key</li>
+          </ul>
+          <!-- Lien de paiement Stripe en dollars (mode réel) -->
+          <a class="btn btn-primary" href="https://buy.stripe.com/A_REMPLACER_LIEN_USD">Buy BridgeToLeads →</a>
+          <p class="fine">Requires your own Google Maps API key. Google offers a free usage quota every month; beyond it, searches are billed by Google.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="faq" style="padding-top:0">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">FAQ</span>
+        <h2>Frequently asked questions</h2>
+      </div>
+      <div class="faq">
+        <details class="reveal">
+          <summary>Do I need to know how to code?</summary>
+          <p>No. You download the file, double-click it, paste your Google key once, and you're ready. Everything is done with the mouse.</p>
+        </details>
+        <details class="reveal">
+          <summary>What is the Google API key?</summary>
+          <p>It's a personal code Google gives you for free to search Google Maps. Creating it takes about ten minutes, and the app shows you where to get it.</p>
+        </details>
+        <details class="reveal">
+          <summary>How much does Google cost?</summary>
+          <p>Google offers a free quota every month, enough for regular local prospecting. Beyond it, searches are billed by Google to your account. You can set a budget alert so you're never surprised.</p>
+        </details>
+        <details class="reveal">
+          <summary>Which countries does it work in?</summary>
+          <p>Anywhere Google Maps lists businesses: United States, Canada, United Kingdom, Australia and more. Just type the city the way you would on Google Maps (for example “Austin TX” or “Leeds UK”).</p>
+        </details>
+        <details class="reveal">
+          <summary>Does it work on Mac?</summary>
+          <p>Yes. BridgeToLeads runs on Windows 10 / 11 and on Mac, with one version for Apple silicon Macs (M1 to M4) and one for Intel Macs.</p>
+        </details>
+        <details class="reveal">
+          <summary>Windows or my Mac shows a warning on first launch. Is that normal?</summary>
+          <p>Yes, for recent software they don't know yet. On Windows, click “More info” then “Run anyway”. On Mac, open System Settings → Privacy &amp; Security and click “Open Anyway”. You only do it once.</p>
+        </details>
+        <details class="reveal">
+          <summary>How does the license work?</summary>
+          <p>Right after payment, your license key appears on the thank-you page; it is valid on 2 computers. You paste it on first launch, and that's it. It is checked online once a day (only the key and an anonymous computer ID are sent); without Internet, the software stays usable for 14 days. To change computers, “License” button → “Release”. If the purchase is refunded, the license is deactivated.</p>
+        </details>
+        <details class="reveal">
+          <summary>Am I allowed to contact these businesses?</summary>
+          <p>Contacting businesses about their professional activity is generally allowed, as long as your offer relates to their business and you let them opt out of further contact; rules vary by country (CAN-SPAM and TCPA in the US, CASL in Canada, PECR in the UK…). If in doubt, check with a legal adviser.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0">
+    <div class="wrap">
+      <div class="cta-band reveal">
+        <h2>Find your next clients today</h2>
+        <p>Run your first search and discover the businesses in your city that don't have a website yet.</p>
+        <a class="btn btn-white" href="#pricing">Get BridgeToLeads →</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <a class="brand" href="#top"><img src="assets/icon.png" alt="">BridgeToLeads<small class="by">by VORELIK</small></a>
+      <span>© <span id="year">2026</span> VORELIK · All rights reserved · <a href="../terms.html">Terms of Sale</a> · <a href="../privacy.html">Privacy</a> · <a href="../cookies.html">Cookies</a> · <a href="../../bridgetoleads/" lang="fr">Français</a> · Google Maps is a trademark of Google LLC. This site is not a part of the Facebook website or Facebook Inc. Additionally, this site is NOT endorsed by Facebook in any way. FACEBOOK is a trademark of FACEBOOK, Inc.</span>
+    </div>
+  </footer>
+  <script>
+    document.body.classList.remove("no-js");
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    const nav = document.getElementById("nav");
+    const onScroll = () => nav.classList.toggle("scrolled", window.scrollY > 8);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+
+    const items = document.querySelectorAll(".reveal");
+    if ("IntersectionObserver" in window) {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+        });
+      }, { threshold: 0.12 });
+      items.forEach((el, i) => { el.style.transitionDelay = (i % 3) * 90 + "ms"; io.observe(el); });
+    } else {
+      items.forEach((el) => el.classList.add("in"));
+    }
+  </script>
+</body>
+</html>

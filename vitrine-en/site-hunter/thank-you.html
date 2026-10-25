@@ -158,7 +158,7 @@
       .nav a.back span { display: none; }
     }
 
-    /* ---------- Clé de licence ---------- */
+    /* ---------- Clé de license ---------- */
     .licence-card { margin-top: 26px; background: var(--card); border-radius: 22px; padding: clamp(22px, 4vw, 32px);
       box-shadow: 0 0 0 2px var(--border); }
     .licence-card h2 { font-size: 1.3rem; }
@@ -225,7 +225,7 @@
     <!-- Stripe (lien de paiement en dollars → After payment → Redirect) :
          https://www.vorelik.com/en/site-hunter/thank-you.html?session_id={CHECKOUT_SESSION_ID} -->
     <section class="licence-card" id="licence" aria-live="polite">
-      <h2>Your licence key</h2>
+      <h2>Your license key</h2>
       <p id="cle-texte" class="cle-attente">Fetching your key…</p>
       <div class="cle-box" id="cle-box" hidden>
         <code id="cle-valeur"></code>
@@ -266,8 +266,8 @@
         </article>
         <article class="step">
           <div>
-            <h3>Activate your licence, then set up your agency</h3>
-            <p>The app asks for your <b>licence key</b>: the one shown <a class="link" href="#licence">higher up on this page</a> (it starts with “CDS-”). Paste it, then click <span class="kbd">Activate</span> (Internet connection required). It is valid on 2 computers.</p>
+            <h3>Activate your license, then set up your agency</h3>
+            <p>The app asks for your <b>license key</b>: the one shown <a class="link" href="#licence">higher up on this page</a> (it starts with “CDS-”). Paste it, then click <span class="kbd">Activate</span> (Internet connection required). It is valid on 2 computers.</p>
             <p>Then, in <b>Settings → Your agency</b>, enter your name, logo, colour and contact details. They will appear on your PDF reports and in your messages. The language (English or French) can be changed in <b>Settings → Language</b>.</p>
           </div>
         </article>
@@ -310,7 +310,7 @@
   <script>
     document.getElementById("year").textContent = new Date().getFullYear();
 
-    // Licence key: requested from the licence server with the Stripe payment number (session_id).
+    // License key: requested from the license server with the Stripe payment number (session_id).
     const SERVEUR_LICENCES = "https://licences.patrick-tabountchikoff.workers.dev";
     (async () => {
       const texte = document.getElementById("cle-texte");
@@ -326,7 +326,7 @@
         detail(cause);
       };
       if (!session) {
-        dire("Your licence key appears here right after your payment. Can't see it? Write to support from the email address used for your purchase.");
+        dire("Your license key appears here right after your payment. Can't see it? Write to support from the email address used for your purchase.");
         return detail("no session_id in this page address (Stripe link → After payment → Redirect: add ?session_id={CHECKOUT_SESSION_ID})");
       }
       let r, d;
