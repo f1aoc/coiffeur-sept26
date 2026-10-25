@@ -63,7 +63,7 @@ jobs:
           for ($i = 0; $i -lt 150; $i++) {
             Start-Sleep -Seconds 2
             try { $r = Invoke-WebRequest -Uri http://127.0.0.1:8765/a-propos -UseBasicParsing -TimeoutSec 5
-                  if ($r.Content -match "Chasseur de sites") { $ok = $true; break } } catch {}
+                  if ($r.Content -match "Chasseur de sites|Site Hunter") { $ok = $true; break } } catch {}  # selon la langue du poste
           }
           $licence = curl.exe -s -o NUL -w "%{redirect_url}" http://127.0.0.1:8765/analyses
           taskkill /IM ChasseurDeSites.exe /F /T | Out-Null
@@ -159,7 +159,7 @@ jobs:
           OK=0
           for i in $(seq 1 150); do
             sleep 2
-            if curl -s --max-time 5 http://127.0.0.1:8765/a-propos | grep -q "Chasseur de sites"; then OK=1; break; fi
+            if curl -s --max-time 5 http://127.0.0.1:8765/a-propos | grep -qE "Chasseur de sites|Site Hunter"; then OK=1; break; fi  # selon la langue du poste
             kill -0 $PID 2>/dev/null || break
           done
           LICENCE=$(curl -s -o /dev/null -w "%{redirect_url}" http://127.0.0.1:8765/analyses || true)

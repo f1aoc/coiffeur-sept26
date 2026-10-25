@@ -54,6 +54,7 @@ def test_langue_du_systeme(monkeypatch, code, attendu):
         monkeypatch.delenv(variable, raising=False)
     monkeypatch.setenv("LANG", code)
     monkeypatch.setattr(langue.locale, "getlocale", lambda: (None, None))
+    monkeypatch.setattr(langue.sys, "platform", "linux")  # sous Windows, la langue de Windows passerait avant LANG
     assert langue.langue_systeme() == attendu
 
 
