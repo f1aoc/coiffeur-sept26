@@ -36,13 +36,21 @@ jobs:
           cp -r vitrine/* public/
           cp -r chasseur-de-sites/site/* public/chasseur-de-sites/
           cp -r audit-express/site/* public/audit-express/
-          # Version anglaise (/en/) : publiée dès que le lien de paiement Stripe en dollars est renseigné
-          if grep -q "A_REMPLACER" vitrine-en/audit-express/index.html; then
-            echo "::warning::Version anglaise non publiée : lien de paiement Stripe en dollars à renseigner dans vitrine-en/audit-express/index.html"
-          else
-            mkdir -p public/en && cp -r vitrine-en/* public/en/
-            test -f public/en/audit-express/thank-you.html && test -f public/en/terms.html
+          # Version anglaise (/en/) : chaque page de vente est publiée dès que son lien de paiement Stripe en dollars
+          # est renseigné (A_REMPLACER sinon) ; l'accueil anglais seulement quand toutes ses pages le sont.
+          mkdir -p public/en && cp -r vitrine-en/* public/en/
+          retirees=0
+          for page in public/en/*/index.html; do
+            if grep -q "A_REMPLACER" "$page"; then
+              echo "::warning::Page anglaise non publiée : ${page#public/} (lien de paiement en dollars à renseigner)"
+              rm -rf "$(dirname "$page")"; retirees=1
+            fi
+          done
+          if [ -f public/en/index.html ] && { [ "$retirees" = 1 ] || grep -q "A_REMPLACER" public/en/index.html; }; then
+            echo "::warning::Accueil anglais non publié : une page de vente ou le lien du pack attend son lien de paiement"
+            rm -f public/en/index.html
           fi
+          test -f public/en/audit-express/thank-you.html && test -f public/en/terms.html
           gh release download bridgetoleads-latest --repo "${{ github.repository }}" --pattern BridgeToLeads-site.zip --dir /tmp
           unzip -q /tmp/BridgeToLeads-site.zip -d public/bridgetoleads
           test -f public/index.html && test -f public/bridgetoleads/index.html && test -f public/chasseur-de-sites/index.html && test -f public/audit-express/merci.html
