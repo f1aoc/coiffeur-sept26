@@ -31,7 +31,7 @@ jobs:
       - name: Build BridgeToLeads.exe
         run: >
           pyinstaller --onefile --windowed --name BridgeToLeads
-          --paths tools/prospection --hidden-import find_no_website --hidden-import brand_icon --hidden-import licence
+          --paths tools/prospection --hidden-import find_no_website --hidden-import brand_icon --hidden-import licence --hidden-import langue --hidden-import traductions_en
           --hidden-import openpyxl --hidden-import certifi --icon tools/prospection/assets/bridgetoleads.ico
           tools/prospection/bridgetoleads.pyw
 
@@ -114,7 +114,7 @@ jobs:
         run: >
           pyinstaller --windowed --name BridgeToLeads
           --osx-bundle-identifier com.ptabountchikoff.bridgetoleads
-          --paths tools/prospection --hidden-import find_no_website --hidden-import brand_icon --hidden-import licence
+          --paths tools/prospection --hidden-import find_no_website --hidden-import brand_icon --hidden-import licence --hidden-import langue --hidden-import traductions_en
           --hidden-import openpyxl --hidden-import certifi --icon tools/prospection/assets/bridgetoleads.png
           tools/prospection/bridgetoleads.pyw
 

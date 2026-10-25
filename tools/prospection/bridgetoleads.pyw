@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """BridgeToLeads by ptabountchikoff — application de bureau pour trouver les commerces sans site web.
+En français ou en anglais (bouton en haut à droite, sinon langue de l'ordinateur : voir langue.py).
 
 Choisissez un métier et une ou plusieurs villes, cliquez sur Rechercher, puis
 exportez les résultats vers Excel. Double-cliquez une ligne pour ouvrir le
@@ -22,13 +23,15 @@ from tkinter import font as tkfont
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from brand_icon import ICON_PNG_B64  # noqa: E402
 from find_no_website import PlacesError, clean_api_key, find_leads, write_xlsx  # noqa: E402
+import langue as lg  # noqa: E402
 import licence as lic  # noqa: E402
+from langue import _, pluriel  # noqa: E402
 
 # ---------- Brand: change these to rebrand the app ----------
 
 APP_NAME = "BridgeToLeads"
 AUTHOR = "ptabountchikoff"
-TAGLINE = "Trouvez les commerces sans site web, prêts à devenir vos clients"
+TAGLINE = "Trouvez les commerces sans site web, prêts à devenir vos clients"  # traduit par _() à l'affichage
 KEY_HELP_URL = "https://console.cloud.google.com/apis/library/places.googleapis.com"
 
 GRADIENT = ["#7C3AED", "#EC4899", "#F97316"]  # violet → rose → orange
@@ -55,30 +58,41 @@ CONFIG_PATH = Path.home() / ".bridgetoleads.json"
 OLD_CONFIG_PATH = Path.home() / ".lead_finder.json"  # settings saved by the app's previous name
 LICENCE_DIR = Path.home() / ".bridgetoleads"  # licence.json (clé de licence, fichier signé)
 
-OCCUPATIONS = [
-    "coiffeur", "barbier", "institut de beauté", "onglerie", "esthéticienne",
-    "boulangerie", "boucherie", "fleuriste", "restaurant", "pizzeria", "bar",
-    "plombier", "électricien", "serrurier", "menuisier", "maçon",
-    "peintre en bâtiment", "couvreur", "paysagiste", "garage automobile",
-    "carrosserie", "auto-école", "toiletteur", "ostéopathe", "kinésithérapeute",
-    "photographe", "cordonnier", "pressing", "tatoueur",
-]
+# Métiers proposés, par langue (même ordre : le métier choisi suit le changement de langue).
+OCCUPATIONS = {
+    "fr": [
+        "coiffeur", "barbier", "institut de beauté", "onglerie", "esthéticienne",
+        "boulangerie", "boucherie", "fleuriste", "restaurant", "pizzeria", "bar",
+        "plombier", "électricien", "serrurier", "menuisier", "maçon",
+        "peintre en bâtiment", "couvreur", "paysagiste", "garage automobile",
+        "carrosserie", "auto-école", "toiletteur", "ostéopathe", "kinésithérapeute",
+        "photographe", "cordonnier", "pressing", "tatoueur",
+    ],
+    "en": [
+        "hair salon", "barber shop", "beauty salon", "nail salon", "esthetician",
+        "bakery", "butcher shop", "florist", "restaurant", "pizzeria", "bar",
+        "plumber", "electrician", "locksmith", "carpenter", "mason",
+        "house painter", "roofer", "landscaper", "auto repair shop",
+        "auto body shop", "driving school", "dog groomer", "chiropractor", "physical therapist",
+        "photographer", "shoe repair", "dry cleaner", "tattoo shop",
+    ],
+}
 
 COLUMNS = [
-    # (key, heading, width, stretch)
+    # (key, heading written in French and translated by _(), width, stretch)
     ("name", "Commerce", 170, True),
     ("status", "Site web", 165, False),
     ("phone", "Téléphone", 120, False),
     ("address", "Adresse", 180, True),
-    ("rating", "Note", 50, False),
-    ("reviews", "Avis", 55, False),
+    ("rating", "Note", 62, False),
+    ("reviews", "Avis", 72, False),
 ]
 
 
 def page_name(status):
-    """'social_or_directory:facebook.com' -> 'Facebook seulement'."""
+    """'social_or_directory:facebook.com' -> 'Facebook seulement' (Facebook only)."""
     host = status.split(":", 1)[-1]
-    return host.split(".")[0].capitalize() + " seulement"
+    return _("{page} seulement").format(page=host.split(".")[0].capitalize())
 
 
 def load_config():
@@ -166,7 +180,6 @@ class PillButton(tk.Canvas):
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title(f"{APP_NAME} by {AUTHOR} — {TAGLINE}")
         self.geometry("1180x740")
         self.minsize(960, 600)
         self.configure(bg=C["bg"])
@@ -190,7 +203,9 @@ class App(tk.Tk):
         }
 
         self.cfg = load_config()
+        lg.definir_langue(self.cfg.get("langue"))
         self.leads = []
+        self.last_counts = None  # (total, none, social) de la dernière recherche
         self.events = queue.Queue()
         self.worker = None
         self.api_key = tk.StringVar(value=os.environ.get("GOOGLE_MAPS_API_KEY") or self.cfg.get("api_key", ""))
@@ -198,16 +213,46 @@ class App(tk.Tk):
         self.show_key = tk.BooleanVar(value=False)
         self.licence = lic.licence_par_defaut(LICENCE_DIR)
         self.licence_dlg = None
+        self.occupation = tk.StringVar(value=self.cfg.get("occupation") or OCCUPATIONS[lg.langue_courante()][0])
+        self.strict = tk.BooleanVar(value=False)
 
         self._init_styles()
-        self._build_header()
-        body = tk.Frame(self, bg=C["bg"])
-        body.pack(fill="both", expand=True, padx=20, pady=(16, 20))
-        self._build_sidebar(body)
-        self._build_main(body)
-        self._refresh_key_badge()
+        self._build_ui()
         self.after(100, self._poll_events)
         self.after(400, self._first_launch)
+
+    def _build_ui(self):
+        """Fenêtre complète dans la langue courante (reconstruite quand la langue change)."""
+        self.title(f"{APP_NAME} by {AUTHOR} — {_(TAGLINE)}")
+        self._build_header()
+        self.body = tk.Frame(self, bg=C["bg"])
+        self.body.pack(fill="both", expand=True, padx=20, pady=(16, 20))
+        self._build_sidebar(self.body)
+        self._build_main(self.body)
+        self._refresh_key_badge()
+
+    def toggle_language(self):
+        if self.worker is not None and self.worker.is_alive():
+            messagebox.showinfo(APP_NAME, _("Attendez la fin de la recherche pour changer de langue."))
+            return
+        ancienne = lg.langue_courante()
+        nouvelle = "en" if ancienne == "fr" else "fr"
+        liste = OCCUPATIONS[ancienne]
+        if self.occupation.get() in liste:  # métier proposé : le même dans l'autre langue
+            self.occupation.set(OCCUPATIONS[nouvelle][liste.index(self.occupation.get())])
+        self.cfg.update(langue=nouvelle, cities=self.cities.get("1.0", "end").strip())
+        save_config(self.cfg)
+        lg.definir_langue(nouvelle)
+        if self.licence_dlg is not None and self.licence_dlg.winfo_exists():
+            self.licence_dlg.destroy()
+        self.header.destroy()
+        self.body.destroy()
+        self._build_ui()
+        if self.last_counts:
+            self._show_counts(*self.last_counts)
+            self._fill_tree()
+            if not self.leads:
+                self.empty.config(text=self._no_lead_text())
 
     # ---------- Styles ----------
 
@@ -246,12 +291,16 @@ class App(tk.Tk):
         self.header = tk.Canvas(self, height=96, highlightthickness=0, bd=0)
         self.header.pack(fill="x")
         self.header_logo = tk.PhotoImage(data=ICON_PNG_B64)
-        self.settings_btn = PillButton(self.header, "⚙  Clé API", self.open_settings, color="white",
+        self.settings_btn = PillButton(self.header, _("⚙  Clé API"), self.open_settings, color="white",
                                        hover="#FDE68A", fg=C["violet_dark"], font=self.f["label"],
                                        height=36, parent_bg=GRADIENT[-1])
-        self.licence_btn = PillButton(self.header, "✦  Licence", self.open_licence, color="white",
+        self.licence_btn = PillButton(self.header, _("✦  Licence"), self.open_licence, color="white",
                                       hover="#FDE68A", fg=C["violet_dark"], font=self.f["label"],
                                       height=36, parent_bg=GRADIENT[-1])
+        # Bouton de langue : propose l'autre langue, écrite dans cette langue.
+        self.lang_btn = PillButton(self.header, "English" if lg.langue_courante() == "fr" else "Français",
+                                   self.toggle_language, color="white", hover="#FDE68A", fg=C["violet_dark"],
+                                   font=self.f["label"], height=36, parent_bg=GRADIENT[-1])
         self.header.bind("<Configure>", lambda e: self._draw_header())
 
     def _draw_header(self):
@@ -266,18 +315,21 @@ class App(tk.Tk):
         title_w = tkfont.Font(font=self.f["title"]).measure(APP_NAME)
         c.create_text(102 + title_w + 10, h // 2 - 8, text=f"by {AUTHOR}", fill="white",
                       font=self.f["byline"], anchor="w")
-        c.create_text(104, h // 2 + 18, text=TAGLINE, fill="white", font=self.f["tagline"], anchor="w")
+        c.create_text(104, h // 2 + 18, text=_(TAGLINE), fill="white", font=self.f["tagline"], anchor="w")
         edge = gradient_at(1.0)
         self.settings_btn.config(bg=edge)
         self.licence_btn.config(bg=edge)
+        self.lang_btn.config(bg=edge)
         c.create_window(w - 24, h // 2, window=self.settings_btn, anchor="e")
         licence_x = w - 24 - int(self.settings_btn["width"]) - 10
         c.create_window(licence_x, h // 2, window=self.licence_btn, anchor="e")
-        c.create_text(licence_x - int(self.licence_btn["width"]) - 16, h // 2, text=self._key_badge_text(),
+        lang_x = licence_x - int(self.licence_btn["width"]) - 10
+        c.create_window(lang_x, h // 2, window=self.lang_btn, anchor="e")
+        c.create_text(lang_x - int(self.lang_btn["width"]) - 16, h // 2, text=self._key_badge_text(),
                       fill="white", font=self.f["label"], anchor="e", tags="badge")
 
     def _key_badge_text(self):
-        return "✔ Clé configurée" if self.api_key.get().strip() else "✖ Aucune clé API"
+        return _("✔ Clé configurée") if self.api_key.get().strip() else _("✖ Aucune clé API")
 
     def _refresh_key_badge(self):
         self.header.itemconfigure("badge", text=self._key_badge_text())
@@ -294,16 +346,15 @@ class App(tk.Tk):
         inner = tk.Frame(side, bg=C["card"], width=300)
         inner.pack(fill="both", expand=True, padx=20, pady=20)
 
-        tk.Label(inner, text="Nouvelle recherche", font=self.f["h2"], bg=C["card"], fg=C["ink"]).pack(anchor="w")
+        tk.Label(inner, text=_("Nouvelle recherche"), font=self.f["h2"], bg=C["card"], fg=C["ink"]).pack(anchor="w")
         tk.Frame(inner, bg=C["pink"], height=3, width=48).pack(anchor="w", pady=(6, 16))
 
-        tk.Label(inner, text="MÉTIER", font=self.f["small"], bg=C["card"], fg=C["violet"]).pack(anchor="w")
-        self.occupation = tk.StringVar(value=self.cfg.get("occupation", "coiffeur"))
-        ttk.Combobox(inner, textvariable=self.occupation, values=OCCUPATIONS, font=self.f["body"],
+        tk.Label(inner, text=_("MÉTIER"), font=self.f["small"], bg=C["card"], fg=C["violet"]).pack(anchor="w")
+        ttk.Combobox(inner, textvariable=self.occupation, values=OCCUPATIONS[lg.langue_courante()], font=self.f["body"],
                      width=28).pack(fill="x", pady=(4, 16))
 
-        tk.Label(inner, text="VILLES", font=self.f["small"], bg=C["card"], fg=C["violet"]).pack(anchor="w")
-        tk.Label(inner, text="Une par ligne, ou séparées par des virgules", font=self.f["small"],
+        tk.Label(inner, text=_("VILLES"), font=self.f["small"], bg=C["card"], fg=C["violet"]).pack(anchor="w")
+        tk.Label(inner, text=_("Une par ligne, ou séparées par des virgules"), font=self.f["small"],
                  bg=C["card"], fg=C["muted"]).pack(anchor="w")
         box = tk.Frame(inner, bg=C["border"], padx=1, pady=1)
         box.pack(fill="x", pady=(4, 16))
@@ -315,11 +366,10 @@ class App(tk.Tk):
         self.cities.bind("<FocusOut>", lambda e: box.config(bg=C["border"]))
         self.cities.insert("1.0", self.cfg.get("cities", ""))
 
-        self.strict = tk.BooleanVar(value=False)
-        ttk.Checkbutton(inner, text="Aucun site du tout\n(exclure pages Facebook, Planity…)",
+        ttk.Checkbutton(inner, text=_("Aucun site du tout\n(exclure pages Facebook, Planity…)"),
                         variable=self.strict, style="Card.TCheckbutton").pack(anchor="w", pady=(0, 20))
 
-        self.search_btn = PillButton(inner, "Rechercher  →", self.start_search, color=C["violet"],
+        self.search_btn = PillButton(inner, _("Rechercher  →"), self.start_search, color=C["violet"],
                                      hover=C["violet_dark"], font=self.f["button"], height=46, width=260)
         self.search_btn.pack(fill="x")
         self.progress = ttk.Progressbar(inner, mode="indeterminate", style="Pink.Horizontal.TProgressbar")
@@ -327,7 +377,7 @@ class App(tk.Tk):
         self.progress.pack_forget()
 
         tk.Frame(inner, bg=C["card"]).pack(fill="both", expand=True)
-        tk.Label(inner, text="Astuce : double-cliquez un résultat\npour l'ouvrir sur Google Maps.",
+        tk.Label(inner, text=_("Astuce : double-cliquez un résultat\npour l'ouvrir sur Google Maps."),
                  font=self.f["small"], bg=C["card"], fg=C["muted"], justify="left").pack(anchor="w")
 
     # ---------- Main area (stats + table) ----------
@@ -354,13 +404,13 @@ class App(tk.Tk):
             var = tk.StringVar(value="—")
             self.stat_vars[key] = var
             tk.Label(text, textvariable=var, font=self.f["stat"], bg=tint, fg=color).pack(anchor="w")
-            tk.Label(text, text=caption, font=self.f["small"], bg=tint, fg=C["ink"]).pack(anchor="w")
+            tk.Label(text, text=_(caption), font=self.f["small"], bg=tint, fg=C["ink"]).pack(anchor="w")
 
         card = self._card(main, fill="both", expand=True)
         top = tk.Frame(card, bg=C["card"])
         top.pack(fill="x", padx=16, pady=(14, 10))
-        tk.Label(top, text="Résultats", font=self.f["h2"], bg=C["card"], fg=C["ink"]).pack(side="left")
-        self.export_btn = PillButton(top, "⬇  Exporter Excel", self.export_xlsx, color=C["teal"],
+        tk.Label(top, text=_("Résultats"), font=self.f["h2"], bg=C["card"], fg=C["ink"]).pack(side="left")
+        self.export_btn = PillButton(top, _("⬇  Exporter Excel"), self.export_xlsx, color=C["teal"],
                                      hover=C["teal_dark"], font=self.f["label"], height=36)
         self.export_btn.pack(side="right")
         self.export_btn.set_enabled(False)
@@ -371,7 +421,7 @@ class App(tk.Tk):
         self.tree = ttk.Treeview(table, columns=[c[0] for c in COLUMNS], show="headings", style="Leads.Treeview",
                                  height=8)
         for key, heading, width, stretch in COLUMNS:
-            self.tree.heading(key, text=heading, anchor="w", command=lambda k=key: self.sort_by(k))
+            self.tree.heading(key, text=_(heading), anchor="w", command=lambda k=key: self.sort_by(k))
             self.tree.column(key, width=width, minwidth=width if not stretch else 120, stretch=stretch, anchor="w")
         self.tree.tag_configure("none", background=C["row_none"])
         self.tree.tag_configure("social", background=C["row_social"])
@@ -381,7 +431,7 @@ class App(tk.Tk):
         vsb.pack(side="right", fill="y")
         self.tree.bind("<Double-1>", self.open_in_maps)
 
-        self.empty = tk.Label(self.tree, text="Lancez une recherche pour voir\nles commerces sans site web ici.",
+        self.empty = tk.Label(self.tree, text=_("Lancez une recherche pour voir\nles commerces sans site web ici."),
                               font=self.f["body"], bg="white", fg=C["muted"], justify="center")
         self.empty.place(relx=0.5, rely=0.5, anchor="center")
 
@@ -390,8 +440,8 @@ class App(tk.Tk):
         for color, text in ((C["row_none"], "Aucun site"), (C["row_social"], "Réseaux / annuaire seulement")):
             tk.Label(legend, bg=color, width=2, highlightbackground=C["border"], highlightthickness=1
                      ).pack(side="left")
-            tk.Label(legend, text=text, font=self.f["small"], bg=C["card"], fg=C["muted"]).pack(side="left", padx=(6, 16))
-        self.status = tk.StringVar(value="Choisissez un métier et au moins une ville, puis cliquez sur Rechercher.")
+            tk.Label(legend, text=_(text), font=self.f["small"], bg=C["card"], fg=C["muted"]).pack(side="left", padx=(6, 16))
+        self.status = tk.StringVar(value=_("Choisissez un métier et au moins une ville, puis cliquez sur Rechercher."))
         tk.Label(legend, textvariable=self.status, font=self.f["small"], bg=C["card"], fg=C["violet"]
                  ).pack(side="right")
 
@@ -399,7 +449,7 @@ class App(tk.Tk):
 
     def open_settings(self):
         dlg = tk.Toplevel(self)
-        dlg.title("Clé API Google")
+        dlg.title(_("Clé API Google"))
         dlg.configure(bg=C["card"])
         dlg.resizable(False, False)
         dlg.transient(self)
@@ -409,19 +459,19 @@ class App(tk.Tk):
             pass
         pad = tk.Frame(dlg, bg=C["card"])
         pad.pack(padx=28, pady=24)
-        tk.Label(pad, text="Votre clé API Google", font=self.f["h2"], bg=C["card"], fg=C["ink"]).pack(anchor="w")
+        tk.Label(pad, text=_("Votre clé API Google"), font=self.f["h2"], bg=C["card"], fg=C["ink"]).pack(anchor="w")
         tk.Frame(pad, bg=C["pink"], height=3, width=48).pack(anchor="w", pady=(6, 12))
-        tk.Label(pad, text="Elle permet d'interroger Google Maps. Elle reste sur cet ordinateur.",
+        tk.Label(pad, text=_("Elle permet d'interroger Google Maps. Elle reste sur cet ordinateur."),
                  font=self.f["small"], bg=C["card"], fg=C["muted"]).pack(anchor="w", pady=(0, 10))
         entry = ttk.Entry(pad, textvariable=self.api_key, show="•", width=52, font=self.f["body"])
         entry.pack(fill="x")
         opts = tk.Frame(pad, bg=C["card"])
         opts.pack(fill="x", pady=10)
-        ttk.Checkbutton(opts, text="Afficher", variable=self.show_key, style="Card.TCheckbutton",
+        ttk.Checkbutton(opts, text=_("Afficher"), variable=self.show_key, style="Card.TCheckbutton",
                         command=lambda: entry.config(show="" if self.show_key.get() else "•")).pack(side="left")
-        ttk.Checkbutton(opts, text="Mémoriser sur cet ordinateur", variable=self.remember_key,
+        ttk.Checkbutton(opts, text=_("Mémoriser sur cet ordinateur"), variable=self.remember_key,
                         style="Card.TCheckbutton").pack(side="left", padx=16)
-        link = tk.Label(pad, text="Comment obtenir une clé ? →", font=self.f["label"], bg=C["card"],
+        link = tk.Label(pad, text=_("Comment obtenir une clé ? →"), font=self.f["label"], bg=C["card"],
                         fg=C["pink_dark"], cursor="hand2")
         link.pack(anchor="w", pady=(0, 16))
         link.bind("<Button-1>", lambda e: webbrowser.open(KEY_HELP_URL))
@@ -432,7 +482,7 @@ class App(tk.Tk):
             self._refresh_key_badge()
             dlg.destroy()
 
-        PillButton(pad, "Enregistrer", save, color=C["violet"], hover=C["violet_dark"],
+        PillButton(pad, _("Enregistrer"), save, color=C["violet"], hover=C["violet_dark"],
                    font=self.f["button"], height=42).pack(anchor="e")
         entry.focus_set()
         dlg.bind("<Return>", lambda e: save())
@@ -449,21 +499,21 @@ class App(tk.Tk):
     def start_search(self):
         etat = self.licence.etat()
         if not etat.utilisable:
-            messagebox.showwarning("Licence requise", etat.message)
+            messagebox.showwarning(_("Licence requise"), etat.message)
             self.open_licence()
             return
         key = clean_api_key(self.api_key.get())
         occupation = self.occupation.get().strip()
         cities = [c.strip() for c in self.cities.get("1.0", "end").replace(",", "\n").splitlines() if c.strip()]
         if not key:
-            messagebox.showwarning("Clé API manquante", "Ajoutez d'abord votre clé API Google (bouton « Clé API »).")
+            messagebox.showwarning(_("Clé API manquante"), _("Ajoutez d'abord votre clé API Google (bouton « Clé API »)."))
             self.open_settings()
             return
         if not occupation:
-            messagebox.showwarning("Métier manquant", "Choisissez ou tapez un métier.")
+            messagebox.showwarning(_("Métier manquant"), _("Choisissez ou tapez un métier."))
             return
         if not cities:
-            messagebox.showwarning("Ville manquante", "Indiquez au moins une ville.")
+            messagebox.showwarning(_("Ville manquante"), _("Indiquez au moins une ville."))
             return
 
         self.cfg.update(occupation=occupation, cities="\n".join(cities))
@@ -474,14 +524,14 @@ class App(tk.Tk):
         for var in self.stat_vars.values():
             var.set("…")
         self.search_btn.set_enabled(False)
-        self.search_btn.set_text("Recherche en cours…")
+        self.search_btn.set_text(_("Recherche en cours…"))
         self.export_btn.set_enabled(False)
         self.progress.pack(fill="x", pady=(12, 0), after=self.search_btn)
         self.progress.start(12)
-        self.empty.config(text="Recherche en cours…")
+        self.empty.config(text=_("Recherche en cours…"))
         self.empty.place(relx=0.5, rely=0.5, anchor="center")
-        villes = "ville" if len(cities) == 1 else "villes"
-        self.status.set(f"Recherche « {occupation} » dans {len(cities)} {villes}…")
+        self.status.set(pluriel(len(cities), "Recherche « {metier} » dans {n} ville…",
+                                "Recherche « {metier} » dans {n} villes…", metier=occupation))
 
         queries = [f"{occupation} {c}" for c in cities]
         self.worker = threading.Thread(target=self._run_search, args=(key, queries, self.strict.get()), daemon=True)
@@ -491,13 +541,14 @@ class App(tk.Tk):
         try:
             leads, total = find_leads(
                 key, queries, strict=strict,
-                progress=lambda q, n: self.events.put(("progress", f"{q} : {n} prospect(s)")),
+                progress=lambda q, n: self.events.put(("progress", pluriel(n, "{recherche} : {n} prospect",
+                                                                          "{recherche} : {n} prospects", recherche=q))),
             )
             self.events.put(("done", (leads, total)))
         except PlacesError as e:
             self.events.put(("error", str(e)))
         except Exception as e:  # keep the UI alive whatever happens
-            self.events.put(("error", f"Erreur inattendue : {e}"))
+            self.events.put(("error", _("Erreur inattendue : {erreur}").format(erreur=e)))
 
     def _poll_events(self):
         try:
@@ -515,9 +566,9 @@ class App(tk.Tk):
                     self._finish()
                     for var in self.stat_vars.values():
                         var.set("—")
-                    self.empty.config(text="La recherche a échoué.")
-                    self.status.set("La recherche a échoué.")
-                    messagebox.showerror("La recherche a échoué", payload)
+                    self.empty.config(text=_("La recherche a échoué."))
+                    self.status.set(_("La recherche a échoué."))
+                    messagebox.showerror(_("La recherche a échoué"), payload)
         except queue.Empty:
             pass
         self.after(100, self._poll_events)
@@ -545,13 +596,16 @@ class App(tk.Tk):
         if self.licence_dlg is not None:
             self._fill_licence_dialog()
         if etat.statut in (lic.DESACTIVEE, lic.A_VERIFIER, lic.INVALIDE):
-            self.status.set("Licence inactive : les recherches sont bloquées.")
+            self.status.set(_("Licence inactive : les recherches sont bloquées."))
             if self.licence_dlg is None:
-                messagebox.showwarning("Licence inactive", etat.message)
+                messagebox.showwarning(_("Licence inactive"), etat.message)
                 self.open_licence()
         elif etat.hors_ligne_depuis_longtemps:
-            self.status.set(f"Licence non vérifiée depuis plusieurs jours : connectez-vous à Internet "
-                            f"(blocage dans {etat.jours_restants} jour(s)).")
+            self.status.set(pluriel(etat.jours_restants,
+                                    "Licence non vérifiée depuis plusieurs jours : connectez-vous à Internet "
+                                    "(blocage dans {n} jour).",
+                                    "Licence non vérifiée depuis plusieurs jours : connectez-vous à Internet "
+                                    "(blocage dans {n} jours)."))
 
     def _run_licence_action(self, action, *args):
         """Appel réseau dans un fil secondaire ; le résultat revient par la file d'événements."""
@@ -568,15 +622,16 @@ class App(tk.Tk):
             return
         self._fill_licence_dialog()
         if not ok:
-            messagebox.showerror("Licence", message, parent=self.licence_dlg)
+            messagebox.showerror(_("Licence"), message, parent=self.licence_dlg)
         elif isinstance(etat, lic.Etat) and etat.utilisable:
-            name = f", {etat.client}" if etat.client else ""
-            messagebox.showinfo("Licence", f"Merci{name} ! Votre licence est active.", parent=self.licence_dlg)
+            text = (_("Merci, {client} ! Votre licence est active.").format(client=etat.client) if etat.client
+                    else _("Merci ! Votre licence est active."))
+            messagebox.showinfo(_("Licence"), text, parent=self.licence_dlg)
             self.licence_dlg.destroy()
             if not self.api_key.get():
                 self.open_settings()
         elif etat is None:  # libérée
-            messagebox.showinfo("Licence", "Licence libérée : vous pouvez l'activer sur un autre ordinateur.",
+            messagebox.showinfo(_("Licence"), _("Licence libérée : vous pouvez l'activer sur un autre ordinateur."),
                                 parent=self.licence_dlg)
 
     def open_licence(self):
@@ -584,7 +639,7 @@ class App(tk.Tk):
             self.licence_dlg.lift()
             return
         dlg = self.licence_dlg = tk.Toplevel(self)
-        dlg.title(f"Licence {APP_NAME}")
+        dlg.title(_("Licence {logiciel}").format(logiciel=APP_NAME))
         dlg.configure(bg=C["card"])
         dlg.resizable(False, False)
         dlg.transient(self)
@@ -607,26 +662,29 @@ class App(tk.Tk):
         for child in pad.winfo_children():
             child.destroy()
         etat = self.licence.etat()
-        title = "✔ Licence active" if etat.utilisable else (
-            f"Activez {APP_NAME}" if etat.statut == lic.ABSENTE else "⚠ Licence inactive")
+        title = _("✔ Licence active") if etat.utilisable else (
+            _("Activez {logiciel}").format(logiciel=APP_NAME) if etat.statut == lic.ABSENTE else _("⚠ Licence inactive"))
         tk.Label(pad, text=title, font=self.f["h2"], bg=C["card"], fg=C["ink"]).pack(anchor="w")
         tk.Frame(pad, bg=C["pink"], height=3, width=48).pack(anchor="w", pady=(6, 12))
         if etat.utilisable:
             lines = []
             if etat.client:
-                lines.append(f"Titulaire : {etat.client}" + (f" ({etat.email})" if etat.email else ""))
-            lines.append(f"Clé : {etat.cle_masquee}")
+                lines.append(_("Titulaire : {client}").format(client=etat.client) + (f" ({etat.email})" if etat.email else ""))
+            lines.append(_("Clé : {cle}").format(cle=etat.cle_masquee))
             if etat.derniere_verification:
-                lines.append("Dernière vérification : " + etat.derniere_verification.astimezone().strftime("%d/%m/%Y à %H:%M"))
+                quand = etat.derniere_verification.astimezone().strftime(_("%d/%m/%Y à %H:%M"))
+                lines.append(_("Dernière vérification : {date}").format(date=quand))
             if etat.hors_ligne_depuis_longtemps:
-                lines.append(f"⚠ Non vérifiée récemment : connectez-vous à Internet (blocage dans {etat.jours_restants} jour(s)).")
+                lines.append(pluriel(etat.jours_restants,
+                                     "⚠ Non vérifiée récemment : connectez-vous à Internet (blocage dans {n} jour).",
+                                     "⚠ Non vérifiée récemment : connectez-vous à Internet (blocage dans {n} jours)."))
             tk.Label(pad, text="\n".join(lines), font=self.f["body"], bg=C["card"], fg=C["ink"], justify="left"
                      ).pack(anchor="w", pady=(0, 16))
             row = tk.Frame(pad, bg=C["card"])
             row.pack(anchor="e")
-            PillButton(row, "Libérer (changer d'ordinateur)", self._liberer, color=C["disabled"], hover=C["muted"],
+            PillButton(row, _("Libérer (changer d'ordinateur)"), self._liberer, color=C["disabled"], hover=C["muted"],
                        font=self.f["button"], height=42).pack(side="left", padx=(0, 10))
-            PillButton(row, "Vérifier maintenant", lambda: self._run_licence_action(self.licence.verifier),
+            PillButton(row, _("Vérifier maintenant"), lambda: self._run_licence_action(self.licence.verifier),
                        color=C["violet"], hover=C["violet_dark"], font=self.f["button"], height=42).pack(side="left")
             return
         tk.Label(pad, text=etat.message, font=self.f["body"], bg=C["card"], fg=C["ink"], wraplength=440,
@@ -634,33 +692,33 @@ class App(tk.Tk):
         if etat.statut in (lic.ABSENTE, lic.INVALIDE):
             entry = ttk.Entry(pad, textvariable=self.licence_key, width=52, font=self.f["body"])
             entry.pack(fill="x")
-            tk.Label(pad, text="Elle s'affiche sur la page « Merci » juste après votre paiement (elle commence par « BTL- »).\n"
-                               "L'activation demande une connexion à Internet.",
+            tk.Label(pad, text=_("Elle s'affiche sur la page « Merci » juste après votre paiement (elle commence par « BTL- »).\n"
+                                 "L'activation demande une connexion à Internet."),
                      font=self.f["small"], bg=C["card"], fg=C["muted"], justify="left").pack(anchor="w", pady=(8, 16))
-            action = ("Activer", lambda: self._run_licence_action(self.licence.activer, self.licence_key.get()))
+            action = (_("Activer"), lambda: self._run_licence_action(self.licence.activer, self.licence_key.get()))
             entry.focus_set()
             self.licence_dlg.bind("<Return>", lambda e: action[1]())
         else:
-            action = ("Vérifier maintenant", lambda: self._run_licence_action(self.licence.verifier))
+            action = (_("Vérifier maintenant"), lambda: self._run_licence_action(self.licence.verifier))
         row = tk.Frame(pad, bg=C["card"])
         row.pack(fill="x")
-        if lic.LIEN_ACHAT:
-            link = tk.Label(row, text="Acheter une licence →", font=self.f["label"], bg=C["card"],
+        if lic.lien_achat():
+            link = tk.Label(row, text=_("Acheter une licence →"), font=self.f["label"], bg=C["card"],
                             fg=C["pink_dark"], cursor="hand2")
             link.pack(side="left")
-            link.bind("<Button-1>", lambda e: webbrowser.open(lic.LIEN_ACHAT))
+            link.bind("<Button-1>", lambda e: webbrowser.open(lic.lien_achat()))
         PillButton(row, action[0], action[1], color=C["violet"], hover=C["violet_dark"],
                    font=self.f["button"], height=42).pack(side="right")
 
     def _liberer(self):
-        if messagebox.askyesno("Libérer la licence", "Libérer la licence de cet ordinateur ? Vous pourrez "
-                               "l'activer sur un autre ordinateur.", parent=self.licence_dlg):
+        if messagebox.askyesno(_("Libérer la licence"), _("Libérer la licence de cet ordinateur ? Vous pourrez "
+                                                          "l'activer sur un autre ordinateur."), parent=self.licence_dlg):
             self._run_licence_action(self.licence.liberer)
 
     def _finish(self):
         self.progress.stop()
         self.progress.pack_forget()
-        self.search_btn.set_text("Rechercher  →")
+        self.search_btn.set_text(_("Rechercher  →"))
         self.search_btn.set_enabled(True)
 
     def _show_results(self, leads, total):
@@ -668,13 +726,22 @@ class App(tk.Tk):
         self.leads = leads
         self._fill_tree()
         none = sum(1 for lead in leads if lead["status"] == "none")
+        self.last_counts = (total, none, len(leads) - none)
+        self._show_counts(*self.last_counts)
+        if not leads:
+            self.empty.config(text=self._no_lead_text())
+
+    def _show_counts(self, total, none, social):
         self.stat_vars["total"].set(str(total))
         self.stat_vars["none"].set(str(none))
-        self.stat_vars["social"].set(str(len(leads) - none))
-        self.export_btn.set_enabled(bool(leads))
-        self.status.set(f"{len(leads)} prospect(s) sans site web sur {total} commerces trouvés.")
-        if not leads:
-            self.empty.config(text="Tous les commerces trouvés ont déjà un site.\nEssayez une autre ville ou un autre métier.")
+        self.stat_vars["social"].set(str(social))
+        self.export_btn.set_enabled(bool(self.leads))
+        self.status.set(pluriel(len(self.leads), "{n} prospect sans site web sur {total} commerces trouvés.",
+                                "{n} prospects sans site web sur {total} commerces trouvés.", total=total))
+
+    @staticmethod
+    def _no_lead_text():
+        return _("Tous les commerces trouvés ont déjà un site.\nEssayez une autre ville ou un autre métier.")
 
     def _fill_tree(self):
         self.tree.delete(*self.tree.get_children())
@@ -682,8 +749,8 @@ class App(tk.Tk):
             self.empty.place_forget()
         for i, lead in enumerate(self.leads):
             tag = "none" if lead["status"] == "none" else "social"
-            label = "✖  Aucun site" if tag == "none" else "•  " + page_name(lead["status"])
-            values = [label if k == "status" else lead[k] for k, _, _, _ in COLUMNS]
+            label = _("✖  Aucun site") if tag == "none" else "•  " + page_name(lead["status"])
+            values = [label if k == "status" else lead[k] for k, _heading, _width, _stretch in COLUMNS]
             self.tree.insert("", "end", iid=str(i), values=values, tags=(tag,))
 
     def sort_by(self, key):
@@ -698,7 +765,7 @@ class App(tk.Tk):
             webbrowser.open(self.leads[int(sel)]["maps_url"])
 
     def export_xlsx(self):
-        default = f"prospects_{self.occupation.get().strip().replace(' ', '_') or 'export'}.xlsx"
+        default = _("prospects") + f"_{self.occupation.get().strip().replace(' ', '_') or 'export'}.xlsx"
         path = filedialog.asksaveasfilename(defaultextension=".xlsx", initialfile=default,
                                             filetypes=[("Excel", "*.xlsx")])
         if not path:
@@ -706,9 +773,10 @@ class App(tk.Tk):
         try:
             write_xlsx(self.leads, path)
         except OSError as e:
-            messagebox.showerror("Export impossible", str(e))
+            messagebox.showerror(_("Export impossible"), str(e))
             return
-        self.status.set(f"{len(self.leads)} prospect(s) exporté(s) vers {os.path.basename(path)}")
+        self.status.set(pluriel(len(self.leads), "{n} prospect exporté vers {fichier}",
+                                "{n} prospects exportés vers {fichier}", fichier=os.path.basename(path)))
 
 
 if __name__ == "__main__":

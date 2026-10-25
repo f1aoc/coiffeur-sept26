@@ -30,12 +30,22 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Callable
 
+try:  # textes traduits dans la langue de l'application (langue.py), français sinon
+    from langue import _, langue_courante
+except ImportError:  # module copié seul dans un autre logiciel
+    def _(texte: str) -> str:
+        return texte
+
+    def langue_courante() -> str:
+        return "fr"
+
 # --- À MODIFIER -------------------------------------------------------------------------------------
 # Adresse de VOTRE serveur de licences (Cloudflare Worker, voir serveur-licences/README.md),
 # par exemple "https://licences.votre-nom.workers.dev".
 SERVEUR = "https://licences.patrick-tabountchikoff.workers.dev"
-# Lien de paiement Stripe du logiciel (affiché sur l'écran de licence).
+# Lien de paiement Stripe du logiciel (affiché sur l'écran de licence), et page de vente anglaise.
 LIEN_ACHAT = "https://buy.stripe.com/cNi28seh5dqSbcT0GlcfK03"
+LIENS_ACHAT = {"fr": LIEN_ACHAT, "en": "https://www.vorelik.com/en/bridgetoleads/"}
 # -----------------------------------------------------------------------------------------------------
 
 NOM_LOGICIEL = "BridgeToLeads"
@@ -55,7 +65,7 @@ MESSAGES_BLOCAGE = {
 
 
 class ErreurLicence(Exception):
-    """Message destiné à l'utilisateur, en français."""
+    """Message destiné à l'utilisateur, dans la langue de l'application."""
 
 
 class HorsLigne(Exception):
@@ -171,27 +181,28 @@ class Licence:
         """État d'après le fichier local, sans appel réseau."""
         d = self._lire()
         if d is None:
-            return Etat(ABSENTE, "Saisissez la clé de licence affichée après votre achat (page « Merci »).")
+            return Etat(ABSENTE, _("Saisissez la clé de licence affichée après votre achat (page « Merci »)."))
         if d.get("altere"):
-            return Etat(ABSENTE, "Le fichier de licence a été modifié ou vient d'un autre ordinateur : "
-                                 "saisissez à nouveau votre clé de licence.")
+            return Etat(ABSENTE, _("Le fichier de licence a été modifié ou vient d'un autre ordinateur : "
+                                   "saisissez à nouveau votre clé de licence."))
         commun = dict(cle=d.get("cle", ""), client=d.get("client", ""), email=d.get("email", ""))
         statut = d.get("statut", INVALIDE)
         verifie = datetime.fromisoformat(d["verifie_le"]) if d.get("verifie_le") else None
         if statut in MESSAGES_BLOCAGE:
-            return Etat(statut, MESSAGES_BLOCAGE[statut], derniere_verification=verifie, **commun)
+            return Etat(statut, _(MESSAGES_BLOCAGE[statut]), derniere_verification=verifie, **commun)
         if statut != ACTIVE or verifie is None:
-            return Etat(INVALIDE, d.get("message") or "Cette clé de licence n'est pas valable.", **commun)
+            return Etat(INVALIDE, _(d.get("message") or "Cette clé de licence n'est pas valable."), **commun)
         maintenant = self.maintenant()
         if verifie - maintenant > timedelta(days=1):  # horloge de l'ordinateur reculée
-            return Etat(A_VERIFIER, "La date de l'ordinateur semble incorrecte : connectez-vous à Internet "
-                                    "pour vérifier votre licence.", derniere_verification=verifie, **commun)
+            return Etat(A_VERIFIER, _("La date de l'ordinateur semble incorrecte : connectez-vous à Internet "
+                                      "pour vérifier votre licence."), derniere_verification=verifie, **commun)
         restants = TOLERANCE_JOURS - (maintenant - verifie).days
         if restants <= 0:
-            return Etat(A_VERIFIER, f"Votre licence n'a pas pu être vérifiée depuis plus de {TOLERANCE_JOURS} jours : "
-                                    "connectez-vous à Internet puis cliquez sur « Vérifier maintenant ».",
+            return Etat(A_VERIFIER, _("Votre licence n'a pas pu être vérifiée depuis plus de {jours} jours : "
+                                      "connectez-vous à Internet puis cliquez sur « Vérifier maintenant ».").format(
+                                          jours=TOLERANCE_JOURS),
                         derniere_verification=verifie, **commun)
-        return Etat(ACTIVE, "Licence active.", derniere_verification=verifie, jours_restants=restants, **commun)
+        return Etat(ACTIVE, _("Licence active."), derniere_verification=verifie, jours_restants=restants, **commun)
 
     def verification_due(self) -> bool:
         d = self._lire()
@@ -208,22 +219,23 @@ class Licence:
     def activer(self, cle: str) -> Etat:
         cle = "".join(cle.split())  # espaces et retours à la ligne collés par erreur
         if len(cle) < 12:
-            raise ErreurLicence("Collez la clé de licence complète, telle qu'elle est affichée après votre achat.")
+            raise ErreurLicence(_("Collez la clé de licence complète, telle qu'elle est affichée après votre achat."))
         try:
             code, r = self._appel("activer", cle)
         except HorsLigne as e:
-            raise ErreurLicence("Impossible de joindre le serveur de licences : vérifiez votre connexion à Internet, "
-                                "puis réessayez.") from e
+            raise ErreurLicence(_("Impossible de joindre le serveur de licences : vérifiez votre connexion à Internet, "
+                                  "puis réessayez.")) from e
         if not r.get("valide"):
             statut = r.get("statut")
             if statut == "limite":
-                raise ErreurLicence("Cette clé est déjà utilisée sur le nombre maximal d'ordinateurs. Libérez-la sur "
-                                    "l'ancien ordinateur (bouton « Licence » → « Libérer »), ou contactez le support.")
+                raise ErreurLicence(_("Cette clé est déjà utilisée sur le nombre maximal d'ordinateurs. Libérez-la sur "
+                                      "l'ancien ordinateur (bouton « Licence » → « Libérer »), ou contactez le support."))
             if statut == "desactivee":
-                raise ErreurLicence("Cette licence a été désactivée (paiement remboursé ou contesté).")
+                raise ErreurLicence(_("Cette licence a été désactivée (paiement remboursé ou contesté)."))
             if statut == "autre_produit":
-                raise ErreurLicence(f"Cette clé de licence est celle d'un autre logiciel, pas de {NOM_LOGICIEL}.")
-            raise ErreurLicence("Clé de licence inconnue : vérifiez qu'elle est copiée en entier.")
+                raise ErreurLicence(_("Cette clé de licence est celle d'un autre logiciel, pas de {logiciel}.").format(
+                    logiciel=NOM_LOGICIEL))
+            raise ErreurLicence(_("Clé de licence inconnue : vérifiez qu'elle est copiée en entier."))
         self._ecrire({"cle": cle, "statut": ACTIVE, "verifie_le": self.maintenant().isoformat(),
                       "client": r.get("nom", ""), "email": r.get("email", "")})
         return self.etat()
@@ -254,8 +266,8 @@ class Licence:
             try:
                 self._appel("liberer", d["cle"])
             except HorsLigne as e:
-                raise ErreurLicence("Impossible de joindre le serveur de licences : connectez-vous à Internet pour "
-                                    "libérer la licence.") from e
+                raise ErreurLicence(_("Impossible de joindre le serveur de licences : connectez-vous à Internet pour "
+                                      "libérer la licence.")) from e
         self.chemin.unlink(missing_ok=True)
 
 
@@ -266,13 +278,18 @@ class LicenceLibre(Licence):
         pass
 
     def etat(self) -> Etat:
-        return Etat(ACTIVE, "Licence non contrôlée (mode développement).")
+        return Etat(ACTIVE, _("Licence non contrôlée (mode développement)."))
 
     def verification_due(self) -> bool:
         return False
 
     def verifier(self) -> Etat:
         return self.etat()
+
+
+def lien_achat() -> str:
+    """Page d'achat dans la langue de l'application."""
+    return LIENS_ACHAT.get(langue_courante(), LIEN_ACHAT)
 
 
 def licence_par_defaut(dossier: str | Path) -> Licence:

@@ -25,6 +25,9 @@ import urllib.error
 import urllib.request
 from urllib.parse import urlparse
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from langue import _, langue_courante  # noqa: E402
+
 ENDPOINT = "https://places.googleapis.com/v1/places:searchText"
 
 FIELDS = [
@@ -51,6 +54,11 @@ NOT_A_REAL_SITE = {
     "booksy.com", "fresha.com", "doctolib.fr", "pagesjaunes.fr",
     "tripadvisor.fr", "tripadvisor.com", "thefork.fr", "lafourchette.com",
     "ubereats.com", "deliveroo.fr", "calendly.com",
+    # English-speaking countries
+    "yelp.com", "yelp.ca", "yelp.co.uk", "yellowpages.com", "yellowpages.ca", "yell.com", "nextdoor.com",
+    "bbb.org", "angi.com", "homeadvisor.com", "thumbtack.com", "houzz.com", "square.site", "vagaro.com",
+    "styleseat.com", "schedulicity.com", "mindbodyonline.com", "booksy.net", "opentable.com",
+    "doordash.com", "grubhub.com", "toasttab.com", "setmore.com", "squareup.com",
 }
 
 CSV_COLUMNS = [
@@ -75,7 +83,7 @@ class PlacesError(Exception):
     pass
 
 
-# Google error reason -> what to do about it (French: the app's users are in France).
+# Google error reason -> what to do about it (written in French, translated by _() when shown).
 ERROR_HINTS = {
     "SERVICE_DISABLED": "L'API « Places API (New) » n'est pas activée sur ce projet.\n"
         "Google Cloud → API et services → Bibliothèque → cherchez « Places API (New) » "
@@ -121,18 +129,19 @@ def explain_http_error(code, body):
             reason = "SERVICE_DISABLED"
         elif code == 429:
             reason = "RATE_LIMIT_EXCEEDED"
-    hint = ERROR_HINTS.get(reason, "Erreur inattendue de Google, voir le détail ci-dessous.")
-    return f"{hint}\n\nDétail Google ({code} {status} {reason}) :\n{message}".strip()
+    hint = _(ERROR_HINTS.get(reason, "Erreur inattendue de Google, voir le détail ci-dessous."))
+    detail = _("Détail Google ({code} {status} {reason}) :").format(code=code, status=status, reason=reason)
+    return f"{hint}\n\n{detail}\n{message}".strip()
 
 
 def explain_network_error(reason):
     text = str(reason)
     if "CERTIFICATE_VERIFY_FAILED" in text:
-        hint = ("Connexion sécurisée refusée (certificat). Souvent causé par un antivirus ou un proxy "
-                "qui inspecte le HTTPS : désactivez l'analyse HTTPS de l'antivirus, ou essayez un autre réseau.")
+        hint = _("Connexion sécurisée refusée (certificat). Souvent causé par un antivirus ou un proxy "
+                 "qui inspecte le HTTPS : désactivez l'analyse HTTPS de l'antivirus, ou essayez un autre réseau.")
     else:
-        hint = "Impossible de joindre Google. Vérifiez votre connexion Internet, votre pare-feu ou antivirus."
-    return f"{hint}\n\nDétail : {text}"
+        hint = _("Impossible de joindre Google. Vérifiez votre connexion Internet, votre pare-feu ou antivirus.")
+    return f"{hint}\n\n" + _("Détail : {detail}").format(detail=text)
 
 
 def clean_api_key(key):
@@ -151,10 +160,17 @@ def classify_website(url):
     return "real"
 
 
+def places_language():
+    """(languageCode, regionCode) for Google: France in French; in English, no region (the city decides)."""
+    return ("fr", "FR") if langue_courante() == "fr" else ("en", None)
+
+
 def search(api_key, query, language, region, max_pages):
     """Yield raw place dicts for a text query (max 20 per page, 3 pages)."""
-    body = {"textQuery": query, "languageCode": language, "regionCode": region, "pageSize": 20}
-    for _ in range(max_pages):
+    body = {"textQuery": query, "languageCode": language, "pageSize": 20}
+    if region:
+        body["regionCode"] = region
+    for _page in range(max_pages):
         req = urllib.request.Request(
             ENDPOINT,
             data=json.dumps(body).encode(),
@@ -197,8 +213,11 @@ def to_row(place, query):
 
 
 def find_leads(api_key, queries, strict=False, include_closed=False,
-               language="fr", region="FR", max_pages=3, progress=None):
-    """Run every query and return (leads sorted by review count, businesses seen)."""
+               language=None, region=None, max_pages=3, progress=None):
+    """Run every query and return (leads sorted by review count, businesses seen).
+    Language and region default to the app language (see places_language)."""
+    if language is None:
+        language, region = places_language()
     seen, leads, total = set(), [], 0
     for q in queries:
         found = 0
@@ -229,7 +248,7 @@ def write_csv(leads, path):
 
 
 XLSX_COLUMNS = [
-    # (key, French heading, column width)
+    # (key, heading written in French and translated by _(), column width)
     ("name", "Nom", 32),
     ("status", "Site web", 22),
     ("website", "Page actuelle", 30),
@@ -245,36 +264,36 @@ XLSX_COLUMNS = [
 
 def status_label(status):
     if status == "none":
-        return "Aucun"
+        return _("Aucun")
     if status.startswith("social_or_directory:"):
-        return status.split(":", 1)[1] + " seulement"
+        return _("{page} seulement").format(page=status.split(":", 1)[1])
     return status
 
 
 def write_xlsx(leads, path):
-    """Excel file with French headers, filters, frozen header and clickable Maps links."""
+    """Excel file with headers in the app language, filters, frozen header and clickable Maps links."""
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill
 
     wb = Workbook()
     ws = wb.active
-    ws.title = "Prospects"
-    ws.append([heading for _, heading, _ in XLSX_COLUMNS])
+    ws.title = _("Prospects")
+    ws.append([_(heading) for _key, heading, _width in XLSX_COLUMNS])
     for cell in ws[1]:
         cell.font = Font(bold=True, color="FFFFFF")
         cell.fill = PatternFill("solid", fgColor="1A3300")
-    for i, (_, _, width) in enumerate(XLSX_COLUMNS, start=1):
+    for i, (_key, _heading, width) in enumerate(XLSX_COLUMNS, start=1):
         ws.column_dimensions[ws.cell(row=1, column=i).column_letter].width = width
 
-    maps_col = [k for k, _, _ in XLSX_COLUMNS].index("maps_url") + 1
+    maps_col = [k for k, _heading, _width in XLSX_COLUMNS].index("maps_url") + 1
     for lead in leads:
         row = []
-        for key, _, _ in XLSX_COLUMNS:
+        for key, _heading, _width in XLSX_COLUMNS:
             value = lead.get(key, "")
             if key == "status":
                 value = status_label(value)
             elif key == "maps_url" and value:
-                value = "Ouvrir"
+                value = _("Ouvrir")
             row.append(value)
         ws.append(row)
         if lead.get("maps_url"):
@@ -304,8 +323,8 @@ def main():
                    help="output file, .xlsx (Excel, needs openpyxl) or .csv (default: leads.xlsx)")
     p.add_argument("--strict", action="store_true", help="only businesses with no website field at all")
     p.add_argument("--include-closed", action="store_true", help="keep temporarily/permanently closed businesses")
-    p.add_argument("--language", default="fr")
-    p.add_argument("--region", default="FR")
+    p.add_argument("--language", help="Google results language (default: fr in French, en otherwise)")
+    p.add_argument("--region", help="Google region code (default: FR in French, none otherwise)")
     p.add_argument("--max-pages", type=int, default=3, help="pages of 20 results per query (API max: 3)")
     args = p.parse_args()
 
@@ -319,10 +338,12 @@ def main():
             cities += [line.strip() for line in f if line.strip() and not line.startswith("#")]
     queries = [f"{args.keyword} {c}" for c in cities] or [args.keyword]
 
+    default_language, default_region = places_language()
     try:
         leads, total = find_leads(
             api_key, queries, strict=args.strict, include_closed=args.include_closed,
-            language=args.language, region=args.region, max_pages=args.max_pages,
+            language=args.language or default_language,
+            region=args.region or (None if args.language else default_region), max_pages=args.max_pages,
             progress=lambda q, n: print(f"{q!r}: {n} lead(s)", file=sys.stderr),
         )
     except PlacesError as e:

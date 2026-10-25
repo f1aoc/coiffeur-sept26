@@ -26,11 +26,21 @@ a result to open it on Google Maps; **Exporter Excel…** saves the list as .xls
 
 ### Look & branding
 
-Colourful interface (violet → pink → orange), fully in French. To rebrand it
+Colourful interface (violet → pink → orange), in French or English. To rebrand it
 for resale, edit the constants at the top of `bridgetoleads.pyw`
 (`APP_NAME`, `AUTHOR`, `TAGLINE`, `GRADIENT`, colours `C`), and redraw the icon with
 `python3 tools/prospection/assets/make_icon.py` (needs Pillow): it rewrites
 `assets/bridgetoleads.ico` (the .exe icon) and `brand_icon.py` (window icon).
+
+### Language (French / English)
+
+The app starts in the computer's language (French if the system is French, English otherwise); the
+**English / Français** button in the header switches it and the choice is saved in `~/.bridgetoleads.json`.
+The variable `BRIDGETOLEADS_LANGUE=fr|en` overrides both. Texts are written in French in the code inside
+`_("…")` (see `langue.py`); `traductions_en.py` maps each one to English, and `tests/test_langues.py` fails if
+a text is missing. In English, Google Places is queried in English with no region (the city typed decides,
+e.g. "Austin TX"); in French, results are in French and biased to France. The Excel export and the licence
+messages follow the language, and the "Buy a license" link opens the English sales page.
 
 ### Licence (Stripe + licence server)
 
