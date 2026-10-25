@@ -63,7 +63,7 @@ def test_ecrans_en_anglais(web, monkeypatch):
         web.post("/reglages", data={"langue": "en"})
         for chemin, attendu in (("/analyses", "No analysis yet"), ("/analyses/nouvelle", "Drag and drop your file here"),
                                 ("/resultats", "No prospect matches these filters"), ("/reglages", "Scoring weights"),
-                                ("/recherche", "« Trade + city » search"), ("/licence", "How it works"),
+                                ("/recherche", "“Trade + city” search"), ("/licence", "How it works"),
                                 ("/oppositions", "Opt-out list"), ("/a-propos", "Site Hunter")):
             page = web.get(chemin)
             assert page.status_code == 200 and attendu in page.text and 'lang="en"' in page.text, chemin

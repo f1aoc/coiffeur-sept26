@@ -71,7 +71,7 @@ def ecran_de_demarrage(icone: Image.Image) -> Image.Image:
     d = ImageDraw.Draw(ecran)
     d.text((196, 46), "Chasseur de sites", fill=(27, 36, 51), font=police(34))
     d.text((198, 92), "by ptabountchikoff", fill=(31, 95, 191), font=police(18))
-    d.text((198, 132), "Démarrage en cours…", fill=(91, 101, 118), font=police(18))
+    d.text((198, 132), "Démarrage… · Starting…", fill=(91, 101, 118), font=police(18))  # avant le choix de la langue
     return ecran
 
 

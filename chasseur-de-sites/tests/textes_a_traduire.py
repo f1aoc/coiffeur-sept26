@@ -11,7 +11,7 @@ RACINE = Path(__file__).resolve().parent.parent / "chasseur"
 
 def _textes_python() -> set[str]:
     textes = set()
-    for fichier in RACINE.rglob("*.py"):
+    for fichier in [*RACINE.rglob("*.py"), RACINE.parent / "packaging" / "lancer.py"]:
         if "__pycache__" in fichier.parts:
             continue
         for noeud in ast.walk(ast.parse(fichier.read_text(encoding="utf-8"))):

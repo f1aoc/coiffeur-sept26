@@ -22,6 +22,8 @@ import urllib.request
 import webbrowser
 from pathlib import Path
 
+from chasseur.langue import _
+
 NOM = "Chasseur de sites"
 AUTEUR = "ptabountchikoff"
 PORT = 8765
@@ -31,6 +33,20 @@ ACCENT, ACCENT_FONCE, FOND, ENCRE, GRIS = "#1f5fbf", "#174a96", "#f5f7fb", "#1b2
 
 def dossier_donnees() -> Path:
     return Path(os.environ.get("CHASSEUR_DONNEES") or Path.home() / ".chasseur-de-sites")
+
+
+def langue_enregistree() -> None:
+    """Langue choisie dans les Réglages de l'application (sinon celle de l'ordinateur) pour cette fenêtre."""
+    try:
+        from chasseur.db import reglages
+        from chasseur.db.moteur import NOM_BASE, Stockage
+        from chasseur.langue import LANGUE, definir_langue
+
+        if (dossier_donnees() / NOM_BASE).is_file():
+            with Stockage(dossier_donnees()).session() as session:
+                definir_langue(reglages.lire(session, LANGUE, ""))
+    except Exception:  # noqa: BLE001 — la langue de l'ordinateur reste utilisée
+        pass
 
 
 def ressource(nom: str) -> Path:
@@ -112,7 +128,7 @@ class Fenetre:
 
         self.tk = tk
         self.racine = tk.Tk()
-        self.racine.title(f"{NOM} by {AUTEUR}")
+        self.racine.title(f"{_(NOM)} by {AUTEUR}")
         self.racine.configure(bg=FOND)
         self.racine.resizable(False, False)
         try:
@@ -124,24 +140,24 @@ class Fenetre:
         cadre.pack()
         titre = tk.Frame(cadre, bg=FOND)
         titre.pack(anchor="w")
-        tk.Label(titre, text=NOM, bg=FOND, fg=ENCRE, font=("Segoe UI", 18, "bold")).pack(side="left")
+        tk.Label(titre, text=_(NOM), bg=FOND, fg=ENCRE, font=("Segoe UI", 18, "bold")).pack(side="left")
         tk.Label(titre, text=f"by {AUTEUR}", bg=FOND, fg=GRIS, font=("Segoe UI", 10)).pack(side="left", padx=(8, 0), pady=(6, 0))
-        tk.Label(cadre, text="Repérez les sites cassés ou obsolètes des entreprises locales", bg=FOND, fg=GRIS,
+        tk.Label(cadre, text=_("Repérez les sites cassés ou obsolètes des entreprises locales"), bg=FOND, fg=GRIS,
                  font=("Segoe UI", 10)).pack(anchor="w", pady=(0, 14))
-        self.etat = tk.Label(cadre, text="Démarrage…", bg=FOND, fg=ENCRE, font=("Segoe UI", 11), justify="left",
+        self.etat = tk.Label(cadre, text=_("Démarrage…"), bg=FOND, fg=ENCRE, font=("Segoe UI", 11), justify="left",
                              wraplength=420)
         self.etat.pack(anchor="w")
         self.barre = ttk.Progressbar(cadre, mode="indeterminate", length=420)
         self.barre.pack(anchor="w", pady=(10, 14))
         boutons = tk.Frame(cadre, bg=FOND)
         boutons.pack(anchor="w", fill="x")
-        self.ouvrir = tk.Button(boutons, text="Ouvrir l'interface", command=ouvrir_navigateur, state="disabled",
+        self.ouvrir = tk.Button(boutons, text=_("Ouvrir l'interface"), command=ouvrir_navigateur, state="disabled",
                                 bg=ACCENT, fg="white", activebackground=ACCENT_FONCE, activeforeground="white",
                                 relief="flat", padx=16, pady=6, font=("Segoe UI", 10, "bold"), cursor="hand2")
         self.ouvrir.pack(side="left")
-        tk.Button(boutons, text="Quitter", command=self.quitter, relief="flat", padx=16, pady=6,
+        tk.Button(boutons, text=_("Quitter"), command=self.quitter, relief="flat", padx=16, pady=6,
                   font=("Segoe UI", 10), cursor="hand2").pack(side="left", padx=(10, 0))
-        tk.Label(cadre, text="Gardez cette fenêtre ouverte (vous pouvez la réduire) : la fermer arrête l'application.",
+        tk.Label(cadre, text=_("Gardez cette fenêtre ouverte (vous pouvez la réduire) : la fermer arrête l'application."),
                  bg=FOND, fg=GRIS, font=("Segoe UI", 9), wraplength=420, justify="left").pack(anchor="w", pady=(14, 0))
         self.racine.protocol("WM_DELETE_WINDOW", self.quitter)
         self.serveur = None
@@ -178,29 +194,29 @@ class Fenetre:
 
     def _preparer(self) -> None:
         if chromium_a_installer():
-            self.afficher("Premier lancement : téléchargement du navigateur d'analyse (environ 150 Mo, une seule "
-                          "fois). Cela prend quelques minutes…", True)
+            self.afficher(_("Premier lancement : téléchargement du navigateur d'analyse (environ 150 Mo, une seule "
+                            "fois). Cela prend quelques minutes…"), True)
             if not installer_chromium():
-                self.afficher("⚠ Le navigateur d'analyse n'a pas pu être téléchargé : vérifiez votre connexion "
-                              "puis relancez l'application. L'interface démarre quand même.", True)
+                self.afficher(_("⚠ Le navigateur d'analyse n'a pas pu être téléchargé : vérifiez votre connexion "
+                                "puis relancez l'application. L'interface démarre quand même."), True)
         else:
-            self.afficher("Démarrage de l'interface…", True)
+            self.afficher(_("Démarrage de l'interface…"), True)
         try:
             self.serveur = creer_serveur()
         except Exception as e:  # noqa: BLE001 — affiché à l'utilisateur
-            self.afficher(f"⚠ Impossible de démarrer : {e}", False)
+            self.afficher(_("⚠ Impossible de démarrer : {erreur}").format(erreur=e), False)
             return
         threading.Thread(target=self.serveur.run, daemon=True).start()
-        for _ in range(300):
+        for _essai in range(300):
             if self.serveur.started:
                 break
             if self.serveur.should_exit:
                 break
             threading.Event().wait(0.1)
         if not self.serveur.started:
-            self.afficher(f"⚠ Le port {PORT} est déjà utilisé par un autre programme. Fermez-le, puis relancez.", False)
+            self.afficher(_("⚠ Le port {port} est déjà utilisé par un autre programme. Fermez-le, puis relancez.").format(port=PORT), False)
             return
-        self.afficher(f"L'application est prête : {ADRESSE}", False)
+        self.afficher(_("L'application est prête : {adresse}").format(adresse=ADRESSE), False)
         self.messages.put(("pret",))
         ouvrir_navigateur()
 
@@ -213,7 +229,7 @@ class Fenetre:
 def sans_fenetre() -> int:
     """Serveur seul, au premier plan (pas d'affichage graphique disponible, ou CHASSEUR_SANS_FENETRE)."""
     if chromium_a_installer():
-        print("Premier lancement : téléchargement du navigateur d'analyse (environ 150 Mo, une seule fois)…", flush=True)
+        print(_("Premier lancement : téléchargement du navigateur d'analyse (environ 150 Mo, une seule fois)…"), flush=True)
         installer_chromium()
     serveur = creer_serveur()
     threading.Timer(1.5, ouvrir_navigateur).start()
@@ -250,6 +266,7 @@ def main() -> int:
     if deja_lance():
         ouvrir_navigateur()
         return 0
+    langue_enregistree()
     if os.environ.get("CHASSEUR_SANS_FENETRE"):
         return sans_fenetre()
     try:
