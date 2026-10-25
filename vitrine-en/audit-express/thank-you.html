@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Thank you for your purchase — Audit Express</title>
+  <meta name="description" content="Download Audit Express and follow the getting started guide.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" type="image/png" href="assets/icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --violet: #059669;
+      --violet-dark: #047857;
+      --pink: #0E7490;
+      --orange: #F97316;
+      --teal: #0D9488;
+      --yellow: #FDE68A;
+      --ink: #0F1E3D;
+      --muted: #56627A;
+      --bg: #F4F9F7;
+      --card: #FFFFFF;
+      --border: #DCEBE5;
+      --gradient: linear-gradient(120deg, var(--violet) 0%, var(--pink) 100%);
+      --shadow: 0 20px 50px -20px rgba(4, 120, 87, .35);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+      color: var(--ink); background: var(--bg); line-height: 1.6;
+      -webkit-font-smoothing: antialiased; overflow-x: hidden;
+    }
+    a { color: inherit; }
+    .wrap { width: min(860px, 100% - 32px); margin-inline: auto; }
+    .gradient-text { background: var(--gradient); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    h1, h2, h3 { line-height: 1.15; margin: 0; letter-spacing: -.02em; }
+
+    .nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 72px; width: min(1140px, 100% - 32px); }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.2rem; text-decoration: none; white-space: nowrap; }
+    .by { font-size: .72rem; font-weight: 500; font-style: italic; color: var(--muted); margin-left: -4px; align-self: flex-end; padding-bottom: 5px; }
+    .brand img { width: 36px; height: 36px; border-radius: 10px; }
+    .nav a.back { color: var(--muted); text-decoration: none; font-weight: 500; }
+    .nav a.back:hover { color: var(--violet); }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+      padding: 16px 30px; border-radius: 999px; font-weight: 700; font-size: 1.05rem;
+      text-decoration: none; transition: transform .2s ease, background .2s ease;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn-primary { background: var(--violet); color: #fff; box-shadow: 0 12px 30px -10px rgba(5, 150, 105, .6); }
+    .btn-primary:hover { background: var(--violet-dark); }
+    .btn-ghost { background: #fff; color: var(--violet-dark); box-shadow: inset 0 0 0 2px var(--border); }
+    .btn-ghost:hover { box-shadow: inset 0 0 0 2px var(--violet); }
+
+    /* ---------- Hero ---------- */
+    .hero { position: relative; text-align: center; padding: clamp(40px, 8vw, 80px) 0 clamp(40px, 7vw, 70px); overflow: hidden; }
+    .blob { position: absolute; border-radius: 50%; filter: blur(70px); opacity: .4; z-index: 0; pointer-events: none; }
+    .blob.one { width: 420px; height: 420px; background: var(--pink); top: -140px; right: -100px; }
+    .blob.two { width: 360px; height: 360px; background: var(--violet); top: 120px; left: -160px; opacity: .3; }
+    .hero .wrap { position: relative; z-index: 1; }
+    .check {
+      width: 96px; height: 96px; margin: 0 auto 26px; border-radius: 30px;
+      background: var(--gradient); display: grid; place-items: center; box-shadow: var(--shadow);
+      animation: pop .7s cubic-bezier(.2, 1.6, .4, 1) both;
+    }
+    .check svg { width: 50px; height: 50px; }
+    .check path { stroke-dasharray: 60; stroke-dashoffset: 60; animation: draw .6s .35s ease forwards; }
+    @keyframes pop { from { transform: scale(.3) rotate(-12deg); opacity: 0; } to { transform: none; opacity: 1; } }
+    @keyframes draw { to { stroke-dashoffset: 0; } }
+    .hero h1 { font-size: clamp(2.2rem, 6vw, 3.6rem); font-weight: 800; }
+    .hero p { color: var(--muted); font-size: clamp(1.05rem, 2.2vw, 1.2rem); max-width: 600px; margin: 18px auto 0; }
+
+    /* ---------- Download card ---------- */
+    .download {
+      position: relative; background: var(--card); border-radius: 28px; padding: clamp(28px, 5vw, 44px);
+      box-shadow: var(--shadow); display: flex; gap: 28px; align-items: center; margin-top: 8px;
+    }
+    .download::before { content: ""; position: absolute; inset: -3px; border-radius: 30px; z-index: -1; background: var(--gradient); }
+    .download img { width: 88px; height: 88px; border-radius: 22px; flex: none; }
+    .download h2 { font-size: 1.5rem; }
+    .download p { color: var(--muted); margin: 6px 0 18px; }
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+    .meta span { background: var(--bg); border: 1px solid var(--border); border-radius: 999px; padding: 4px 12px; font-size: .82rem; font-weight: 500; color: var(--muted); }
+
+    .dl-buttons { display: flex; flex-wrap: wrap; gap: 10px; }
+    .dl-buttons .btn { padding: 13px 22px; font-size: 1rem; }
+    .dl-buttons small { font-weight: 500; opacity: .8; font-size: .82rem; }
+    .which-mac { font-size: .85rem; margin: 14px 0 0 !important; }
+    .os-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+    .os-tabs > div { background: var(--bg); border-radius: 14px; padding: 14px 16px; font-size: .93rem; color: var(--muted); }
+    .os-tabs h4 { margin: 0 0 6px; color: var(--ink); font-size: .95rem; }
+    .os-tabs ol { margin: 0; padding-left: 18px; }
+
+    /* ---------- Steps ---------- */
+    .section { padding: clamp(56px, 9vw, 90px) 0 0; }
+    .section-head { text-align: center; margin-bottom: 36px; }
+    .eyebrow { font-size: .8rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--violet); }
+    .section-head h2 { font-size: clamp(1.7rem, 4vw, 2.3rem); font-weight: 800; margin-top: 10px; }
+    .steps { display: grid; gap: 18px; counter-reset: step; }
+    .step {
+      display: grid; grid-template-columns: 56px 1fr; gap: 20px;
+      background: var(--card); border: 1px solid var(--border); border-radius: 22px; padding: 26px;
+    }
+    .step::before {
+      counter-increment: step; content: counter(step);
+      display: grid; place-items: center; width: 56px; height: 56px; border-radius: 16px;
+      font-weight: 800; font-size: 1.4rem; color: #fff;
+    }
+    .step:nth-child(1)::before { background: var(--violet); }
+    .step:nth-child(2)::before { background: var(--pink); }
+    .step:nth-child(3)::before { background: var(--orange); }
+    .step:nth-child(4)::before { background: var(--teal); }
+    .step h3 { font-size: 1.2rem; margin-top: 4px; }
+    .step p { color: var(--muted); margin: 8px 0 0; }
+    .step ol { color: var(--muted); margin: 10px 0 0; padding-left: 20px; display: grid; gap: 6px; }
+    .step b { color: var(--ink); }
+    .kbd { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 1px 8px; font-weight: 700; color: var(--ink); white-space: nowrap; }
+    .link { color: var(--violet); font-weight: 700; text-decoration: none; }
+    .link:hover { text-decoration: underline; }
+    .tip {
+      margin-top: 14px; background: #FFF7E0; border-left: 4px solid #F59E0B; border-radius: 10px;
+      padding: 12px 16px; font-size: .93rem; color: var(--ink);
+    }
+
+    /* ---------- Help ---------- */
+    .help {
+      margin: clamp(56px, 9vw, 90px) 0; background: var(--gradient); color: #fff; border-radius: 28px;
+      padding: clamp(32px, 6vw, 56px); text-align: center;
+    }
+    .help h2 { font-size: clamp(1.6rem, 4vw, 2.1rem); font-weight: 800; }
+    .help p { opacity: .95; max-width: 520px; margin: 12px auto 26px; }
+    .help .btn { background: #fff; color: var(--violet-dark); }
+    .help .btn:hover { background: var(--yellow); }
+
+    footer { padding: 0 0 50px; color: var(--muted); font-size: .9rem; text-align: center; }
+
+    /* ---------- Confetti ---------- */
+    .confetti { position: fixed; inset: 0; pointer-events: none; z-index: 50; overflow: hidden; }
+    .confetti i {
+      position: absolute; top: -20px; width: 10px; height: 16px; border-radius: 3px; opacity: .9;
+      animation: fall linear forwards;
+    }
+    @keyframes fall { to { transform: translateY(110vh) rotate(720deg); opacity: .8; } }
+
+    @media (max-width: 620px) {
+      .nav .by { display: none; }
+      .download { flex-direction: column; text-align: center; }
+      .meta { justify-content: center; }
+      .download .btn { width: 100%; }
+      .os-tabs { grid-template-columns: 1fr; }
+      .os-tabs > div { min-width: 0; }
+      .kbd { white-space: normal; }
+      .step { grid-template-columns: 1fr; gap: 14px; }
+      .nav a.back span { display: none; }
+    }
+
+    /* ---------- Clé de licence ---------- */
+    .licence-card { margin-top: 26px; background: var(--card); border-radius: 22px; padding: clamp(22px, 4vw, 32px);
+      box-shadow: 0 0 0 2px var(--border); }
+    .licence-card h2 { font-size: 1.3rem; }
+    .licence-card p { color: var(--muted); margin: 8px 0 0; }
+    .cle-box { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 16px; }
+    .cle-box code { flex: 1 1 260px; min-width: 0; overflow-wrap: anywhere; font-size: 1.05rem; font-weight: 700;
+      background: var(--bg); border: 2px dashed var(--violet); border-radius: 12px; padding: 12px 16px; color: var(--ink); }
+    .cle-box .btn { padding: 12px 20px; font-size: .95rem; }
+    .cle-attente { font-style: italic; }
+    .licence-card .cle-logiciel { margin: 18px 0 -6px; font-weight: 700; color: var(--ink); }
+    .licence-card .cle-dl { margin-top: 12px; }
+    .licence-card .cle-dl .btn { padding: 11px 18px; font-size: .92rem; }
+    .licence-card .cle-guide { display: inline-block; margin-top: 10px; font-size: .9rem; }
+    .licence-card .cle-detail { font-size: .8rem; overflow-wrap: anywhere; opacity: .8; }
+    .cle-box[hidden], .licence-card [hidden] { display: none; }
+    @media (max-width: 400px) {
+      .step { padding: 20px; }
+      .step > div { min-width: 0; overflow-wrap: anywhere; }
+      .brand { font-size: 1rem; gap: 8px; }
+      .brand img { width: 30px; height: 30px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+      .check path { stroke-dashoffset: 0; }
+      .confetti { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="wrap">
+      <a class="brand" href="./"><img src="assets/icon.png" alt="">Audit Express<small class="by">by VORELIK</small></a>
+      <a class="back" href="./">← <span>Back to the site</span></a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="blob one"></div><div class="blob two"></div>
+    <div class="wrap">
+      <div class="check" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <h1>Thank you for <span class="gradient-text">your purchase!</span></h1>
+      <p>Welcome to Audit Express. Your software is ready: download it, then follow the 4 steps below to run your first audit.</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="download">
+      <img src="assets/icon.png" alt="">
+      <div>
+        <h2>Download Audit Express</h2>
+        <p>Choose the version for your computer. Nothing to install (about 110 MB).</p>
+        <div class="dl-buttons">
+          <a class="btn btn-primary" data-os="win"
+             href="https://github.com/f1aoc/audit_express/releases/download/auditexpress-latest/AuditExpress-Windows.zip">Windows <small>10 / 11</small></a>
+          <a class="btn btn-ghost" data-os="mac"
+             href="https://github.com/f1aoc/audit_express/releases/download/auditexpress-latest/AuditExpress-mac-apple-silicon.zip">Mac <small>Apple silicon M1–M4</small></a>
+          <a class="btn btn-ghost" data-os="mac"
+             href="https://github.com/f1aoc/audit_express/releases/download/auditexpress-latest/AuditExpress-mac-intel.zip">Mac <small>Intel</small></a>
+        </div>
+        <p class="which-mac">Which Mac do you have? Apple menu → <b>About This Mac</b>: « Chip Apple M… » = Apple silicon, « Processor Intel » = Intel.</p>
+      </div>
+    </section>
+
+    <!-- Stripe (lien de paiement en dollars → After payment → Redirect) :
+         https://www.vorelik.com/en/audit-express/thank-you.html?session_id={CHECKOUT_SESSION_ID} -->
+    <section class="licence-card" id="licence" aria-live="polite">
+      <h2>Your licence key</h2>
+      <p id="cle-texte" class="cle-attente">Fetching your key…</p>
+      <div class="cle-box" id="cle-box" hidden>
+        <code id="cle-valeur"></code>
+        <button class="btn btn-primary" type="button" id="cle-copier">Copy</button>
+      </div>
+      <p id="cle-aide" hidden><b>Keep it safe</b> (write it down or take a screenshot): the software asks for it on first
+        launch. Each key is valid on 2 computers.</p>
+      <p id="cle-detail" class="cle-detail" hidden></p>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <span class="eyebrow">Getting started</span>
+        <h2>Ready in <span class="gradient-text">10 minutes</span></h2>
+      </div>
+      <div class="steps">
+        <article class="step">
+          <div>
+            <h3>Launch the app</h3>
+            <div class="os-tabs">
+              <div>
+                <h4>On Windows</h4>
+                <ol>
+                  <li>Right-click <b>AuditExpress-Windows.zip</b> (Downloads folder) → <span class="kbd">Extract All…</span> → <span class="kbd">Extract</span>.</li>
+                  <li>In the extracted folder, open <b>AuditExpress</b> and double-click <b>AuditExpress.exe</b>.</li>
+                </ol>
+                <div class="tip">If Windows shows <b>« Windows protected your PC »</b>, click <span class="kbd">More info</span> then <span class="kbd">Run anyway</span>. Only once.</div>
+              </div>
+              <div>
+                <h4>On Mac</h4>
+                <ol>
+                  <li>Double-click the downloaded <b>.zip</b> file to unzip it.</li>
+                  <li>Drag <b>AuditExpress</b> into your <b>Applications</b> folder, then open it.</li>
+                </ol>
+                <div class="tip">If your Mac refuses to open it the first time, click <span class="kbd">OK</span>, then open <b>System Settings → Privacy &amp; Security</b>, scroll down and click <span class="kbd">Open Anyway</span>. Only once.</div>
+              </div>
+            </div>
+            <p><b>The first time</b>, Audit Express downloads the browser used for screenshots (about 150&nbsp;MB, a few minutes), then opens by itself in your web browser at <b>http://127.0.0.1:8765</b>.</p>
+            <div class="tip">On Windows, a black window stays open: keep it (you can minimise it); closing it stops Audit Express.</div>
+          </div>
+        </article>
+        <article class="step">
+          <div>
+            <h3>Activate your licence, then set up your agency</h3>
+            <p>Audit Express asks for your <b>licence key</b>: the one shown <a class="link" href="#licence">higher up on this page</a> (it starts with « AEX- »). Paste it, then click <span class="kbd">Activate</span> (Internet connection required). It is valid on 2 computers.</p>
+            <p>Then, in <b>Settings → White label</b>, enter your agency name, logo, colours, contact details and booking link. They will appear on your PDF reports and in your emails. The language (English or French) can be changed in <b>Settings → Language</b>.</p>
+          </div>
+        </article>
+        <article class="step">
+          <div>
+            <h3>Add your Google PageSpeed key (free, recommended)</h3>
+            <p>Speed measurements come from Google PageSpeed. Without a key, Google limits the number of measurements and speed is often marked « not checked ». The key is free:</p>
+            <ol>
+              <li>Go to <a class="link" href="https://console.cloud.google.com" target="_blank" rel="noopener">console.cloud.google.com</a> and sign in with your Google account.</li>
+              <li>Create a <b>new project</b> (for example « audits »).</li>
+              <li>In <b>APIs &amp; Services → Library</b>, enable <b>« PageSpeed Insights API »</b>.</li>
+              <li>In <b>APIs &amp; Services → Credentials</b>, click <b>Create credentials → API key</b> and copy the key (it starts with « AIza »).</li>
+              <li>Paste it in <b>Settings → Google PageSpeed API key</b> in Audit Express, then <span class="kbd">Save the key</span>.</li>
+            </ol>
+            <div class="tip">The key is stored encrypted on your computer: it never appears in reports or exports.</div>
+          </div>
+        </article>
+        <article class="step">
+          <div>
+            <h3>Run your first audit</h3>
+            <p>In <b>New audit</b>, type a website address (and, if you like, the business name and city), then click <span class="kbd">Audit</span>. Less than a minute later, you see the grade, the problems found and the report preview.</p>
+            <p>Untick a problem to remove it from the report, add your comment, then click <span class="kbd">Download the PDF</span>. The covering email is ready just below: <span class="kbd">Copy the email</span>.</p>
+            <div class="tip">To audit a whole list (CSV or Excel), use <b>Batch audit</b>: every report arrives in a single ZIP file.</div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="help">
+      <h2>Need a hand?</h2>
+      <p>A question about installation, the Google key or your first reports? Write to us, we reply quickly.</p>
+      <a class="btn" href="mailto:support@vorelik.com?subject=Audit%20Express%20help">✉&nbsp; Contact support</a>
+    </section>
+  </main>
+
+  <footer>© <span id="year">2026</span> VORELIK · All rights reserved · <a href="../terms.html">Terms of Sale</a> · <a href="../privacy.html">Privacy</a> · <a href="../cookies.html">Cookies</a> · Google PageSpeed is a trademark of Google LLC.</footer>
+
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    // Licence key: requested from the licence server with the Stripe payment number (session_id).
+    const SERVEUR_LICENCES = "https://licences.patrick-tabountchikoff.workers.dev";
+    (async () => {
+      const texte = document.getElementById("cle-texte");
+      const session = new URLSearchParams(location.search).get("session_id");
+      const dire = (m) => { texte.textContent = m; texte.classList.remove("cle-attente"); };
+      const detail = (cause) => {
+        const t = document.getElementById("cle-detail");
+        t.textContent = "Technical detail: " + cause;
+        t.hidden = false;
+      };
+      const echec = (cause) => {
+        dire("Your key could not be retrieved right now. Reload the page in a minute; if the problem persists, write to support from the email address used for your purchase.");
+        detail(cause);
+      };
+      if (!session) {
+        dire("Your licence key appears here right after your payment. Can't see it? Write to support from the email address used for your purchase.");
+        return detail("no session_id in this page address (Stripe link → After payment → Redirect: add ?session_id={CHECKOUT_SESSION_ID})");
+      }
+      let r, d;
+      try {
+        r = await fetch(`${SERVEUR_LICENCES}/cle?session_id=${encodeURIComponent(session)}`);
+      } catch {
+        return echec(`connexion_impossible — page ${location.origin}, compare with ORIGINE_SITE`);
+      }
+      try { d = await r.json(); } catch { d = {}; }
+      if (!r.ok || !d.cle) return echec(`${d.erreur || "HTTP " + r.status}${d.detail ? " — " + d.detail : ""}`);
+      const licences = d.licences && d.licences.length ? d.licences : [{ cle: d.cle, produit: d.produit }];
+      const modele = document.getElementById("cle-box");
+      for (const l of licences) {
+        const box = modele.cloneNode(true);
+        box.removeAttribute("id");
+        box.hidden = false;
+        const code = box.querySelector("code");
+        code.removeAttribute("id");
+        code.textContent = l.cle;
+        modele.parentNode.insertBefore(box, modele);
+        const bouton = box.querySelector("button");
+        bouton.removeAttribute("id");
+        bouton.addEventListener("click", async () => {
+          try { await navigator.clipboard.writeText(l.cle); bouton.textContent = "Copied ✓"; }
+          catch { getSelection().selectAllChildren(code); }
+        });
+      }
+      document.getElementById("cle-aide").hidden = false;
+      const intro = licences.length > 1 ? "Here are the keys for your purchase" : "Here is the key for your purchase";
+      dire(d.email ? `Thank you${d.nom ? ", " + d.nom : ""}! ${intro} (${d.email}):` : `${intro}:`);
+    })();
+
+    // Put the visitor's platform first.
+    if (/Mac/i.test(navigator.platform || navigator.userAgent)) {
+      document.querySelectorAll('.dl-buttons [data-os="win"]').forEach((b) => b.classList.replace("btn-primary", "btn-ghost"));
+      const macs = document.querySelectorAll('.dl-buttons [data-os="mac"]');
+      macs.forEach((b) => b.classList.replace("btn-ghost", "btn-primary"));
+      macs[0].parentNode.prepend(...macs);
+    }
+
+    // Short confetti burst on arrival.
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const colors = ["#059669", "#0E7490", "#F97316", "#FDE68A", "#0D9488"];
+      const box = document.createElement("div");
+      box.className = "confetti";
+      for (let i = 0; i < 90; i++) {
+        const c = document.createElement("i");
+        c.style.left = Math.random() * 100 + "vw";
+        c.style.background = colors[i % colors.length];
+        c.style.animationDuration = 2.2 + Math.random() * 2.2 + "s";
+        c.style.animationDelay = Math.random() * 0.8 + "s";
+        c.style.transform = "rotate(" + Math.random() * 360 + "deg)";
+        box.appendChild(c);
+      }
+      document.body.appendChild(box);
+      setTimeout(() => box.remove(), 5500);
+    }
+  </script>
+</body>
+</html>
