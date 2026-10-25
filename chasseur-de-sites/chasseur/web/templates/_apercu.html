@@ -2,28 +2,28 @@
 <p class="alerte alerte-erreur" role="alert">{{ erreur }}</p>
 {% else %}
 <section class="carte">
-  <h2>Aperçu de « {{ nom_fichier }} »</h2>
+  <h2>{{ _("Aperçu de « {nom} »").format(nom=nom_fichier) }}</h2>
   {% if info %}<p class="discret">{{ info }}</p>{% endif %}
   <p>
-    <span class="pastille">{{ format }}</span>
-    <strong>{{ total }}</strong> entreprise{{ "s" if total > 1 }}, dont <strong>{{ avec_site }}</strong> avec un site à analyser.
+    <span class="pastille">{{ _(format) }}</span>
+    {{ pluriel(total, "<strong>{n}</strong> entreprise, dont <strong>{avec_site}</strong> avec un site à analyser.", "<strong>{n}</strong> entreprises, dont <strong>{avec_site}</strong> avec un site à analyser.", avec_site=avec_site) }}
   </p>
   {% if doublons or opposes %}
   <p class="discret">
-    {% if doublons %}{{ doublons }} doublon{{ "s" if doublons > 1 }} retiré{{ "s" if doublons > 1 }} (même site).{% endif %}
-    {% if opposes %}{{ opposes }} entreprise{{ "s" if opposes > 1 }} écartée{{ "s" if opposes > 1 }} : domaine dans votre <a href="/oppositions">liste d'opposition</a>.{% endif %}
+    {% if doublons %}{{ pluriel(doublons, "{n} doublon retiré (même site).", "{n} doublons retirés (même site).") }}{% endif %}
+    {% if opposes %}{{ pluriel(opposes, "{n} entreprise écartée : domaine dans votre", "{n} entreprises écartées : domaine dans votre") }} <a href="/oppositions">{{ _("liste d'opposition") }}</a>.{% endif %}
   </p>
   {% endif %}
   {% if format_maps and avec_site < total %}
   <p class="alerte">
-    Ce fichier vient de l'outil Google Maps, qui ne garde que les entreprises <strong>sans vrai site</strong>
-    (aucun site, ou seulement une page Facebook, Planity…). Elles apparaîtront « Sans site » dans les résultats.
+    {{ _("Ce fichier vient de l'outil Google Maps, qui ne garde que les entreprises") }} <strong>{{ _("sans vrai site") }}</strong>
+    {{ _("(aucun site, ou seulement une page Facebook, Planity…). Elles apparaîtront « Sans site » dans les résultats.") }}
   </p>
   {% endif %}
   <div class="tableau-defilant">
     <table class="tableau">
-      <caption>{{ lignes|length }} première{{ "s" if lignes|length > 1 }} ligne{{ "s" if lignes|length > 1 }}</caption>
-      <thead><tr><th>Nom</th><th>Site</th><th>Téléphone</th><th>Ville</th><th>Catégorie</th><th>Note Google</th></tr></thead>
+      <caption>{{ pluriel(lignes|length, "{n} première ligne", "{n} premières lignes") }}</caption>
+      <thead><tr><th>{{ _("Nom") }}</th><th>{{ _("Site") }}</th><th>{{ _("Téléphone") }}</th><th>{{ _("Ville") }}</th><th>{{ _("Catégorie") }}</th><th>{{ _("Note Google") }}</th></tr></thead>
       <tbody>
       {% for p in lignes %}
         <tr>
@@ -42,8 +42,8 @@
     <input type="hidden" name="jeton" value="{{ jeton }}">
     <input type="hidden" name="nom_fichier" value="{{ nom_fichier }}">
     {% if source %}<input type="hidden" name="source" value="{{ source }}">{% endif %}
-    <label>Nom de l'analyse <input type="text" name="nom" value="{{ nom }}" maxlength="120"></label>
-    <button type="submit" class="bouton bouton-principal">Lancer l'analyse</button>
+    <label>{{ _("Nom de l'analyse") }} <input type="text" name="nom" value="{{ nom }}" maxlength="120"></label>
+    <button type="submit" class="bouton bouton-principal">{{ _("Lancer l'analyse") }}</button>
   </form>
 </section>
 {% endif %}

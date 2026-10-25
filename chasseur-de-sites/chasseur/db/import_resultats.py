@@ -22,6 +22,7 @@ from chasseur.importers.fichiers import ville_depuis_adresse
 from chasseur.modeles import Prospect, Resultat
 from chasseur.reports.csv_export import COLONNES_MESURES, SEPARATEUR_LISTE
 from chasseur.scoring import noter
+from chasseur.langue import _
 
 RE_NON_VERIFIE = re.compile(r"^(\w+) \((.*)\)$")
 RE_ECHEC = re.compile(r"échec de l'analyseur (\w+)")
@@ -77,13 +78,13 @@ def importer_resultats(stockage: Stockage, chemin: str | Path, config: Config, n
     lignes = list(csv.DictReader(texte.splitlines(), delimiter=";"))
     if not lignes or not {"codes", "score", "etat"} <= set(lignes[0]):
         raise ErreurMigration(
-            f"{chemin.name} n'est pas un export de résultats de « chasseur scan » (colonnes codes, score, etat attendues)"
+            _("{fichier} n'est pas un export de résultats de « chasseur scan » (colonnes codes, score, etat attendues)").format(fichier=chemin.name)
         )
 
     resultats = [_resultat(l, config) for l in lignes]
     with stockage.session() as session:
         scan = depot.creer_scan(
-            session, nom or f"Import {chemin.stem}", [r.prospect for r in resultats], fichier=chemin.name,
+            session, nom or _("Import {nom}").format(nom=chemin.stem), [r.prospect for r in resultats], fichier=chemin.name,
             format_="Résultats CSV (Lot 2)",
         )
         ids = [p.id for p in depot.a_analyser(session, scan.id)]

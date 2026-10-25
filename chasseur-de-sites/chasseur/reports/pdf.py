@@ -21,16 +21,20 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 
+from markupsafe import Markup
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from chasseur.db.agence import Agence, logo_data_uri
 from chasseur.db.moteur import Stockage
 from chasseur.db.tables import heure_locale
 from chasseur.reports.donnees import Diagnostic
+from chasseur.langue import _, langue_courante
 from chasseur.reports.textes import date_longue
 
 GABARITS = Path(__file__).resolve().parent / "templates"
 _env = Environment(loader=FileSystemLoader(GABARITS), autoescape=select_autoescape(["html"]))
+_env.globals["_"] = lambda texte: Markup(_(texte))  # textes du gabarit fiables ; .format() échappe les valeurs
+_env.globals["code_langue"] = langue_courante
 
 COULEURS_ETATS = {
     "Cassé": ("#b42318", "#fdecea"),
@@ -82,7 +86,7 @@ def html_rapport(stockage: Stockage, d: Diagnostic, agence: Agence, aujourd_hui:
         agence=agence,
         logo=logo_data_uri(stockage, agence),
         date=date_longue(date_analyse.strftime("%Y-%m-%d")),
-        prise_le=f"{date_longue(prise.strftime('%Y-%m-%d'))} à {prise:%H:%M}" if prise else "",
+        prise_le=_("{date} à {heure}").format(date=date_longue(prise.strftime("%Y-%m-%d")), heure=f"{prise:%H:%M}") if prise else "",
         capture_bureau=_image(stockage, bureau.chemin) if bureau else "",
         capture_mobile=_image(stockage, mobile.chemin) if mobile else "",
         couleur=agence.couleur,
@@ -158,8 +162,8 @@ class MoteurPDF:
                     await self._playwright.stop()
                     self._playwright = None
                     raise ErreurPDF(
-                        "Chromium ne démarre pas pour créer le PDF : lancez « playwright install chromium ». "
-                        f"({str(e).splitlines()[0][:150]})"
+                        _("Chromium ne démarre pas pour créer le PDF : lancez « playwright install chromium ». ({erreur})").format(
+                            erreur=str(e).splitlines()[0][:150])
                     ) from None
         contexte = await self._navigateur.new_context(java_script_enabled=False, offline=True)
         try:

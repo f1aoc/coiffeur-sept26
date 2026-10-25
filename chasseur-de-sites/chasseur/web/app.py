@@ -20,6 +20,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from markupsafe import Markup
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from chasseur import __version__, planification, rgpd
@@ -32,6 +33,8 @@ from chasseur.db.moteur import Stockage
 from chasseur.db.tables import LIBELLES_SCAN, STATUTS_COMMERCIAUX, heure_locale
 from chasseur.reports.pdf import MoteurPDF
 from chasseur.web.taches import GestionnaireScans
+from chasseur.db import reglages
+from chasseur.langue import LANGUE, _, definir_langue, langue_courante
 
 # Sous Windows, le type des fichiers vient du registre, qui ignore souvent .webp (captures)
 mimetypes.add_type("image/webp", ".webp")
@@ -68,7 +71,10 @@ def duree(secondes: float | None) -> str:
 
 
 def date_fr(d) -> str:
-    return heure_locale(d).strftime("%d/%m/%Y à %H:%M") if d else "—"
+    """Date et heure dans la langue courante (25/10/2026 à 15:17, 2026-10-25 15:17)."""
+    if not d:
+        return "—"
+    return heure_locale(d).strftime(_("%d/%m/%Y à %H:%M"))
 
 
 def heure(d) -> str:
@@ -84,6 +90,9 @@ def creer_templates() -> Jinja2Templates:
     env.filters["heure"] = heure
     env.filters["libelle"] = libelle
     env.globals.update(
+        _=lambda texte: Markup(_(texte)),  # textes des gabarits fiables ; .format() échappe les valeurs insérées
+        code_langue=langue_courante,
+        pluriel=lambda n, un, plusieurs, **valeurs: Markup(_(un if n == 1 else plusieurs)).format(n=n, **valeurs),
         a_bonus=a_bonus,
         STATUTS=STATUTS_COMMERCIAUX,
         LIBELLES_SCAN=LIBELLES_SCAN,
@@ -161,8 +170,14 @@ def creer_app(
             moteurs.append(MoteurPDF(chromium=chromium))
         return moteurs[0]
 
+    def appliquer_langue() -> None:
+        """Langue choisie dans les Réglages (« auto » : celle de l'ordinateur)."""
+        with stockage.session() as s:
+            definir_langue(reglages.lire(s, LANGUE, ""))
+
     @asynccontextmanager
     async def cycle_de_vie(app: FastAPI):
+        appliquer_langue()
         gestionnaire.au_demarrage()
         entretien = asyncio.get_running_loop().create_task(boucle_entretien(stockage, gestionnaire, intervalle_entretien, licence))
         yield
@@ -185,17 +200,22 @@ def creer_app(
     async def erreur_interne(request: Request, exc: Exception):
         journal.error("erreur sur %s %s : %s %s", request.method, request.url.path, type(exc).__name__, exc)
         return PlainTextResponse(
-            "Une erreur inattendue s'est produite. Elle est notée dans le journal (page « À propos »).", status_code=500
+            _("Une erreur inattendue s'est produite. Elle est notée dans le journal (page « À propos »)."), status_code=500
         )
 
     hotes_autorises = hotes or HOTES_LOCAUX
+
+    @app.middleware("http")
+    async def langue(request: Request, suivant):
+        appliquer_langue()
+        return await suivant(request)
 
     @app.middleware("http")
     async def meme_origine(request: Request, suivant):
         if request.method not in METHODES_SURES:
             origine = request.headers.get("origin") or request.headers.get("referer")
             if origine and urlsplit(origine).netloc != request.headers.get("host"):
-                return PlainTextResponse("Requête refusée : elle ne vient pas de l'application.", status_code=403)
+                return PlainTextResponse(_("Requête refusée : elle ne vient pas de l'application."), status_code=403)
         return await suivant(request)
 
     from chasseur.web.routes_licence import chemin_libre, refus

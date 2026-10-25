@@ -13,6 +13,8 @@ from pathlib import Path
 
 from cryptography.fernet import Fernet, InvalidToken
 
+from chasseur.langue import _
+
 NOM_CLE = "cle.secret"
 
 
@@ -39,7 +41,7 @@ def dechiffrer(dossier: Path, jeton: str) -> str:
     try:
         return Fernet(_cle_maitresse(dossier)).decrypt(jeton.encode()).decode()
     except InvalidToken:
-        raise ErreurSecret("clé API illisible (fichier cle.secret remplacé ?) : ressaisissez-la dans les Réglages") from None
+        raise ErreurSecret(_("clé API illisible (fichier cle.secret remplacé ?) : ressaisissez-la dans les Réglages")) from None
 
 
 def masquer(cle: str) -> str:

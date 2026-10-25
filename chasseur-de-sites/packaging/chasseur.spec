@@ -25,6 +25,7 @@ donnees = [
     (str(RACINE / "chasseur" / "web" / "templates"), "chasseur/web/templates"),
     (str(RACINE / "chasseur" / "web" / "static"), "chasseur/web/static"),
     (str(RACINE / "chasseur" / "reports" / "templates"), "chasseur/reports/templates"),
+    (str(RACINE / "chasseur" / "langues"), "chasseur/langues"),
 ]
 donnees += collect_data_files("whois")
 

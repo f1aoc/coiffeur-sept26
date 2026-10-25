@@ -18,6 +18,7 @@ import httpx
 from chasseur import urls
 from chasseur.analyzers.base import Analyseur
 from chasseur.config import Config
+from chasseur.langue import _
 from chasseur.controles import CODE_NON_VERIFIE
 from chasseur.modeles import Prospect, Rapport
 
@@ -85,7 +86,7 @@ class AnalyseurPerformance(Analyseur):
     def _non_verifie(self, raison: str, echec: bool) -> Rapport:
         raison = self._masquer(raison)
         return Rapport(
-            [self.config.constat(CODE_NON_VERIFIE, "Vitesse du site non vérifiée.", f"performance : {raison}")],
+            [self.config.constat(CODE_NON_VERIFIE, _("Vitesse du site non vérifiée."), _("performance : {raison}").format(raison=raison))],
             non_verifies={"performance": raison},
             echec=echec,
         )
@@ -93,7 +94,7 @@ class AnalyseurPerformance(Analyseur):
     async def analyser(self, prospect: Prospect, client: httpx.AsyncClient) -> Rapport:
         p = self.config.performance
         if not p.cle:
-            return self._non_verifie("pas de clé API PageSpeed Insights (config.yaml ou PAGESPEED_API_KEY)", echec=False)
+            return self._non_verifie(_("pas de clé API PageSpeed Insights (config.yaml ou PAGESPEED_API_KEY)"), echec=False)
 
         url = urls.candidates(prospect.url)[0]
         params = {"url": url, "strategy": p.strategie, "category": "performance", "key": p.cle}
@@ -104,24 +105,24 @@ class AnalyseurPerformance(Analyseur):
                     reponse = await self._http().get(API_PAGESPEED, params=params, timeout=p.timeout)
                 except httpx.HTTPError as e:
                     reponse = None
-                    derniere_erreur = f"appel à l'API impossible ({type(e).__name__})"
+                    derniere_erreur = _("appel à l'API impossible ({erreur})").format(erreur=type(e).__name__)
             if reponse is not None and reponse.status_code == 200:
                 return self._interpreter(reponse, url)
             if reponse is not None and reponse.status_code not in (429,) and reponse.status_code < 500:
-                return self._non_verifie(f"PageSpeed a refusé l'analyse : {self._message_api(reponse)}", echec=True)
+                return self._non_verifie(_("PageSpeed a refusé l'analyse : {erreur}").format(erreur=self._message_api(reponse)), echec=True)
             if reponse is not None:
                 derniere_erreur = f"HTTP {reponse.status_code} : {self._message_api(reponse)}"
             if tentative < p.max_relances:
                 attente = (_retry_after(reponse) if reponse is not None else None) or p.pause_base * 2**tentative
                 self.file.pause(attente)
-        return self._non_verifie(f"abandon après {p.max_relances + 1} essais ({derniere_erreur})", echec=True)
+        return self._non_verifie(_("abandon après {n} essais ({erreur})").format(n=p.max_relances + 1, erreur=derniere_erreur), echec=True)
 
     @staticmethod
     def _message_api(reponse: httpx.Response) -> str:
         try:
             return str(reponse.json()["error"]["message"])[:200]
         except (ValueError, KeyError, TypeError):
-            return reponse.reason_phrase or "erreur inconnue"
+            return reponse.reason_phrase or _("erreur inconnue")
 
     def _interpreter(self, reponse: httpx.Response, url: str) -> Rapport:
         p = self.config.performance
@@ -130,9 +131,9 @@ class AnalyseurPerformance(Analyseur):
             score = resultat["categories"]["performance"]["score"]
             audits = resultat.get("audits", {})
         except (ValueError, KeyError, TypeError):
-            return self._non_verifie("réponse PageSpeed illisible", echec=True)
+            return self._non_verifie(_("réponse PageSpeed illisible"), echec=True)
         if score is None:
-            return self._non_verifie("PageSpeed n'a pas pu mesurer la page", echec=True)
+            return self._non_verifie(_("PageSpeed n'a pas pu mesurer la page"), echec=True)
 
         def valeur(audit: str) -> float | None:
             v = audits.get(audit, {}).get("numericValue")
@@ -149,13 +150,15 @@ class AnalyseurPerformance(Analyseur):
             mesures["perf_tbt_ms"] = str(round(tbt))
         rapport = Rapport(mesures=mesures)
         if note < p.seuil:
-            detail = f" : il faut {lcp / 1000:.1f} s pour afficher son contenu principal" if lcp else ""
+            detail = _(" : il faut {secondes} s pour afficher son contenu principal").format(
+                secondes=f"{lcp / 1000:.1f}") if lcp else ""
             rapport.append(
                 self.config.constat(
                     "PERF_LENTE",
-                    f"Sur téléphone, votre site est lent{detail}. Une partie des visiteurs part avant la fin "
-                    "du chargement.",
-                    f"PageSpeed Insights ({p.strategie}) : score {note}/100 (seuil {p.seuil}) pour {url}",
+                    _("Sur téléphone, votre site est lent{detail}. Une partie des visiteurs part avant la fin "
+                      "du chargement.").format(detail=detail),
+                    _("PageSpeed Insights ({strategie}) : score {note}/100 (seuil {seuil}) pour {url}").format(
+                        strategie=p.strategie, note=note, seuil=p.seuil, url=url),
                 )
             )
         return rapport

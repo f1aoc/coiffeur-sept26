@@ -15,6 +15,7 @@ from bs4 import BeautifulSoup
 
 from chasseur import urls
 from chasseur.config import Config
+from chasseur.langue import _, date_courte
 from chasseur.modeles import Rapport
 from chasseur.signatures import Signatures, hote_dans, version_en_tuple
 
@@ -120,7 +121,7 @@ def mise_en_page_tableaux(soup: BeautifulSoup) -> str | None:
     """Preuve textuelle si la page est mise en page avec des <table>, sinon None."""
     tables = soup.find_all("table")
     if any(t.find_parent("table") for t in tables):
-        return "tableaux imbriqués (mise en page des années 2000)"
+        return _("tableaux imbriqués (mise en page des années 2000)")
     corps = soup.body or soup
     total = len(corps.get_text(" ", strip=True))
     if total < 200:
@@ -130,7 +131,7 @@ def mise_en_page_tableaux(soup: BeautifulSoup) -> str | None:
             continue  # tableau de données
         part = len(t.get_text(" ", strip=True)) / total
         if part > 0.5:
-            return f"un tableau sans en-têtes contient {part:.0%} du texte de la page"
+            return _("un tableau sans en-têtes contient {part} du texte de la page").format(part=f"{part:.0%}")
     return None
 
 
@@ -167,7 +168,7 @@ def evaluer_page(info: PageInfo, config: Config, sig: Signatures, maintenant: da
 
     # Une page d'erreur HTTP est déjà signalée par l'analyseur Réseau : on n'en juge pas le contenu.
     if info.statut_http is not None and info.statut_http >= 400:
-        rapport.non_verifies.update(dict.fromkeys(CONTROLES_CONTENU, f"page d'erreur HTTP {info.statut_http}"))
+        rapport.non_verifies.update(dict.fromkeys(CONTROLES_CONTENU, _("page d'erreur HTTP {code}").format(code=info.statut_http)))
         return rapport
 
     soup = BeautifulSoup(info.html, "html.parser")
@@ -180,18 +181,19 @@ def evaluer_page(info: PageInfo, config: Config, sig: Signatures, maintenant: da
         rapport.append(
             c.constat(
                 "ERREUR_PHP",
-                "Votre site affiche un message d'erreur technique à la place de son contenu : "
-                "les visiteurs pensent que l'entreprise n'existe plus.",
-                f"texte affiché : « {m[0][:200]} »",
+                _("Votre site affiche un message d'erreur technique à la place de son contenu : "
+                  "les visiteurs pensent que l'entreprise n'existe plus."),
+                _("texte affiché : « {texte} »").format(texte=m[0][:200]),
             )
         )
     elif len(texte) < nav.texte_min:
         rapport.append(
             c.constat(
                 "PAGE_BLANCHE",
-                "La page d'accueil de votre site est vide ou presque : les visiteurs ne voient ni vos "
-                "services ni vos coordonnées.",
-                f"{len(texte)} caractères de texte visibles (seuil : {nav.texte_min}) sur {info.url_finale}",
+                _("La page d'accueil de votre site est vide ou presque : les visiteurs ne voient ni vos "
+                  "services ni vos coordonnées."),
+                _("{n} caractères de texte visibles (seuil : {seuil}) sur {url}").format(
+                    n=len(texte), seuil=nav.texte_min, url=info.url_finale),
             )
         )
 
@@ -201,9 +203,9 @@ def evaluer_page(info: PageInfo, config: Config, sig: Signatures, maintenant: da
             rapport.append(
                 c.constat(
                     "SITE_EN_MAINTENANCE",
-                    "Votre site affiche « en construction » ou « en maintenance » : les visiteurs repartent "
-                    "sans trouver vos informations.",
-                    f"texte affiché : « {m[0]} » ({len(texte)} caractères visibles)",
+                    _("Votre site affiche « en construction » ou « en maintenance » : les visiteurs repartent "
+                      "sans trouver vos informations."),
+                    _("texte affiché : « {texte} » ({n} caractères visibles)").format(texte=m[0], n=len(texte)),
                 )
             )
 
@@ -215,9 +217,9 @@ def evaluer_page(info: PageInfo, config: Config, sig: Signatures, maintenant: da
         rapport.append(
             c.constat(
                 "PIRATAGE_SPAM",
-                "Votre site contient des publicités cachées pour des médicaments ou des casinos : c'est le "
-                "signe d'un piratage, et Google peut vous déclasser ou afficher un avertissement.",
-                f"mots de spam trouvés dans le code de la page : {', '.join(spams)}",
+                _("Votre site contient des publicités cachées pour des médicaments ou des casinos : c'est le "
+                  "signe d'un piratage, et Google peut vous déclasser ou afficher un avertissement."),
+                _("mots de spam trouvés dans le code de la page : {mots}").format(mots=", ".join(spams)),
             )
         )
     hote_depart, hote_final = urls.hote(info.url_demandee), urls.hote(info.url_finale)
@@ -231,8 +233,8 @@ def evaluer_page(info: PageInfo, config: Config, sig: Signatures, maintenant: da
         rapport.append(
             c.constat(
                 "PIRATAGE_REDIRECTION",
-                f"Les visiteurs de votre site sont redirigés vers un autre site ({hote_final}) : c'est souvent "
-                "le signe d'un piratage.",
+                _("Les visiteurs de votre site sont redirigés vers un autre site ({hote}) : c'est souvent "
+                  "le signe d'un piratage.").format(hote=hote_final),
                 f"{info.url_demandee} → {info.url_finale}",
             )
         )
@@ -244,8 +246,8 @@ def evaluer_page(info: PageInfo, config: Config, sig: Signatures, maintenant: da
         rapport.append(
             c.constat(
                 "VIEWPORT_ABSENT",
-                "Votre site n'est pas adapté aux téléphones : sur mobile, le texte est minuscule et il faut zoomer.",
-                "pas de balise <meta name=\"viewport\"> dans la page",
+                _("Votre site n'est pas adapté aux téléphones : sur mobile, le texte est minuscule et il faut zoomer."),
+                _("pas de balise <meta name=\"viewport\"> dans la page"),
             )
         )
     if info.largeur_contenu_mobile and info.largeur_fenetre_mobile:
@@ -254,8 +256,9 @@ def evaluer_page(info: PageInfo, config: Config, sig: Signatures, maintenant: da
             rapport.append(
                 c.constat(
                     "DEFILEMENT_HORIZONTAL",
-                    "Sur téléphone, votre site déborde de l'écran : il faut faire défiler de gauche à droite pour le lire.",
-                    f"contenu de {info.largeur_contenu_mobile} px pour un écran de {info.largeur_fenetre_mobile} px",
+                    _("Sur téléphone, votre site déborde de l'écran : il faut faire défiler de gauche à droite pour le lire."),
+                    _("contenu de {contenu} px pour un écran de {ecran} px").format(
+                        contenu=info.largeur_contenu_mobile, ecran=info.largeur_fenetre_mobile),
                 )
             )
 
@@ -267,9 +270,9 @@ def evaluer_page(info: PageInfo, config: Config, sig: Signatures, maintenant: da
             rapport.append(
                 c.constat(
                     "COPYRIGHT_ANCIEN",
-                    f"Le bas de votre site affiche « © {annee} » : les visiteurs ont l'impression que le site "
-                    "n'est plus entretenu.",
-                    f"année la plus récente du pied de page : {annee}",
+                    _("Le bas de votre site affiche « © {annee} » : les visiteurs ont l'impression que le site "
+                      "n'est plus entretenu.").format(annee=annee),
+                    _("année la plus récente du pied de page : {annee}").format(annee=annee),
                 )
             )
 
@@ -294,9 +297,9 @@ def evaluer_page(info: PageInfo, config: Config, sig: Signatures, maintenant: da
             rapport.append(
                 c.constat(
                     t.constat,
-                    f"Votre site utilise {t.nom}, une technologie abandonnée que les navigateurs actuels "
-                    "n'affichent plus.",
-                    f"{t.nom} détecté dans le code de la page",
+                    _("Votre site utilise {nom}, une technologie abandonnée que les navigateurs actuels "
+                      "n'affichent plus.").format(nom=t.nom),
+                    _("{nom} détecté dans le code de la page").format(nom=t.nom),
                 )
             )
         elif version and version_en_tuple(version) < t.obsolete_avant:
@@ -304,19 +307,20 @@ def evaluer_page(info: PageInfo, config: Config, sig: Signatures, maintenant: da
             rapport.append(
                 c.constat(
                     t.constat,
-                    f"Votre site tourne sur une version ancienne de {t.nom} ({version}) : elle n'est plus mise "
-                    "à jour et expose le site aux piratages.",
-                    f"{t.nom} {version} détecté (version minimale conseillée : {minimum})",
+                    _("Votre site tourne sur une version ancienne de {nom} ({version}) : elle n'est plus mise "
+                      "à jour et expose le site aux piratages.").format(nom=t.nom, version=version),
+                    _("{nom} {version} détecté (version minimale conseillée : {minimum})").format(
+                        nom=t.nom, version=version, minimum=minimum),
                 )
             )
     tableaux = mise_en_page_tableaux(soup)
     if tableaux:
-        trouvees.append("mise en page en tableaux")
+        trouvees.append(_("mise en page en tableaux"))
         rapport.append(
             c.constat(
                 "MISE_EN_PAGE_TABLEAUX",
-                "Votre site est construit avec une technique des années 2000 : il s'affiche mal sur les "
-                "écrans actuels et se modifie difficilement.",
+                _("Votre site est construit avec une technique des années 2000 : il s'affiche mal sur les "
+                  "écrans actuels et se modifie difficilement."),
                 tableaux,
             )
         )
@@ -331,16 +335,16 @@ def evaluer_page(info: PageInfo, config: Config, sig: Signatures, maintenant: da
         rapport.append(
             c.constat(
                 "TITLE_ABSENT",
-                "Votre site n'a pas de titre : dans Google, il apparaît sans nom clair et attire moins de clics.",
-                "balise <title> absente ou vide",
+                _("Votre site n'a pas de titre : dans Google, il apparaît sans nom clair et attire moins de clics."),
+                _("balise <title> absente ou vide"),
             )
         )
     if not description:
         rapport.append(
             c.constat(
                 "META_DESCRIPTION_ABSENTE",
-                "Votre site n'a pas de description pour Google : le moteur affiche un extrait au hasard sous votre nom.",
-                "balise <meta name=\"description\"> absente ou vide",
+                _("Votre site n'a pas de description pour Google : le moteur affiche un extrait au hasard sous votre nom."),
+                _("balise <meta name=\"description\"> absente ou vide"),
             )
         )
 
@@ -355,9 +359,10 @@ def evaluer_page(info: PageInfo, config: Config, sig: Signatures, maintenant: da
         rapport.append(
             c.constat(
                 "CONTACT_ABSENT",
-                "Sur votre site, on ne peut ni vous écrire par formulaire ni vous appeler d'un simple clic "
-                "sur mobile : des clients renoncent à vous contacter.",
-                f"ni <form> ni lien tel: sur l'accueil{' ni sur ' + info.url_contact if info.url_contact else ''}",
+                _("Sur votre site, on ne peut ni vous écrire par formulaire ni vous appeler d'un simple clic "
+                  "sur mobile : des clients renoncent à vous contacter."),
+                _("ni <form> ni lien tel: sur l'accueil ni sur {url}").format(url=info.url_contact) if info.url_contact
+                else _("ni <form> ni lien tel: sur l'accueil"),
             )
         )
 
@@ -370,9 +375,9 @@ def evaluer_page(info: PageInfo, config: Config, sig: Signatures, maintenant: da
             rapport.append(
                 c.constat(
                     "ACTUALITES_ANCIENNES",
-                    f"La date la plus récente de votre site remonte au {recente:%d/%m/%Y} : les visiteurs "
-                    "se demandent si l'entreprise est toujours active.",
-                    f"date la plus récente trouvée sur la page : {recente:%Y-%m-%d}",
+                    _("La date la plus récente de votre site remonte au {date} : les visiteurs "
+                      "se demandent si l'entreprise est toujours active.").format(date=date_courte(recente)),
+                    _("date la plus récente trouvée sur la page : {date}").format(date=f"{recente:%Y-%m-%d}"),
                 )
             )
     return rapport

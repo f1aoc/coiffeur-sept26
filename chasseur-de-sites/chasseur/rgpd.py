@@ -31,6 +31,7 @@ from chasseur.db.tables import (
     maintenant,
 )
 from chasseur.modeles import Prospect
+from chasseur.langue import _
 
 CONSERVATION = "conservation_mois"
 CONSERVATION_DEFAUT = 12
@@ -49,7 +50,7 @@ def normaliser_domaine(saisie: str) -> str:
     hote = urls.hote(saisie.strip()) if saisie and saisie.strip() else None
     domaine = (hote or "").removeprefix("www.")
     if not RE_DOMAINE.match(domaine):
-        raise ErreurRGPD(f"« {saisie.strip()[:80]} » n'est pas un nom de domaine valide (ex. salon-lea.fr).")
+        raise ErreurRGPD(_("« {saisie} » n'est pas un nom de domaine valide (ex. salon-lea.fr).").format(saisie=saisie.strip()[:80]))
     return domaine
 
 

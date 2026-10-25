@@ -1,30 +1,28 @@
 {% extends "base.html" %}
-{% block titre %}À propos{% endblock %}
+{% block titre %}{{ _("À propos") }}{% endblock %}
 {% block contenu %}
-<h1>À propos</h1>
+<h1>{{ _("À propos") }}</h1>
 <section class="carte">
-  <h2>Chasseur de sites <small class="auteur">by ptabountchikoff</small> {{ version }}</h2>
+  <h2>{{ _("Chasseur de sites") }} <small class="auteur">by ptabountchikoff</small> {{ version }}</h2>
   <dl class="coordonnees">
-    <dt>Version</dt><dd>{{ version }}</dd>
-    <dt>Python</dt><dd>{{ python }} · {{ systeme }}</dd>
-    <dt>Moteur PDF</dt><dd>{{ moteur_pdf }}</dd>
-    <dt>Données</dt><dd><code>{{ dossier }}</code></dd>
-    <dt>Contenu</dt><dd>{{ analyses }} analyse{{ "s" if analyses > 1 }}, {{ prospects }} prospect{{ "s" if prospects > 1 }}</dd>
-    <dt>Conservation</dt><dd>Prospects jamais contactés supprimés après {{ conservation }} mois (réglable dans les Réglages)</dd>
-    <dt>Journal</dt><dd><code>{{ journal }}</code></dd>
+    <dt>{{ _("Version") }}</dt><dd>{{ version }}</dd>
+    <dt>{{ _("Python") }}</dt><dd>{{ python }} · {{ systeme }}</dd>
+    <dt>{{ _("Moteur PDF") }}</dt><dd>{{ moteur_pdf }}</dd>
+    <dt>{{ _("Données") }}</dt><dd><code>{{ dossier }}</code></dd>
+    <dt>{{ _("Contenu") }}</dt><dd>{{ pluriel(analyses, "{n} analyse", "{n} analyses") }}, {{ pluriel(prospects, "{n} prospect", "{n} prospects") }}</dd>
+    <dt>{{ _("Conservation") }}</dt><dd>{{ _("Prospects jamais contactés supprimés après {mois} mois (réglable dans les Réglages)").format(mois=conservation) }}</dd>
+    <dt>{{ _("Journal") }}</dt><dd><code>{{ journal }}</code></dd>
   </dl>
 </section>
 <section class="carte">
-  <h2>Dernières erreurs</h2>
-  <p class="discret">Les clés API et les adresses e-mail sont masquées avant d'être écrites.</p>
+  <h2>{{ _("Dernières erreurs") }}</h2>
+  <p class="discret">{{ _("Les clés API et les adresses e-mail sont masquées avant d'être écrites.") }}</p>
   {% if erreurs %}<pre class="journal">{% for l in erreurs %}{{ l }}
-{% endfor %}</pre>{% else %}<p>Aucune erreur enregistrée.</p>{% endif %}
+{% endfor %}</pre>{% else %}<p>{{ _("Aucune erreur enregistrée.") }}</p>{% endif %}
 </section>
 {% include "_encart_b2b.html" %}
 <section class="carte">
-  <h2>Composants</h2>
-  <p class="discret">htmx (licence Zero-Clause BSD), FastAPI, SQLModel, Playwright/Chromium, httpx, openpyxl, WeasyPrint.
-    Les données restent sur cet ordinateur : l'application n'envoie rien ailleurs qu'aux sites analysés, aux API
-    Google dont vous avez fourni la clé et au serveur de licences (clé de licence et identifiant anonyme de l'ordinateur).</p>
+  <h2>{{ _("Composants") }}</h2>
+  <p class="discret">{{ _("htmx (licence Zero-Clause BSD), FastAPI, SQLModel, Playwright/Chromium, httpx, openpyxl, WeasyPrint. Les données restent sur cet ordinateur : l'application n'envoie rien ailleurs qu'aux sites analysés, aux API Google dont vous avez fourni la clé et au serveur de licences (clé de licence et identifiant anonyme de l'ordinateur).") }}</p>
 </section>
 {% endblock %}

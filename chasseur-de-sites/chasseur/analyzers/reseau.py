@@ -19,6 +19,7 @@ import httpx
 
 from chasseur.analyzers.base import Analyseur
 from chasseur.config import Config
+from chasseur.langue import _, date_courte
 from chasseur import urls
 from chasseur.modeles import Constat, Prospect, Rapport
 
@@ -66,7 +67,7 @@ async def verifier_certificat(hote: str, port: int = 443, timeout: float = 15.0)
             erreur=e.verify_message or str(e),
         )
     except ssl.SSLError as e:
-        return InfoSSL("invalide", erreur=f"échec de la négociation TLS : {e.reason or e}")
+        return InfoSSL("invalide", erreur=_("échec de la négociation TLS : {raison}").format(raison=e.reason or e))
     except (OSError, asyncio.TimeoutError) as e:
         return InfoSSL("absent", erreur=f"port {port} : {type(e).__name__} {e}".strip())
 
@@ -86,9 +87,9 @@ async def verifier_certificat(hote: str, port: int = 443, timeout: float = 15.0)
 
 def _decrire_erreur(e: Exception) -> str:
     if isinstance(e, httpx.TimeoutException):
-        return f"délai dépassé ({type(e).__name__})"
+        return _("délai dépassé ({erreur})").format(erreur=type(e).__name__)
     if isinstance(e, httpx.ConnectError):
-        return f"connexion impossible ({e})"
+        return _("connexion impossible ({erreur})").format(erreur=e)
     return f"{type(e).__name__} : {e}"
 
 
@@ -123,16 +124,16 @@ class AnalyseurReseau(Analyseur):
         brut = prospect.url.strip()
         if not brut:
             return Rapport(
-                [c.constat("SITE_ABSENT", "Aucun site web n'est référencé pour votre entreprise.", "colonne url vide")],
-                non_verifies=dict.fromkeys(suite, "pas d'URL"),
+                [c.constat("SITE_ABSENT", _("Aucun site web n'est référencé pour votre entreprise."), _("colonne url vide"))],
+                non_verifies=dict.fromkeys(suite, _("pas d'URL")),
             )
 
         candidats = urls.candidates(brut)
         hote = urls.hote(brut)
         if not hote:
             return Rapport(
-                [c.constat("URL_INVALIDE", "L'adresse de votre site semble mal saisie.", f"url illisible : {brut!r}")],
-                non_verifies=dict.fromkeys(suite, "URL illisible"),
+                [c.constat("URL_INVALIDE", _("L'adresse de votre site semble mal saisie."), _("url illisible : {url}").format(url=repr(brut)))],
+                non_verifies=dict.fromkeys(suite, _("URL illisible")),
             )
 
         # 1. DNS
@@ -145,12 +146,12 @@ class AnalyseurReseau(Analyseur):
                 [
                     c.constat(
                         "DNS_INTROUVABLE",
-                        "Votre nom de domaine ne pointe plus vers aucun serveur : votre site n'existe plus aux yeux "
-                        "des internautes (domaine expiré ou mal configuré).",
-                        f"résolution DNS de {hote} impossible : {type(e).__name__} {e}".strip(),
+                        _("Votre nom de domaine ne pointe plus vers aucun serveur : votre site n'existe plus aux yeux "
+                          "des internautes (domaine expiré ou mal configuré)."),
+                        _("résolution DNS de {hote} impossible : {erreur}").format(hote=hote, erreur=f"{type(e).__name__} {e}".strip()),
                     )
                 ],
-                non_verifies=dict.fromkeys(suite[1:], "domaine introuvable"),
+                non_verifies=dict.fromkeys(suite[1:], _("domaine introuvable")),
             )
         rapport = Rapport(mesures={"ip": ", ".join(ips)})
 
@@ -160,11 +161,11 @@ class AnalyseurReseau(Analyseur):
             rapport.append(
                 c.constat(
                     "HTTP_INJOIGNABLE",
-                    "Votre site ne répond pas : les visiteurs tombent sur une page d'erreur ou attendent indéfiniment.",
+                    _("Votre site ne répond pas : les visiteurs tombent sur une page d'erreur ou attendent indéfiniment."),
                     f"{hote} ({', '.join(ips)}) : " + " ; ".join(journal),
                 )
             )
-            rapport.non_verifies.update(dict.fromkeys(["http_4xx", "ssl", "https", "ssl_expiration"], "site injoignable"))
+            rapport.non_verifies.update(dict.fromkeys(["http_4xx", "ssl", "https", "ssl_expiration"], _("site injoignable")))
             return rapport
 
         code = reponse.status_code
@@ -172,12 +173,12 @@ class AnalyseurReseau(Analyseur):
         rapport.mesures.update({"code_http": str(code), "url_finale": url_finale})
         preuve_http = f"GET {reponse.request.url} → HTTP {code}"
         if reponse.history:
-            preuve_http += f" (après {len(reponse.history)} redirection(s) depuis {reponse.history[0].request.url})"
+            preuve_http += _(" (après {n} redirection(s) depuis {url})").format(n=len(reponse.history), url=reponse.history[0].request.url)
         if code >= 500:
             rapport.append(
                 c.constat(
                     "HTTP_ERREUR_SERVEUR",
-                    "Votre site affiche une erreur serveur : les visiteurs voient une page cassée au lieu de votre vitrine.",
+                    _("Votre site affiche une erreur serveur : les visiteurs voient une page cassée au lieu de votre vitrine."),
                     preuve_http,
                 )
             )
@@ -185,7 +186,7 @@ class AnalyseurReseau(Analyseur):
             rapport.append(
                 c.constat(
                     "HTTP_ERREUR_CLIENT",
-                    "La page d'accueil de votre site est introuvable ou refusée (erreur " + str(code) + ").",
+                    _("La page d'accueil de votre site est introuvable ou refusée (erreur {code}).").format(code=code),
                     preuve_http,
                 )
             )
@@ -201,9 +202,9 @@ class AnalyseurReseau(Analyseur):
             rapport.append(
                 c.constat(
                     "HTTPS_NON_FORCE",
-                    "Votre site s'ouvre sans cadenas (« Non sécurisé » dans le navigateur) alors qu'une version "
-                    "sécurisée existe : les visiteurs n'y sont pas redirigés.",
-                    f"{preuve_http} : la page finale est en HTTP, sans redirection vers HTTPS",
+                    _("Votre site s'ouvre sans cadenas (« Non sécurisé » dans le navigateur) alors qu'une version "
+                      "sécurisée existe : les visiteurs n'y sont pas redirigés."),
+                    _("{preuve} : la page finale est en HTTP, sans redirection vers HTTPS").format(preuve=preuve_http),
                 )
             )
         return rapport
@@ -227,11 +228,11 @@ class AnalyseurReseau(Analyseur):
                 except httpx.ProxyError:
                     raise  # problème de notre réseau, pas du site : ne pas pénaliser le prospect
                 except httpx.HTTPError as e:
-                    journal.append(f"{url} essai {essai}/{self.config.essais} : {_decrire_erreur(e)}")
+                    journal.append(_("{url} essai {n}/{total} : {erreur}").format(url=url, n=essai, total=self.config.essais, erreur=_decrire_erreur(e)))
                     continue
                 if derniere.status_code < 500:
                     return derniere, journal
-                journal.append(f"{url} essai {essai}/{self.config.essais} : HTTP {derniere.status_code}")
+                journal.append(_("{url} essai {n}/{total} : {erreur}").format(url=url, n=essai, total=self.config.essais, erreur=f"HTTP {derniere.status_code}"))
             if derniere is not None:
                 return derniere, journal
         return None, journal
@@ -248,9 +249,9 @@ class AnalyseurReseau(Analyseur):
             return [
                 c.constat(
                     "SSL_ABSENT",
-                    "Votre site n'est pas sécurisé (pas de HTTPS) : les navigateurs affichent « Non sécurisé » "
-                    "à vos visiteurs et Google le pénalise.",
-                    f"aucune connexion HTTPS possible sur {hote}:443 ({info.erreur})",
+                    _("Votre site n'est pas sécurisé (pas de HTTPS) : les navigateurs affichent « Non sécurisé » "
+                      "à vos visiteurs et Google le pénalise."),
+                    _("aucune connexion HTTPS possible sur {hote}:443 ({erreur})").format(hote=hote, erreur=info.erreur),
                 )
             ]
         if info.statut == "invalide":
@@ -258,16 +259,16 @@ class AnalyseurReseau(Analyseur):
                 return [
                     c.constat(
                         "SSL_EXPIRE",
-                        "Le certificat de sécurité de votre site a expiré : les navigateurs bloquent vos visiteurs "
-                        "avec un avertissement rouge.",
+                        _("Le certificat de sécurité de votre site a expiré : les navigateurs bloquent vos visiteurs "
+                          "avec un avertissement rouge."),
                         f"{hote} : {info.erreur}",
                     )
                 ]
             return [
                 c.constat(
                     "SSL_INVALIDE",
-                    "Le certificat de sécurité de votre site n'est pas reconnu : les navigateurs affichent un "
-                    "avertissement à vos visiteurs.",
+                    _("Le certificat de sécurité de votre site n'est pas reconnu : les navigateurs affichent un "
+                      "avertissement à vos visiteurs."),
                     f"{hote} : {info.erreur}",
                 )
             ]
@@ -275,22 +276,23 @@ class AnalyseurReseau(Analyseur):
         if info.expire_le is None:
             return []
         jours = (info.expire_le - self._maintenant()).days
-        date = info.expire_le.strftime("%d/%m/%Y")
+        date = date_courte(info.expire_le)
         if jours < 0:
             return [
                 c.constat(
                     "SSL_EXPIRE",
-                    "Le certificat de sécurité de votre site a expiré.",
-                    f"{hote} : certificat expiré le {date}",
+                    _("Le certificat de sécurité de votre site a expiré."),
+                    _("{hote} : certificat expiré le {date}").format(hote=hote, date=date),
                 )
             ]
         if jours <= c.ssl_alerte_jours:
             return [
                 c.constat(
                     "SSL_EXPIRE_BIENTOT",
-                    f"Le certificat de sécurité de votre site expire dans {jours} jour(s) : sans renouvellement, "
-                    "vos visiteurs verront un avertissement.",
-                    f"{hote} : certificat valide jusqu'au {date} ({jours} j), émis par {info.emetteur or 'inconnu'}",
+                    _("Le certificat de sécurité de votre site expire dans {jours} jour(s) : sans renouvellement, "
+                      "vos visiteurs verront un avertissement.").format(jours=jours),
+                    _("{hote} : certificat valide jusqu'au {date} ({jours} j), émis par {emetteur}").format(
+                        hote=hote, date=date, jours=jours, emetteur=info.emetteur or _("inconnu")),
                 )
             ]
         return []

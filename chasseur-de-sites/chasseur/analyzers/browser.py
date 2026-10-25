@@ -27,6 +27,7 @@ from chasseur import urls
 from chasseur.analyzers.base import Analyseur
 from chasseur.analyzers.page import PageInfo, evaluer_page, formulaires_utiles, liens_tel
 from chasseur.config import Config
+from chasseur.langue import _
 from chasseur.modeles import Prospect, Rapport
 from chasseur.signatures import Signatures, charger_signatures
 
@@ -110,7 +111,7 @@ class AnalyseurNavigateur(Analyseur):
             try:
                 from playwright.async_api import async_playwright
             except ImportError:
-                raise ErreurNavigateur("Playwright n'est pas installé : pip install playwright") from None
+                raise ErreurNavigateur(_("Playwright n'est pas installé : pip install playwright")) from None
             nav = self.config.navigateur
             chemin = nav.chromium or os.environ.get("CHASSEUR_CHROMIUM") or None
             en_root = hasattr(os, "geteuid") and os.geteuid() == 0  # le bac à sable refuse de démarrer en root
@@ -128,8 +129,8 @@ class AnalyseurNavigateur(Analyseur):
                 self._playwright = None
                 premiere_ligne = str(e).strip().splitlines()[0] if str(e).strip() else type(e).__name__
                 self._erreur_demarrage = ErreurNavigateur(
-                    f"Chromium ne démarre pas ({premiere_ligne}). Lancez « playwright install chromium » "
-                    "ou renseignez navigateur.chromium dans config.yaml."
+                    _("Chromium ne démarre pas ({erreur}). Lancez « playwright install chromium » "
+                      "ou renseignez navigateur.chromium dans config.yaml.").format(erreur=premiere_ligne)
                 )
                 raise self._erreur_demarrage from None
             version = self._navigateur.version.split(".")[0]
@@ -164,7 +165,7 @@ class AnalyseurNavigateur(Analyseur):
             if nav.respecter_robots and not await self._robots_autorise(url, client):
                 return Rapport(
                     mesures={"robots_txt": "interdit"},
-                    non_verifies=dict.fromkeys(self.controles, "robots.txt interdit l'analyse"),
+                    non_verifies=dict.fromkeys(self.controles, _("robots.txt interdit l'analyse")),
                 )
             bureau = await navigateur.new_context(**self._options_contexte(mobile=False))
             try:
@@ -178,7 +179,7 @@ class AnalyseurNavigateur(Analyseur):
                 await bureau.close()
             await self._mobile(navigateur, info, prospect)
             return evaluer_page(info, self.config, self.signatures, self._maintenant())
-        raise ErreurNavigateur("page inaccessible dans le navigateur : " + " ; ".join(erreurs))
+        raise ErreurNavigateur(_("page inaccessible dans le navigateur : {erreurs}").format(erreurs=" ; ".join(erreurs)))
 
     def _options_contexte(self, mobile: bool) -> dict:
         nav = self.config.navigateur
@@ -276,7 +277,7 @@ class AnalyseurNavigateur(Analyseur):
             chemin = urlsplit(href).path
             if any(p.search(lien.get("texte", "")) or p.search(chemin) for p in self.signatures.page_contact):
                 try:
-                    page, _ = await self._ouvrir(contexte, href)
+                    page, _reponse = await self._ouvrir(contexte, href)
                     soup = BeautifulSoup(await self._contenu(page), "html.parser")
                 except ErreurPlaywright:
                     return
@@ -290,7 +291,7 @@ class AnalyseurNavigateur(Analyseur):
 
         mobile = await navigateur.new_context(**self._options_contexte(mobile=True))
         try:
-            page, _ = await self._ouvrir(mobile, info.url_finale)
+            page, _reponse = await self._ouvrir(mobile, info.url_finale)
             info.largeur_contenu_mobile, info.largeur_fenetre_mobile = await page.evaluate(JS_LARGEURS)
             info.captures["capture_mobile"] = await self._capturer(page, prospect, "mobile")
         except ErreurPlaywright:

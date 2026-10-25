@@ -12,6 +12,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from chasseur.db import depot
 from chasseur.db.tables import EN_ATTENTE, EN_COURS, EN_PAUSE, Scan
 from chasseur.importers import FORMAT_GENERIQUE, ErreurImport, lire_prospects
+from chasseur.langue import _
 
 FORMAT_PLACES = "Recherche Google Places"
 
@@ -45,10 +46,10 @@ async def apercu(request: Request, fichier: UploadFile):
     stockage = request.app.state.stockage
     extension = Path(fichier.filename or "").suffix.lower()
     if extension not in EXTENSIONS:
-        return _page(request, "_apercu.html", erreur="Choisissez un fichier CSV ou Excel (.csv, .xlsx).")
+        return _page(request, "_apercu.html", erreur=_("Choisissez un fichier CSV ou Excel (.csv, .xlsx)."))
     contenu = await fichier.read(TAILLE_MAX + 1)
     if len(contenu) > TAILLE_MAX:
-        return _page(request, "_apercu.html", erreur="Fichier trop volumineux (20 Mo maximum).")
+        return _page(request, "_apercu.html", erreur=_("Fichier trop volumineux (20 Mo maximum)."))
     jeton = f"{secrets.token_hex(16)}{extension}"
     chemin = stockage.dossier_imports / jeton
     chemin.write_bytes(contenu)
@@ -59,7 +60,7 @@ async def apercu(request: Request, fichier: UploadFile):
         return _page(request, "_apercu.html", erreur=str(e))
     if not resultat.prospects:
         chemin.unlink(missing_ok=True)
-        return _page(request, "_apercu.html", erreur="Le fichier ne contient aucune entreprise.")
+        return _page(request, "_apercu.html", erreur=_("Le fichier ne contient aucune entreprise."))
     return apercu_import(request, jeton, fichier.filename or jeton, resultat.format, resultat.prospects)
 
 
@@ -68,7 +69,7 @@ def apercu_import(request: Request, jeton: str, nom_fichier: str, format_: str, 
     with request.app.state.stockage.session() as s:
         prepare = depot.preparer_import(s, prospects)
     if not prepare.prospects:
-        return _page(request, "_apercu.html", erreur="Toutes les entreprises de cette liste sont dans votre liste d'opposition.")
+        return _page(request, "_apercu.html", erreur=_("Toutes les entreprises de cette liste sont dans votre liste d'opposition."))
     return _page(
         request,
         "_apercu.html",
@@ -92,11 +93,11 @@ async def lancer(
     request: Request, jeton: str = Form(...), nom: str = Form(""), nom_fichier: str = Form(""), source: str = Form(""),
 ):
     if not RE_JETON.match(jeton):
-        raise HTTPException(400, "Fichier d'import invalide")
+        raise HTTPException(400, _("Fichier d'import invalide"))
     stockage = request.app.state.stockage
     chemin = stockage.dossier_imports / jeton
     if not chemin.is_file():
-        raise HTTPException(400, "Fichier d'import expiré : déposez-le à nouveau")
+        raise HTTPException(400, _("Fichier d'import expiré : déposez-le à nouveau"))
     resultat = lire_prospects(chemin)
     format_ = FORMAT_PLACES if source.startswith("Recherche Google Places") else resultat.format
     with stockage.session() as s:

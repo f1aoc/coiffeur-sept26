@@ -11,6 +11,7 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 
 from chasseur import licence as lic
+from chasseur.langue import _, langue_courante
 
 routeur = APIRouter()
 
@@ -40,7 +41,7 @@ def _rediriger(**params) -> RedirectResponse:
 async def page(request: Request, ok: str = "", erreur: str = ""):
     etat = request.app.state.licence.etat()
     return request.app.state.templates.TemplateResponse(request, "licence.html", {
-        "actif": "licence", "etat": etat, "ok": ok, "erreur": erreur, "lien_achat": lic.LIEN_ACHAT,
+        "actif": "licence", "etat": etat, "ok": ok, "erreur": erreur, "lien_achat": lic.LIENS_ACHAT.get(langue_courante(), lic.LIEN_ACHAT),
         "tolerance": lic.TOLERANCE_JOURS,
     })
 
@@ -51,15 +52,16 @@ async def activer(request: Request, cle: str = Form("")):
         etat = await asyncio.to_thread(request.app.state.licence.activer, cle)
     except lic.ErreurLicence as e:
         return _rediriger(erreur=str(e))
-    nom = f", {etat.client}" if etat.client else ""
-    return _rediriger(ok=f"Merci{nom} ! Votre licence est activée sur cet ordinateur.")
+    if etat.client:
+        return _rediriger(ok=_("Merci, {nom} ! Votre licence est activée sur cet ordinateur.").format(nom=etat.client))
+    return _rediriger(ok=_("Merci ! Votre licence est activée sur cet ordinateur."))
 
 
 @routeur.post("/licence/verifier")
 async def verifier(request: Request):
     etat = await asyncio.to_thread(request.app.state.licence.verifier)
     if etat.utilisable:
-        return _rediriger(ok="Licence vérifiée : tout est en ordre.")
+        return _rediriger(ok=_("Licence vérifiée : tout est en ordre."))
     return _rediriger()  # la page affiche déjà la raison (désactivée, expirée, hors ligne…)
 
 
@@ -69,4 +71,4 @@ async def liberer(request: Request):
         await asyncio.to_thread(request.app.state.licence.liberer)
     except lic.ErreurLicence as e:
         return _rediriger(erreur=str(e))
-    return _rediriger(ok="Licence libérée : vous pouvez maintenant l'activer sur un autre ordinateur.")
+    return _rediriger(ok=_("Licence libérée : vous pouvez maintenant l'activer sur un autre ordinateur."))

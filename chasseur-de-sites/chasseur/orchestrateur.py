@@ -17,6 +17,7 @@ import httpx
 from chasseur import urls
 from chasseur.analyzers import TOUS, Analyseur
 from chasseur.config import Config
+from chasseur.langue import _
 from chasseur.controles import CODE_NON_VERIFIE, CONTROLES
 from chasseur.modeles import Prospect, Rapport, Resultat
 from chasseur.scoring import noter
@@ -61,11 +62,11 @@ async def _executer(analyseur: Analyseur, prospect: Prospect, http: httpx.AsyncC
             [
                 config.constat(
                     CODE_NON_VERIFIE,
-                    f"Contrôles « {analyseur.nom} » non vérifiés (erreur technique de notre côté).",
-                    f"analyseur {analyseur.nom} : {detail}",
+                    _("Contrôles « {nom} » non vérifiés (erreur technique de notre côté).").format(nom=analyseur.nom),
+                    _("analyseur {nom} : {detail}").format(nom=analyseur.nom, detail=detail),
                 )
             ],
-            non_verifies=dict.fromkeys(analyseur.controles, f"échec de l'analyseur {analyseur.nom}"),
+            non_verifies=dict.fromkeys(analyseur.controles, _("échec de l'analyseur {nom}").format(nom=analyseur.nom)),
             echec=True,
         )
 
@@ -78,7 +79,8 @@ def consolider(resultat: Resultat) -> None:
         avant = len(resultat.constats)
         resultat.constats = [c for c in resultat.constats if c.code not in ("HTTP_ERREUR_CLIENT", "HTTP_ERREUR_SERVEUR")]
         if len(resultat.constats) != avant:
-            m["note_http"] = f"HTTP {code_robot} renvoyé au robot, mais page affichée normalement dans le navigateur (HTTP {code_nav})"
+            m["note_http"] = _("HTTP {robot} renvoyé au robot, mais page affichée normalement dans le navigateur (HTTP {navigateur})").format(
+                robot=code_robot, navigateur=code_nav)
 
 
 async def analyser_prospects(
@@ -103,7 +105,7 @@ async def analyser_prospects(
     async def traiter(prospect: Prospect, http: httpx.AsyncClient) -> Resultat:
         nonlocal termines
         resultat = Resultat(prospect)
-        resultat.non_verifies.update(dict.fromkeys(non_lances, "analyseur non lancé"))
+        resultat.non_verifies.update(dict.fromkeys(non_lances, _("analyseur non lancé")))
         valide = urls.url_valide(prospect.url)
         applicables = [a for a in analyseurs if valide or not a.requiert_url]
         for a in analyseurs:

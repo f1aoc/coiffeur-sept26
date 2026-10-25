@@ -1,41 +1,41 @@
 {% extends "base.html" %}
-{% block titre %}Comparaison – {{ nouveau.nom }}{% endblock %}
+{% block titre %}{{ _("Comparaison") }} – {{ nouveau.nom }}{% endblock %}
 {% block contenu %}
-<p class="fil"><a href="/analyses">Analyses</a> › <a href="/analyses/{{ nouveau.id }}">{{ nouveau.nom }}</a> › Comparaison</p>
-<h1>Qu'est-ce qui a changé ?</h1>
+<p class="fil"><a href="/analyses">{{ _("Analyses") }}</a> › <a href="/analyses/{{ nouveau.id }}">{{ nouveau.nom }}</a> {{ _("› Comparaison") }}</p>
+<h1>{{ _("Qu'est-ce qui a changé ?") }}</h1>
 <form method="get" class="filtres">
-  <label>Comparer « {{ nouveau.nom }} » avec
+  <label>{{ _("Comparer « {nom} » avec").format(nom=nouveau.nom) }}
     <select name="avec" onchange="this.form.submit()">
       {% for a in autres %}<option value="{{ a.id }}" {% if ancien and a.id == ancien.id %}selected{% endif %}>{{ a.nom }} ({{ a.cree_le|date_fr }})</option>{% endfor %}
     </select>
   </label>
-  <noscript><button class="bouton">Comparer</button></noscript>
+  <noscript><button class="bouton">{{ _("Comparer") }}</button></noscript>
 </form>
 {% if not c %}
-<p class="vide">Aucune autre analyse à comparer pour l'instant.</p>
+<p class="vide">{{ _("Aucune autre analyse à comparer pour l'instant.") }}</p>
 {% else %}
 <ul class="compteurs">
-  <li class="compteur etat-casse"><span>Devenus cassés</span><strong>{{ c.devenus_casses|length }}</strong></li>
-  <li class="compteur etat-correct"><span>Réparés</span><strong>{{ c.repares|length }}</strong></li>
-  <li class="compteur etat-obsolete"><span>Autres changements</span><strong>{{ c.changements|length }}</strong></li>
-  <li class="compteur etat-sans-site"><span>Nouveaux / disparus</span><strong>{{ c.nouveaux|length }} / {{ c.disparus|length }}</strong></li>
+  <li class="compteur etat-casse"><span>{{ _("Devenus cassés") }}</span><strong>{{ c.devenus_casses|length }}</strong></li>
+  <li class="compteur etat-correct"><span>{{ _("Réparés") }}</span><strong>{{ c.repares|length }}</strong></li>
+  <li class="compteur etat-obsolete"><span>{{ _("Autres changements") }}</span><strong>{{ c.changements|length }}</strong></li>
+  <li class="compteur etat-sans-site"><span>{{ _("Nouveaux / disparus") }}</span><strong>{{ c.nouveaux|length }} / {{ c.disparus|length }}</strong></li>
 </ul>
 {% for titre, lignes in (("Sites devenus cassés depuis la dernière fois", c.devenus_casses), ("Sites réparés", c.repares), ("Autres changements", c.changements)) %}
 <section class="carte">
-  <h2>{{ titre }}</h2>
+  <h2>{{ _(titre) }}</h2>
   {% if lignes %}
   <div class="tableau-defilant"><table class="tableau">
-    <thead><tr><th>Entreprise</th><th>Avant</th><th>Maintenant</th><th>Statut commercial</th></tr></thead>
+    <thead><tr><th>{{ _("Entreprise") }}</th><th>{{ _("Avant") }}</th><th>{{ _("Maintenant") }}</th><th>{{ _("Statut commercial") }}</th></tr></thead>
     <tbody>{% for a, n in lignes %}
       <tr><td><a href="/prospects/{{ n.id }}"><strong>{{ n.nom or n.url }}</strong></a><br><span class="discret">{{ n.url }}</span></td>
-        <td><span class="etat etat-{{ a.etat|classe_etat }}">{{ a.etat }}</span> {{ a.score }}</td>
-        <td><span class="etat etat-{{ n.etat|classe_etat }}">{{ n.etat }}</span> {{ n.score }}</td>
-        <td>{{ n.statut }}</td></tr>
+        <td><span class="etat etat-{{ a.etat|classe_etat }}">{{ _(a.etat) }}</span> {{ a.score }}</td>
+        <td><span class="etat etat-{{ n.etat|classe_etat }}">{{ _(n.etat) }}</span> {{ n.score }}</td>
+        <td>{{ _(n.statut) }}</td></tr>
     {% endfor %}</tbody>
   </table></div>
-  {% else %}<p class="discret">Aucun.</p>{% endif %}
+  {% else %}<p class="discret">{{ _("Aucun.") }}</p>{% endif %}
 </section>
 {% endfor %}
-<p class="discret">{{ c.inchanges }} site{{ "s" if c.inchanges > 1 }} sans changement de catégorie.</p>
+<p class="discret">{{ pluriel(c.inchanges, "{n} site sans changement de catégorie.", "{n} sites sans changement de catégorie.") }}</p>
 {% endif %}
 {% endblock %}

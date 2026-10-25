@@ -13,6 +13,7 @@ from chasseur.reports.donnees import diagnostic
 from chasseur.reports.excel import exporter_csv, exporter_excel
 from chasseur.reports.pdf import ErreurPDF, html_rapport, nom_fichier, zip_rapports
 from chasseur.web.routes_resultats import filtres_depuis
+from chasseur.langue import _
 
 routeur = APIRouter()
 MAX_RAPPORTS = 200
@@ -60,7 +61,7 @@ async def apercu_rapport(request: Request, prospect_id: int):
 async def rapports_groupes(request: Request, ids: list[int] = Form(default=[])):
     ids = list(dict.fromkeys(ids))[:MAX_RAPPORTS]
     if not ids:
-        raise HTTPException(400, "Cochez au moins un prospect.")
+        raise HTTPException(400, _("Cochez au moins un prospect."))
     rapports = [await _pdf(request, i) for i in ids]
     nom = f"diagnostics-{datetime.now():%Y-%m-%d}.zip"
     return _telechargement(zip_rapports(rapports), nom, "application/zip")
@@ -86,8 +87,9 @@ async def export_csv(request: Request):
 
 def _description(request: Request) -> str:
     q = request.query_params
-    morceaux = [f"{nom} : {q[cle]}" for cle, nom in (("etat", "catégorie"), ("statut", "statut"), ("probleme", "problème"), ("q", "recherche")) if q.get(cle)]
-    return ", ".join(morceaux) or "tous les prospects"
+    morceaux = [f"{_(nom)} : {_(q[cle]) if cle in ('etat', 'statut') else q[cle]}"
+                for cle, nom in (("etat", "catégorie"), ("statut", "statut"), ("probleme", "problème"), ("q", "recherche")) if q.get(cle)]
+    return ", ".join(morceaux) or _("tous les prospects")
 
 
 @routeur.get("/agence/logo", include_in_schema=False)
@@ -97,5 +99,5 @@ async def logo(request: Request):
         agence = lire_agence(s)
     chemin = stockage.absolu(agence.logo) if agence.logo else None
     if not chemin or not chemin.is_file():
-        raise HTTPException(404, "Pas de logo")
+        raise HTTPException(404, _("Pas de logo"))
     return FileResponse(chemin, headers={"Content-Security-Policy": "script-src 'none'", "Cache-Control": "no-cache"})

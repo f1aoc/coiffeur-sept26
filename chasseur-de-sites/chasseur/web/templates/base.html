@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="fr">
+<html lang="{{ code_langue() }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block titre %}Chasseur de sites{% endblock %} · Chasseur de sites by ptabountchikoff</title>
+  <title>{% block titre %}{{ _("Chasseur de sites") }}{% endblock %} · {{ _("Chasseur de sites") }} by ptabountchikoff</title>
   <link rel="icon" href="/static/icone.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/static/style.css">
   <script src="/static/htmx.min.js" defer></script>
@@ -11,25 +11,24 @@
 </head>
 <body>
   <header class="entete">
-    <a class="marque" href="/analyses">Chasseur de sites <small class="auteur">by ptabountchikoff</small></a>
-    <nav aria-label="Navigation principale">
-      <a href="/analyses/nouvelle" {% if actif == "nouvelle" %}aria-current="page"{% endif %}>Nouvelle analyse</a>
-      <a href="/recherche" {% if actif == "recherche" %}aria-current="page"{% endif %}>Recherche</a>
-      <a href="/analyses" {% if actif == "analyses" %}aria-current="page"{% endif %}>Analyses</a>
-      <a href="/resultats" {% if actif == "resultats" %}aria-current="page"{% endif %}>Résultats</a>
-      <a href="/reglages" {% if actif == "reglages" %}aria-current="page"{% endif %}>Réglages</a>
+    <a class="marque" href="/analyses">{{ _("Chasseur de sites") }} <small class="auteur">by ptabountchikoff</small></a>
+    <nav aria-label="{{ _("Navigation principale") }}">
+      <a href="/analyses/nouvelle" {% if actif == "nouvelle" %}aria-current="page"{% endif %}>{{ _("Nouvelle analyse") }}</a>
+      <a href="/recherche" {% if actif == "recherche" %}aria-current="page"{% endif %}>{{ _("Recherche") }}</a>
+      <a href="/analyses" {% if actif == "analyses" %}aria-current="page"{% endif %}>{{ _("Analyses") }}</a>
+      <a href="/resultats" {% if actif == "resultats" %}aria-current="page"{% endif %}>{{ _("Résultats") }}</a>
+      <a href="/reglages" {% if actif == "reglages" %}aria-current="page"{% endif %}>{{ _("Réglages") }}</a>
     </nav>
   </header>
   {% set l = licence() %}
-  {% if l.hors_ligne_depuis_longtemps %}<p class="bandeau-licence" role="status">Licence non vérifiée depuis plusieurs jours :
-    connectez-vous à Internet (blocage dans {{ l.jours_restants }} jour{{ "s" if l.jours_restants > 1 }}). <a href="/licence">Détails</a></p>{% endif %}
+  {% if l.hors_ligne_depuis_longtemps %}<p class="bandeau-licence" role="status">{{ pluriel(l.jours_restants, "Licence non vérifiée depuis plusieurs jours : connectez-vous à Internet (blocage dans {n} jour).", "Licence non vérifiée depuis plusieurs jours : connectez-vous à Internet (blocage dans {n} jours).") }} <a href="/licence">{{ _("Détails") }}</a></p>{% endif %}
   <main>
     {% block contenu %}{% endblock %}
   </main>
-  <footer class="pied">Chasseur de sites by ptabountchikoff {{ VERSION }} · application locale, vos données restent sur cet ordinateur ·
-    <a href="/oppositions">Liste d'opposition</a> · <a href="/licence">Licence</a> · <a href="/a-propos">À propos</a></footer>
-  <dialog id="visionneuse" aria-label="Capture agrandie">
-    <form method="dialog"><button class="fermer" aria-label="Fermer">×</button></form>
+  <footer class="pied">{{ _("Chasseur de sites") }} by ptabountchikoff {{ VERSION }} · {{ _("application locale, vos données restent sur cet ordinateur") }} ·
+    <a href="/oppositions">{{ _("Liste d'opposition") }}</a> · <a href="/licence">{{ _("Licence") }}</a> · <a href="/a-propos">{{ _("À propos") }}</a></footer>
+  <dialog id="visionneuse" aria-label="{{ _("Capture agrandie") }}">
+    <form method="dialog"><button class="fermer" aria-label="{{ _("Fermer") }}">×</button></form>
     <img alt="">
   </dialog>
 </body>

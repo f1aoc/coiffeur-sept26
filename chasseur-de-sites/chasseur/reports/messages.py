@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from sqlmodel import Session
 
 from chasseur.db import reglages
+from chasseur.langue import _, langue_courante
 
 VARIABLES = ("entreprise", "probleme_principal", "ville", "agence")
 RE_VARIABLE = re.compile(r"\{(" + "|".join(VARIABLES) + r")\}")
@@ -61,17 +62,26 @@ PAR_ID = {m.id: m for m in MODELES}
 
 
 def cle(modele_id: str) -> str:
-    return f"modele_{modele_id}"
+    """Modèle personnalisé propre à chaque langue (modele_email en français, modele_email_en en anglais)."""
+    return f"modele_{modele_id}" if langue_courante() == "fr" else f"modele_{modele_id}_{langue_courante()}"
+
+
+def defaut(modele: Modele) -> str:
+    return _(modele.defaut)
+
+
+def nom(modele: Modele) -> str:
+    return _(modele.nom)
 
 
 def lire_modeles(session: Session) -> dict[str, str]:
-    return {m.id: reglages.lire(session, cle(m.id), "") or m.defaut for m in MODELES}
+    return {m.id: reglages.lire(session, cle(m.id), "") or defaut(m) for m in MODELES}
 
 
 def ecrire_modele(session: Session, modele_id: str, texte: str) -> None:
     modele = PAR_ID[modele_id]
     texte = (texte or "").replace("\r\n", "\n").strip()
-    if not texte or texte == modele.defaut:
+    if not texte or texte == defaut(modele):
         reglages.supprimer(session, cle(modele_id))  # retour au texte par défaut
     else:
         reglages.ecrire(session, cle(modele_id), texte[:5000])
@@ -84,8 +94,8 @@ def rendre(modele: str, valeurs: dict[str, str]) -> str:
 
 def variables(entreprise: str, probleme_principal: str, ville: str, agence: str) -> dict[str, str]:
     return {
-        "entreprise": entreprise or "votre entreprise",
-        "probleme_principal": probleme_principal or "votre site pourrait être modernisé",
-        "ville": ville or "votre ville",
-        "agence": agence or "[votre agence]",
+        "entreprise": entreprise or _("votre entreprise"),
+        "probleme_principal": probleme_principal or _("votre site pourrait être modernisé"),
+        "ville": ville or _("votre ville"),
+        "agence": agence or _("[votre agence]"),
     }

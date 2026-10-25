@@ -15,6 +15,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from chasseur.langue import _
+
 CODE_NON_VERIFIE = "NON_VERIFIE"
 
 
@@ -131,4 +133,5 @@ LIBELLES: dict[str, str] = {
 
 
 def libelle(code: str) -> str:
-    return LIBELLES.get(code, code)
+    """Libellé court d'un code de constat, dans la langue courante."""
+    return _(LIBELLES.get(code, code))

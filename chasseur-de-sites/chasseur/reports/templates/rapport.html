@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="fr">
+<html lang="{{ code_langue() }}">
 <head>
 <meta charset="utf-8">
-<title>Diagnostic du site de {{ p.nom }}</title>
+<title>{{ _("Diagnostic du site de {nom}").format(nom=p.nom) }}</title>
 <style>
   @page { size: A4; margin: 0; }
   * { box-sizing: border-box; }
@@ -71,7 +71,7 @@
 <div class="bandeau">
   <table><tr>
     <td>{% if logo %}<img class="logo" src="{{ logo }}" alt="{{ agence.nom_affiche }}">{% else %}<span class="agence">{{ agence.nom_affiche }}</span>{% endif %}</td>
-    <td class="date">Diagnostic du {{ date }}</td>
+    <td class="date">{{ _("Diagnostic du {date}").format(date=date) }}</td>
   </tr></table>
 </div>
 {% endmacro %}
@@ -87,33 +87,33 @@
 
 <section class="page">
   {{ bandeau() }}
-  <p class="sur-titre">Diagnostic de votre site internet</p>
+  <p class="sur-titre">{{ _("Diagnostic de votre site internet") }}</p>
   <h1>{{ p.nom or p.url }}</h1>
   {% if p.url %}<p class="adresse">{{ p.url }}{% if p.ville %} · {{ p.ville }}{% endif %}</p>{% endif %}
 
   <div class="verdict">{{ d.verdict }}</div>
 
-  <p class="intro">Nous avons ouvert votre site comme le ferait un client, sur un ordinateur et sur un téléphone.
-  Voici ce qu'il voit en arrivant sur votre page d'accueil{% if prise_le %} (captures du {{ prise_le }}){% endif %}.</p>
+  <p class="intro">{% if prise_le %}{{ _("Nous avons ouvert votre site comme le ferait un client, sur un ordinateur et sur un téléphone. Voici ce qu'il voit en arrivant sur votre page d'accueil (captures du {date}).").format(date=prise_le) }}
+  {%- else %}{{ _("Nous avons ouvert votre site comme le ferait un client, sur un ordinateur et sur un téléphone. Voici ce qu'il voit en arrivant sur votre page d'accueil.") }}{% endif %}</p>
 
   <table class="captures"><tr>
     <td class="col-bureau">
-      {% if capture_bureau %}<img class="ecran" src="{{ capture_bureau }}" alt="Votre site sur ordinateur">
-      {% else %}<div class="indisponible">Capture sur ordinateur indisponible</div>{% endif %}
-      <div class="legende">Sur un ordinateur</div>
+      {% if capture_bureau %}<img class="ecran" src="{{ capture_bureau }}" alt="{{ _('Votre site sur ordinateur') }}">
+      {% else %}<div class="indisponible">{{ _("Capture sur ordinateur indisponible") }}</div>{% endif %}
+      <div class="legende">{{ _("Sur un ordinateur") }}</div>
     </td>
     <td>
-      {% if capture_mobile %}<img class="ecran" src="{{ capture_mobile }}" alt="Votre site sur téléphone">
-      {% else %}<div class="indisponible">Capture sur téléphone indisponible</div>{% endif %}
-      <div class="legende">Sur un téléphone</div>
+      {% if capture_mobile %}<img class="ecran" src="{{ capture_mobile }}" alt="{{ _('Votre site sur téléphone') }}">
+      {% else %}<div class="indisponible">{{ _("Capture sur téléphone indisponible") }}</div>{% endif %}
+      <div class="legende">{{ _("Sur un téléphone") }}</div>
     </td>
   </tr></table>
 
   {% if d.principaux %}
   <div class="bref">
-    <h2>En bref</h2>
+    <h2>{{ _("En bref") }}</h2>
     <ul>{% for pb in d.principaux %}<li class="{{ pb.famille }}">{{ pb.texte.titre }}</li>{% endfor %}</ul>
-    <p class="suite-bref">Le détail de chaque point, et ce qu'il change pour vos visiteurs, est en page 2.</p>
+    <p class="suite-bref">{{ _("Le détail de chaque point, et ce qu'il change pour vos visiteurs, est en page 2.") }}</p>
   </div>
   {% endif %}
   {{ pied(1) }}
@@ -122,24 +122,23 @@
 <section class="page">
   {{ bandeau() }}
   {% if d.principaux %}
-    <h2>{% if p.etat == "Correct" %}Les points à améliorer{% else %}Ce que nous avons relevé{% endif %}</h2>
+    <h2>{% if p.etat == "Correct" %}{{ _("Les points à améliorer") }}{% else %}{{ _("Ce que nous avons relevé") }}{% endif %}</h2>
     {% for pb in d.principaux %}
     <div class="probleme {{ pb.famille }}">
       <h3>{{ loop.index }}. {{ pb.texte.titre }}</h3>
-      <p><span class="etiquette">Ce que voit le visiteur :</span> {{ pb.texte.visiteur }}</p>
-      <p><span class="etiquette">Pourquoi c'est gênant :</span> {{ pb.texte.impact }}</p>
+      <p><span class="etiquette">{{ _("Ce que voit le visiteur :") }}</span> {{ pb.texte.visiteur }}</p>
+      <p><span class="etiquette">{{ _("Pourquoi c'est gênant :") }}</span> {{ pb.texte.impact }}</p>
     </div>
     {% endfor %}
-    {% if d.autres %}<p class="suite">Et {{ d.autres }} autre{{ "s" if d.autres > 1 }} point{{ "s" if d.autres > 1 }} de moindre importance, que nous pouvons vous détailler.</p>{% endif %}
+    {% if d.autres %}<p class="suite">{{ (_("Et 1 autre point de moindre importance, que nous pouvons vous détailler.") if d.autres == 1 else _("Et {n} autres points de moindre importance, que nous pouvons vous détailler.").format(n=d.autres)) }}</p>{% endif %}
   {% else %}
-    <h2>Bonne nouvelle</h2>
-    <p>Nous n'avons relevé aucun problème important sur votre page d'accueil. Un site se dégrade pourtant avec le temps :
-    certificat de sécurité à renouveler, logiciel à mettre à jour, informations à tenir à jour.</p>
+    <h2>{{ _("Bonne nouvelle") }}</h2>
+    <p>{{ _("Nous n'avons relevé aucun problème important sur votre page d'accueil. Un site se dégrade pourtant avec le temps : certificat de sécurité à renouveler, logiciel à mettre à jour, informations à tenir à jour.") }}</p>
   {% endif %}
 
   <div class="appel">
-    <p>{% if not d.principaux %}Pour garder votre site en bon état dans la durée, contactez-nous.
-       {%- elif p.etat == "Correct" %}Pour améliorer ces points et garder votre site en bon état, contactez-nous, sans engagement.
+    <p>{% if not d.principaux %}{{ _("Pour garder votre site en bon état dans la durée, contactez-nous.") }}
+       {%- elif p.etat == "Correct" %}{{ _("Pour améliorer ces points et garder votre site en bon état, contactez-nous, sans engagement.") }}
        {%- else %}{{ agence.appel }}{% endif %}</p>
     <p class="contact">{{ agence.nom_affiche }}{% for c in agence.coordonnees %}<br>{{ c }}{% endfor %}</p>
   </div>

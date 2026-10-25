@@ -12,6 +12,7 @@ from sqlmodel import Session
 from chasseur.controles import CODE_NON_VERIFIE, CONTROLE_DU_CODE
 from chasseur.db import depot
 from chasseur.db.tables import Capture, ConstatDB, ProspectDB
+from chasseur.langue import _
 from chasseur.modeles import GRAVITES
 from chasseur.reports.textes import Texte, texte
 
@@ -52,16 +53,18 @@ class Diagnostic:
     def verdict(self) -> str:
         p, n = self.prospect, len(self.problemes)
         if p.etat == "Sans site":
-            return "Votre entreprise n'a pas encore de site internet."
+            return _("Votre entreprise n'a pas encore de site internet.")
         if not p.analyse:
-            return "Votre site n'a pas encore été analysé."
+            return _("Votre site n'a pas encore été analysé.")
         if n == 0:
-            return "Votre site ne présente pas de problème majeur."
+            return _("Votre site ne présente pas de problème majeur.")
         if p.etat == "Correct":
-            return f"Votre site est en bon état, avec {n} point{'s' if n > 1 else ''} à améliorer."
+            if n == 1:
+                return _("Votre site est en bon état, avec 1 point à améliorer.")
+            return _("Votre site est en bon état, avec {n} points à améliorer.").format(n=n)
         if n == 1:
-            return "Votre site présente 1 problème qui fait fuir vos visiteurs."
-        return f"Votre site présente {n} problèmes qui font fuir vos visiteurs."
+            return _("Votre site présente 1 problème qui fait fuir vos visiteurs.")
+        return _("Votre site présente {n} problèmes qui font fuir vos visiteurs.").format(n=n)
 
 
 def problemes(constats: list[ConstatDB], mesures: dict) -> list[Probleme]:

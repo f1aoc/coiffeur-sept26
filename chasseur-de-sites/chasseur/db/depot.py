@@ -26,6 +26,7 @@ from chasseur.db.tables import (
 )
 from chasseur.modeles import GRAVITES, Constat, Prospect, Resultat
 from chasseur.scoring import noter
+from chasseur.langue import _
 
 PAR_PAGE = 50
 CLES_CAPTURES = {"capture_bureau": "bureau", "capture_mobile": "mobile"}
@@ -42,7 +43,7 @@ def creer_scan(
     session: Session, nom: str, prospects: list[Prospect], fichier: str = "", format_: str = "", source: str = "",
     origine_id: int | None = None,
 ) -> Scan:
-    source = source or f"Import « {fichier or nom} »"
+    source = source or _("Import « {fichier} »").format(fichier=fichier or nom)
     scan = Scan(nom=nom, fichier=fichier, format=format_, total=len(prospects), source=source, origine_id=origine_id)
     session.add(scan)
     session.flush()

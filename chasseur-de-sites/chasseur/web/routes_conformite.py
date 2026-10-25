@@ -14,6 +14,7 @@ from chasseur.db import depot
 from chasseur.db.tables import Opposition, ProspectDB, Scan
 from chasseur.journal import dernieres_lignes
 from chasseur.reports.pdf import weasyprint_disponible
+from chasseur.langue import _
 
 routeur = APIRouter()
 
@@ -40,7 +41,8 @@ async def ajouter(request: Request, domaine: str = Form(""), motif: str = Form("
             opposition, supprimes = rgpd.ajouter_opposition(stockage, s, domaine, motif)
         except rgpd.ErreurRGPD as e:
             return RedirectResponse(f"/oppositions?{urlencode({'erreur': str(e)})}", status_code=303)
-    message = f"{opposition.domaine} ajouté à la liste d'opposition" + (f" ; {supprimes} prospect(s) supprimé(s)." if supprimes else ".")
+    message = (_("{domaine} ajouté à la liste d'opposition ; {n} prospect(s) supprimé(s).").format(domaine=opposition.domaine, n=supprimes)
+               if supprimes else _("{domaine} ajouté à la liste d'opposition.").format(domaine=opposition.domaine))
     return RedirectResponse(f"/oppositions?{urlencode({'ok': message})}", status_code=303)
 
 
@@ -60,16 +62,17 @@ async def supprimer(request: Request, prospect_id: int, opposer: str = Form(""))
     with stockage.session() as s:
         p = s.get(ProspectDB, prospect_id)
         if p is None:
-            raise HTTPException(404, "Prospect introuvable")
+            raise HTTPException(404, _("Prospect introuvable"))
         scan_id, nom, url = p.scan_id, p.nom, p.url
         if opposer and url:
             try:
-                rgpd.ajouter_opposition(stockage, s, url, motif=f"Demande de {nom}"[:200])
+                rgpd.ajouter_opposition(stockage, s, url, motif=_("Demande de {nom}").format(nom=nom)[:200])
             except rgpd.ErreurRGPD:
                 rgpd.supprimer_prospect(stockage, s, prospect_id)
         else:
             rgpd.supprimer_prospect(stockage, s, prospect_id)
-    message = f"« {nom or url} » a été supprimé" + (" et son domaine ne sera plus jamais analysé." if opposer and url else ".")
+    message = (_("« {nom} » a été supprimé et son domaine ne sera plus jamais analysé.") if opposer and url
+               else _("« {nom} » a été supprimé.")).format(nom=nom or url)
     return RedirectResponse(f"/resultats?{urlencode({'scan': scan_id, 'message': message})}", status_code=303)
 
 

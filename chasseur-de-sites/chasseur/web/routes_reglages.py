@@ -14,6 +14,7 @@ from chasseur.db import depot, reglages
 from chasseur.db.agence import CHAMPS, TAILLE_LOGO_MAX, ErreurAgence, ecrire_agence, enregistrer_logo, lire_agence, supprimer_logo
 from chasseur.db.secret import ErreurSecret, masquer
 from chasseur.reports import messages
+from chasseur.langue import AUTO, LANGUE, LANGUES, definir_langue
 
 routeur = APIRouter()
 
@@ -45,13 +46,14 @@ async def page(request: Request, ok: int = 0, erreur: str = ""):
         agence = lire_agence(s)
         textes = messages.lire_modeles(s)
         conservation = rgpd.duree_conservation(s)
+        langue = reglages.lire(s, LANGUE, "") or AUTO
     modeles = [(m, textes[m.id]) for m in messages.MODELES]
     groupes = [(titre, [(c, points[c.id], base.points[c.id]) for c in CONTROLES if c.famille == f and c.id != "url"]) for f, titre in FAMILLES]
     return request.app.state.templates.TemplateResponse(
         request, "reglages.html",
         dict(
             actif="reglages", cles=cles, groupes=groupes, parallelisme=parallelisme, maximum=PARALLELISME_MAX,
-            ok=ok, erreur=erreur[:300], agence=agence, modeles=modeles, conservation=conservation,
+            ok=ok, erreur=erreur[:300], agence=agence, modeles=modeles, conservation=conservation, langue=langue,
         ),
     )
 
@@ -67,6 +69,9 @@ async def enregistrer(request: Request):
         except ErreurAgence as e:
             s.rollback()
             return RedirectResponse(f"/reglages?{urlencode({'erreur': str(e)})}#agence", status_code=303)
+        choix_langue = str(formulaire.get("langue", "")) if "langue" in formulaire else None
+        if choix_langue is not None:
+            reglages.ecrire(s, LANGUE, choix_langue if choix_langue in LANGUES else AUTO)
         for m in messages.MODELES:
             if f"modele_{m.id}" in formulaire:
                 messages.ecrire_modele(s, m.id, str(formulaire.get(f"modele_{m.id}", "")))
@@ -95,6 +100,8 @@ async def enregistrer(request: Request):
         s.commit()
         config = reglages.config_effective(stockage, s, base)
         depot.recalculer_scores(s, config)  # les scores existants suivent les nouveaux poids
+    if choix_langue is not None:  # après les modèles de messages, enregistrés dans la langue du formulaire
+        definir_langue(choix_langue)
     return RedirectResponse("/reglages?ok=1", status_code=303)
 
 

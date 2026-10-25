@@ -1,0 +1,795 @@
+# Traductions anglaises de Chasseur de sites (texte français du code → texte anglais).
+# Produit à partir de tests/textes_a_traduire.py ; le test tests/test_langues.py vérifie qu'il n'en manque aucune.
+' (après {n} redirection(s) depuis {url})': ' (after {n} redirect(s) from {url})'
+' (environ {secondes} secondes)': ' (about {secondes} seconds)'
+' : il faut {secondes} s pour afficher son contenu principal': ': it takes {secondes} s to display its main content'
+' ancienne': ' old'
+' depuis le {date}': ' since {date}'
+' le {date}': ' on {date}'
+' prochainement': ' soon'
+'%d/%m/%Y à %H:%M': '%Y-%m-%d %H:%M'
+(.csv, .xlsx): (.csv, .xlsx)
+(Excel ou CSV), ou supprimez des prospects.: (Excel or CSV), or delete prospects.
+(Google Cloud → « Places API (New) » activée → clé API).: (Google Cloud → « Places API (New) » enabled → API key).
+(aucun site, ou seulement une page Facebook, Planity…). Elles apparaîtront « Sans site » dans les résultats.: (no website, or only a Facebook page, a booking page…). They will appear as « No website » in the results.
+(le tarif indicatif se règle dans config.yaml).: (the indicative price is set in config.yaml).
+? '. Les messages ne sont jamais envoyés automatiquement : vous les copiez depuis la fiche d''un prospect. Videz un champ pour revenir au texte d''origine.'
+: '. Messages are never sent automatically: you copy them from a prospect''s page. Empty a field to restore the original text.'
+'10 convient à un ordinateur portable récent. Plus haut : plus rapide, mais plus gourmand.': '10 suits a recent laptop. Higher: faster, but more demanding.'
+<strong>{n}</strong> entreprise, dont <strong>{avec_site}</strong> avec un site à analyser.: <strong>{n}</strong> business, including <strong>{avec_site}</strong> with a website to analyse.
+<strong>{n}</strong> entreprises, dont <strong>{avec_site}</strong> avec un site à analyser.: <strong>{n}</strong> businesses, including <strong>{avec_site}</strong> with a website to analyse.
+'Accès refusé : activez « Places API (New) » dans Google Cloud et vérifiez les restrictions de la clé.': 'Access denied: enable « Places API (New) » in Google Cloud and check the key restrictions.'
+Acheter une licence: Buy a licence
+Activer: Activate
+Activez Chasseur de sites: Activate Site Hunter
+Activité: Activity
+Actualités anciennes: Old news
+Adresse: Address
+Adresse du site illisible: Unreadable website address
+Adresse e-mail de l'agence invalide.: Invalid agency email address.
+Affichée en tête et en pied des rapports PDF, et utilisée pour signer les messages.: Shown in the header and footer of the PDF reports, and used to sign the messages.
+Ajouter: Add
+Ajoutez d'abord votre clé Google Places dans les: First add your Google Places key in
+Ajouté le: Added on
+Analyse: Analysis
+Analyses: Analyses
+Analyses simultanées: Simultaneous analyses
+Analysé le: Analysed on
+Aperçu de « {nom} »: Preview of « {nom} »
+Appel à l'action (fin du rapport): Call to action (end of the report)
+Arrêter la relance hebdomadaire: Stop the weekly rerun
+Au lieu de votre page d'accueil, le visiteur voit un message d'erreur technique.: Instead of your home page, the visitor sees a technical error message.
+Au plus 1 requête à l'API, soit {cout} {devise} au maximum au tarif indicatif de {prix} {devise} les 1 000 requêtes.: At most 1 API request, i.e. {cout} {devise} at most at the indicative price of {prix} {devise} per 1,000 requests.
+Au plus {n} requêtes à l'API, soit {cout} {devise} au maximum au tarif indicatif de {prix} {devise} les 1 000 requêtes.: At most {n} API requests, i.e. {cout} {devise} at most at the indicative price of {prix} {devise} per 1,000 requests.
+Aucun changement de statut pour l'instant.: No status change yet.
+Aucun domaine dans la liste d'opposition.: No domain in the opt-out list.
+Aucun problème détecté.: No problem found.
+Aucun prospect ne correspond à ces filtres.: No prospect matches these filters.
+Aucun site web n'est référencé pour votre entreprise.: No website is listed for your business.
+Aucun.: None.
+Aucune analyse pour l'instant.: No analysis yet.
+Aucune autre analyse à comparer pour l'instant.: No other analysis to compare yet.
+'Aucune clé Google Places : ajoutez-la dans les Réglages.': 'No Google Places key: add it in Settings.'
+? 'Aucune colonne reconnue dans {fichier} (en-têtes lus : {entetes}). Colonnes attendues : nom, url, téléphone, adresse, catégorie.'
+: 'No recognised column in {fichier} (headers read: {entetes}). Expected columns: name, url, phone, address, category.'
+Aucune erreur enregistrée.: No error recorded.
+Aucune fiche avec un site trouvée ({n} fiche(s) sans site, avec une simple page tierce ou fermée).: No listing with a website found ({n} listing(s) without a website, with a mere third-party page, or closed).
+Automatique (langue de l'ordinateur): Automatic (computer language)
+Autres: Others
+Autres changements: Other changes
+Avancement: Progress
+Avant: Before
+Avant de lancer: Before starting
+Avertissement de sécurité à l'ouverture: Security warning when opening the site
+Avignon&#10;Cavaillon: Austin&#10;Dallas
+Avis Google: Google reviews
+Balise title et meta description: Title tag and meta description
+Beaucoup de visiteurs n'attendent pas la fin du chargement.: Many visitors do not wait for the page to finish loading.
+? Bonjour, {agence} ici. En consultant le site de {entreprise}, j'ai vu que {probleme_principal}. Voulez-vous que je vous envoie un court diagnostic ? Répondez STOP pour ne plus être contacté.
+: Hello, this is {agence}. Looking at the {entreprise} website, I noticed that {probleme_principal}. Would you like me to send you a short report? Reply STOP to opt out.
+? 'Bonjour, {agence} à l''appareil. Je vous appelle au sujet du site internet de {entreprise}.
+
+
+  En le consultant, j''ai remarqué que {probleme_principal}. Est-ce que vous étiez au courant ?
+
+
+  → Si oui : Avez-vous prévu de le faire corriger ? Je peux vous expliquer ce que cela demande.
+
+  → Si non : J''ai préparé un court diagnostic avec des captures d''écran, pour que vous voyiez ce que voient vos clients. À quelle adresse e-mail puis-je vous l''envoyer ?
+
+  → Si pas intéressé : Pas de souci, je note de ne pas vous rappeler. Bonne journée !'
+: 'Hello, this is {agence}. I''m calling about the {entreprise} website.
+
+
+  Looking at it, I noticed that {probleme_principal}. Were you aware of it?
+
+
+  → If yes: Are you planning to have it fixed? I can explain what it involves.
+
+  → If no: I''ve prepared a short report with screenshots, so you can see what your customers see. Which email address can I send it to?
+
+  → If not interested: No problem, I''ll make a note not to call you again. Have a nice day!'
+Bonne nouvelle: Good news
+Bonus: Bonus
+Bonus commercial: Sales bonus
+'C''est le signe d''un piratage : Google peut afficher un avertissement ou faire reculer votre site.': 'It is a sign of hacking: Google may show a warning or push your site down.'
+? 'C''est une borne haute : la recherche s''arrête dès qu''il n''y a plus de résultats. Google offre un crédit mensuel gratuit ; vérifiez le tarif en vigueur sur'
+: 'This is an upper limit: the search stops as soon as there are no more results. Google offers a free monthly credit; check the current price on'
+CDS-…: CDS-…
+CMS ou technologies périmées: Outdated CMS or technologies
+CSV / Excel générique: Generic CSV / Excel
+Capture: Screenshot
+Capture agrandie: Enlarged screenshot
+Capture ordinateur: Computer screenshot
+Capture sur ordinateur indisponible: Computer screenshot unavailable
+Capture sur téléphone indisponible: Phone screenshot unavailable
+Capture téléphone: Phone screenshot
+Captures d'écran: Screenshots
+Cassé: Broken
+Cassés: Broken
+Catégorie: Category
+'Ce SVG contient du code (script, événements) : il est refusé par sécurité.': 'This SVG contains code (script, events): it is rejected for security reasons.'
+Ce fichier n'est pas un SVG valide.: This file is not a valid SVG.
+Ce fichier n'est pas une image PNG valide.: This file is not a valid PNG image.
+Ce fichier vient de l'outil Google Maps, qui ne garde que les entreprises: This file comes from the Google Maps tool, which only keeps businesses
+Ce que nous avons relevé: What we found
+'Ce que voit le visiteur :': 'What the visitor sees:'
+Ce site n'a pas encore été analysé.: This website has not been analysed yet.
+Cela donne une image négligée et cache vos informations.: It looks careless and hides your information.
+Cela inquiète les visiteurs, alors qu'une version sécurisée existe déjà.: It worries visitors, even though a secure version already exists.
+Cela inquiète les visiteurs, surtout au moment de remplir un formulaire, et Google privilégie les sites sécurisés.: It worries visitors, especially when filling in a form, and Google favours secure sites.
+Certificat SSL expiré ou invalide: Expired or invalid SSL certificate
+Certificat SSL qui expire bientôt: SSL certificate expiring soon
+Certificat bientôt expiré: Certificate expiring soon
+Certificat de sécurité bientôt expiré: Security certificate expiring soon
+Certificat de sécurité expiré: Expired security certificate
+Certificat de sécurité invalide: Invalid security certificate
+? 'Ces problèmes se corrigent. Contactez-nous pour en parler, sans engagement : nous vous montrerons ce qu''il faudrait faire pour que votre site travaille à nouveau pour vous.'
+: 'These problems can be fixed. Contact us to talk about it, with no commitment: we will show you what needs to be done so that your website works for you again.'
+Cette clé de licence est celle d'un autre logiciel, pas de {nom}.: This licence key belongs to another software product, not {nom}.
+? Cette clé est déjà utilisée sur le nombre maximal d'ordinateurs. Libérez-la sur l'ancien ordinateur (écran Licence → « Libérer »), ou contactez le support.
+: This key is already used on the maximum number of computers. Release it on the old computer (Licence screen → « Release »), or contact support.
+Cette licence a été désactivée (paiement remboursé ou contesté).: This licence has been deactivated (payment refunded or disputed).
+? Cette licence a été désactivée (paiement remboursé ou contesté). Les analyses sont bloquées ; vous pouvez encore exporter ou supprimer vos données.
+: This licence has been deactivated (payment refunded or disputed). Analyses are blocked; you can still export or delete your data.
+'Cette licence n''est plus reconnue pour cet ordinateur : saisissez à nouveau votre clé.': 'This licence is no longer recognised for this computer: enter your key again.'
+Chaque effort en plus fait renoncer des clients.: Every extra effort makes customers give up.
+Chasseur de sites: Site Hunter
+Choisissez un fichier CSV ou Excel (.csv, .xlsx).: Choose a CSV or Excel file (.csv, .xlsx).
+? Chromium ne démarre pas ({erreur}). Lancez « playwright install chromium » ou renseignez navigateur.chromium dans config.yaml.
+: Chromium does not start ({erreur}). Run « playwright install chromium » or set navigateur.chromium in config.yaml.
+'Chromium ne démarre pas pour créer le PDF : lancez « playwright install chromium ». ({erreur})': 'Chromium does not start to create the PDF: run « playwright install chromium ». ({erreur})'
+Client: Client
+Clé: Key
+'Clé API Google Places refusée : vérifiez-la dans les Réglages.': 'Google Places API key rejected: check it in Settings.'
+Clé de licence: Licence key
+'Clé de licence inconnue : vérifiez qu''elle est copiée en entier.': 'Unknown licence key: check that it was copied in full.'
+Clés API: API keys
+Cochez au moins un prospect.: Tick at least one prospect.
+Code: Code
+Collecté le: Collected on
+Collez la clé de licence complète, telle qu'elle est affichée après votre achat.: Paste the full licence key, exactly as shown after your purchase.
+Comment ça marche: How it works
+Comparaison: Comparison
+Comparer: Compare
+Comparer avec une autre analyse: Compare with another analysis
+Comparer « {nom} » avec: Compare « {nom} » with
+Composants: Components
+Composants techniques périmés: Outdated technical components
+Conservation: Retention
+Conservation des données: Data retention
+Construction des années 2000: Built with 2000s techniques
+Contacté: Contacted
+Contenu: Content
+Contenu qui ne s'affiche plus: Content that no longer displays
+Contenus indésirables cachés dans votre site: Unwanted content hidden in your site
+Contrôles: Checks
+Contrôles « {nom} » non vérifiés (erreur technique de notre côté).: « {nom} » checks not carried out (technical error on our side).
+Coordonnées publiques: Public contact details
+Copier: Copy
+Copyright ancien: Old copyright
+Copyright récent: Recent copyright
+Correct: Correct
+Corrects: Correct
+'Couleur invalide : choisissez une couleur au format #1f5fbf.': 'Invalid colour: choose a colour in the #1f5fbf format.'
+Couleur principale: Main colour
+Dans les résultats de Google, votre site apparaît sans nom clair.: In Google results, your site appears without a clear name.
+Date: Date
+Demande de {nom}: Request from {nom}
+Demande par téléphone le …: Phone request on …
+Dernière actualité récente: Recent latest news
+Dernière vérification: Last check
+Dernières erreurs: Latest errors
+Des liens publicitaires (médicaments, casinos) sont dissimulés dans vos pages.: Advertising links (medicines, casinos) are hidden in your pages.
+Devenus cassés: Newly broken
+Diagnostic de votre site internet: Your website check-up
+Diagnostic du site de {nom}: Website check-up for {nom}
+Diagnostic du {date}: Check-up of {date}
+Difficile de vous contacter: Hard to contact you
+Domaine: Domain
+Domaine bientôt expiré: Domain expiring soon
+Domaine expiré: Expired domain
+Domaine expiré ou parqué: Expired or parked domain
+Domaine introuvable: Domain not found
+Domaine libre: Domain available
+Domaine ou adresse du site: Domain or website address
+Domaine parqué (à vendre): Parked domain (for sale)
+Domaine qui expire bientôt: Domain expiring soon
+Domaine qui résout (DNS): Domain that resolves (DNS)
+Données: Data
+Déborde sur mobile: Overflows on mobile
+Détails: Details
+Détails techniques: Technical details
+E-mail: Email
+? Elle s'affiche sur la page « Merci » juste après votre paiement (elle commence par « CDS- »). Clé perdue ? Écrivez au support avec l'adresse e-mail de votre achat. L'activation demande une connexion à Internet.
+: It is shown on the « Thank you » page right after your payment (it starts with « CDS- »). Lost your key? Write to support from the email address used for your purchase. Activation needs an Internet connection.
+En attente: Waiting
+En bas de page, le visiteur lit « ©{annee} ».: At the bottom of the page, the visitor reads « ©{annee} ».
+En bref: In short
+En cours: In progress
+En maintenance / en construction: Under maintenance / construction
+En ouvrant votre adresse, le visiteur se retrouve sur un autre site{hote}.: When opening your address, the visitor ends up on another site{hote}.
+En pause: Paused
+En tapant votre adresse, le visiteur tombe sur une page « Ce site est inaccessible ».: When typing your address, the visitor lands on a « This site can't be reached » page.
+En vous cherchant, le client ne trouve aucun site présentant vos services.: When looking for you, customers find no website presenting your services.
+Enregistrer: Save
+Enregistré: Saved
+Enregistré le {date}: Saved on {date}
+Enregistré à {heure}: Saved at {heure}
+'Enregistrée : {cle}': 'Saved: {cle}'
+Entreprise: Business
+Erreur: Error
+Erreur 4xx sur la page d'accueil: 4xx error on the home page
+'Erreur :': 'Error:'
+Erreur Google Places (HTTP {code}).: Google Places error (HTTP {code}).
+Erreur serveur: Server error
+Erreur serveur 5xx ou délai dépassé: 5xx server error or timeout
+Estimer le coût: Estimate the cost
+Et 1 autre point de moindre importance, que nous pouvons vous détailler.: And 1 other, less important point, which we can explain to you.
+Et {n} autres points de moindre importance, que nous pouvons vous détailler.: And {n} other, less important points, which we can explain to you.
+Ex. Atelier Web Provence: E.g. Bright Web Studio
+Ex. coiffeur, plombier, boulangerie: E.g. hairdresser, plumber, bakery
+Exporter en CSV: Export to CSV
+Exporter en Excel: Export to Excel
+Fermer: Close
+'Fichier d''import expiré : déposez-le à nouveau': 'Import file expired: drop it again'
+Fichier d'import invalide: Invalid import file
+Fichier trop volumineux (20 Mo maximum).: File too large (20 MB maximum).
+Filtrer: Filter
+Formulaire ou lien téléphone cliquable: Form or clickable phone link
+Glissez-déposez votre fichier ici: Drag and drop your file here
+Google Maps: Google Maps
+Google Places (recherche secteur + ville): Google Places (trade + city search)
+'Google Places injoignable ({erreur}) : vérifiez votre connexion.': 'Google Places unreachable ({erreur}): check your connection.'
+Générer le rapport PDF: Create the PDF report
+Généré le {date} · {n} prospect(s): Created on {date} · {n} prospect(s)
+HTTP {robot} renvoyé au robot, mais page affichée normalement dans le navigateur (HTTP {navigateur}): HTTP {robot} returned to the robot, but the page displays normally in the browser (HTTP {navigateur})
+HTTPS et redirection HTTP → HTTPS: HTTPS and HTTP → HTTPS redirect
+HTTPS non imposé: HTTPS not enforced
+Historique des statuts: Status history
+Hors tableaux: Other checks
+Il ne comprend pas ce que vous proposez et repart.: They don't understand what you offer and leave.
+Il ne donne pas envie de cliquer.: It doesn't make people want to click.
+Il ne trouve ni vos services ni vos horaires et cherche ailleurs.: They find neither your services nor your opening hours and look elsewhere.
+Il paraît daté et se modifie difficilement.: It looks dated and is hard to update.
+Il pense que l'entreprise n'existe plus.: They think the business no longer exists.
+Il pense s'être trompé d'adresse et abandonne.: They think they typed the wrong address and give up.
+Il se demande si l'entreprise est toujours active.: They wonder whether the business is still active.
+Il se tourne plus facilement vers une entreprise qu'il peut découvrir en ligne.: They more readily turn to a business they can discover online.
+Ils ne sont plus corrigés et peuvent provoquer des bugs ou des failles de sécurité.: They are no longer fixed and can cause bugs or security flaws.
+Import {nom}: Import {nom}
+Import « {fichier} »: Import « {fichier} »
+? 'Importez la liste des entreprises à analyser : un fichier CSV ou Excel avec au moins le nom et l''adresse du site. Le fichier produit par l''outil Google Maps est reconnu automatiquement.'
+: 'Import the list of businesses to analyse: a CSV or Excel file with at least the name and the website address. The file produced by the Google Maps tool is recognised automatically.'
+Importez une première liste d'entreprises.: Import a first list of businesses.
+'Impossible de joindre le serveur de licences : connectez-vous à Internet pour libérer la licence.': 'Cannot reach the licence server: connect to the Internet to release the licence.'
+'Impossible de joindre le serveur de licences : vérifiez votre connexion à Internet, puis réessayez.': 'Cannot reach the licence server: check your Internet connection, then try again.'
+Indiquez un secteur et au moins une ville.: Enter a trade and at least one city.
+Interrompu: Interrupted
+Intéressé: Interested
+Joomla périmé: Outdated Joomla
+Journal: Log
+'L''API renvoie 60 fiches au plus par recherche : pour une grande ville, cherchez quartier par quartier.': 'The API returns at most 60 listings per search: for a big city, search neighbourhood by neighbourhood.'
+L'adresse de votre site semble mal saisie.: Your website address seems to be mistyped.
+? La clé est vérifiée en ligne au démarrage puis une fois par jour. Seuls la clé et un identifiant anonyme de cet ordinateur sont envoyés au serveur de licences ; vos prospects ne quittent jamais votre ordinateur. Sans Internet, l'application reste utilisable {jours} jours après la dernière vérification réussie. Licence valable sur 2 ordinateurs. En cas de remboursement, la licence est désactivée.
+: The key is checked online at start-up, then once a day. Only the key and an anonymous identifier of this computer are sent to the licence server; your prospects never leave your computer. Without Internet, the app stays usable for {jours} days after the last successful check. Licence valid on 2 computers. If the purchase is refunded, the licence is deactivated.
+'La date de l''ordinateur semble incorrecte : connectez-vous à Internet pour vérifier votre licence.': 'The computer''s date seems wrong: connect to the Internet to check your licence.'
+La date la plus récente affichée sur votre site est{date}.: The most recent date shown on your site is{date}.
+'La date la plus récente de votre site remonte au {date} : les visiteurs se demandent si l''entreprise est toujours active.': 'The most recent date on your site goes back to {date}: visitors wonder whether the business is still active.'
+La fiche, ses captures, notes et historique sont effacés définitivement.: The record, its screenshots, notes and history are permanently deleted.
+La lecture devient pénible et le site paraît cassé.: Reading becomes tedious and the site looks broken.
+La page d'accueil de votre site est introuvable ou refusée (erreur {code}).: Your website's home page cannot be found or is refused (error {code}).
+'La page d''accueil de votre site est vide ou presque : les visiteurs ne voient ni vos services ni vos coordonnées.': 'Your website''s home page is empty or almost: visitors see neither your services nor your contact details.'
+La page reste blanche, puis le navigateur affiche une erreur de connexion.: The page stays blank, then the browser shows a connection error.
+La plupart des visiteurs n'osent pas aller plus loin et repartent.: Most visitors don't dare go further and leave.
+? 'La prospection par e-mail d''entreprises est possible si le message concerne l''activité professionnelle du destinataire et propose un moyen simple de s''opposer à tout nouveau contact. Seules des informations publiques d''entreprise sont collectées (raison sociale, adresse, téléphone standard, site). Vous restez responsable de vos envois : faites valider votre démarche par un juriste avant de la commercialiser.'
+: 'Emailing businesses is generally allowed when the message relates to the recipient''s professional activity and offers a simple way to refuse any further contact (rules vary by country: GDPR, CAN-SPAM, PECR…). Only public business information is collected (company name, address, main phone number, website). You remain responsible for your messages: have your approach checked by a legal adviser.'
+La technologie utilisée (Flash) n'est plus lue par aucun navigateur actuel.: The technology used (Flash) is no longer supported by any current browser.
+Lancer l'analyse: Start the analysis
+Lancer la recherche « {secteur} » ({n} ville): Search « {secteur} » ({n} city)
+Lancer la recherche « {secteur} » ({n} villes): Search « {secteur} » ({n} cities)
+Langue: Language
+Langue de l'application, des rapports PDF, des exports et des messages: Language of the app, the PDF reports, the exports and the messages
+'Le bas de votre site affiche « © {annee} » : les visiteurs ont l''impression que le site n''est plus entretenu.': 'The bottom of your site shows « © {annee} »: visitors get the impression that the site is no longer maintained.'
+'Le certificat de sécurité de votre site a expiré : les navigateurs bloquent vos visiteurs avec un avertissement rouge.': 'Your website''s security certificate has expired: browsers block your visitors with a red warning.'
+Le certificat de sécurité de votre site a expiré.: Your website's security certificate has expired.
+? 'Le certificat de sécurité de votre site expire dans {jours} jour(s) : sans renouvellement, vos visiteurs verront un avertissement.'
+: 'Your website''s security certificate expires in {jours} day(s): without renewal, your visitors will see a warning.'
+'Le certificat de sécurité de votre site n''est pas reconnu : les navigateurs affichent un avertissement à vos visiteurs.': 'Your website''s security certificate is not recognised: browsers show your visitors a warning.'
+Le client clique plus volontiers sur un concurrent bien présenté.: Customers more readily click on a well-presented competitor.
+Le détail de chaque point, et ce qu'il change pour vos visiteurs, est en page 2.: The details of each point, and what it means for your visitors, are on page 2.
+'Le fichier de licence a été modifié ou vient d''un autre ordinateur : saisissez à nouveau votre clé de licence.': 'The licence file has been modified or comes from another computer: enter your licence key again.'
+Le fichier ne contient aucune entreprise.: The file contains no business.
+Le logo doit être un fichier PNG ou SVG.: The logo must be a PNG or SVG file.
+Le navigateur affiche un avertissement de sécurité avant d'ouvrir votre site.: The browser shows a security warning before opening your site.
+Le navigateur bloque l'accès avec un avertissement rouge « Votre connexion n'est pas privée »{depuis}.: The browser blocks access with a red « Your connection is not private » warning{depuis}.
+Le site donne une impression d'abandon et le visiteur ne trouve pas vos informations.: The site looks abandoned and the visitor cannot find your information.
+Le site s'affiche comme un bloc figé qui s'adapte mal aux écrans actuels.: The site displays as a rigid block that adapts badly to today's screens.
+Le visiteur arrive sur une page « introuvable » ou « accès refusé ».: The visitor lands on a « not found » or « access denied » page.
+'Le visiteur n''attend pas : il repart sans avoir vu vos services.': 'The visitor doesn''t wait: they leave without seeing your services.'
+Le visiteur ne trouve ni formulaire ni numéro à toucher pour vous appeler depuis son téléphone.: The visitor finds neither a form nor a number to tap to call you from their phone.
+Le visiteur se demande si l'entreprise est toujours active.: The visitor wonders whether the business is still active.
+Le visiteur voit une page blanche ou presque, sans vos services ni vos coordonnées.: The visitor sees a blank or almost blank page, without your services or contact details.
+Le visiteur voit une page publicitaire qui propose d'acheter votre adresse web.: The visitor sees an advertising page offering to buy your web address.
+Le visiteur voit « en construction » ou « en maintenance » au lieu de votre site.: The visitor sees « under construction » or « under maintenance » instead of your site.
+Lecture du fichier…: Reading the file…
+Lent sur mobile: Slow on mobile
+'Les anciennes versions ne reçoivent plus de correctifs de sécurité : le site est plus exposé aux piratages.': 'Old versions no longer receive security fixes: the site is more exposed to hacking.'
+Les clés API et les adresses e-mail sont masquées avant d'être écrites.: API keys and email addresses are masked before being written.
+Les clés sont chiffrées sur cet ordinateur et ne sont jamais affichées en entier ni exportées.: Keys are encrypted on this computer and are never shown in full or exported.
+? Les domaines de cette liste ne sont plus jamais importés, analysés (relances planifiées comprises) ni exportés. Ajouter un domaine supprime aussi les prospects existants de ce domaine.
+: Domains on this list are never imported, analysed (scheduled reruns included) or exported again. Adding a domain also deletes the existing prospects of that domain.
+Les points à améliorer: Points to improve
+? Les relances ont lieu quand l'application est ouverte. Le statut commercial de chaque prospect est conservé et la comparaison montre les sites devenus cassés depuis la dernière fois.
+: Reruns happen while the app is open. Each prospect's sales status is kept, and the comparison shows the sites that have broken since last time.
+Les sites en cours se terminent, aucun nouveau site ne démarre.: Sites in progress finish; no new site starts.
+'Les visiteurs de votre site sont redirigés vers un autre site ({hote}) : c''est souvent le signe d''un piratage.': 'Your site''s visitors are redirected to another site ({hote}): this is often a sign of hacking.'
+Libérer (changer d'ordinateur): Release (change computer)
+Libérer la licence de cet ordinateur ? Vous pourrez l'activer sur un autre ordinateur.: Release the licence from this computer? You will be able to activate it on another computer.
+Licence: Licence
+Licence active.: Licence active.
+'Licence libérée : vous pouvez maintenant l''activer sur un autre ordinateur.': 'Licence released: you can now activate it on another computer.'
+Licence non contrôlée (mode développement).: Licence not checked (development mode).
+'Licence non vérifiée depuis plusieurs jours : connectez-vous à Internet (blocage dans {n} jour).': 'Licence not checked for several days: connect to the Internet (blocked in {n} day).'
+'Licence non vérifiée depuis plusieurs jours : connectez-vous à Internet (blocage dans {n} jours).': 'Licence not checked for several days: connect to the Internet (blocked in {n} days).'
+'Licence vérifiée : tout est en ordre.': 'Licence checked: everything is in order.'
+Liste d'opposition: Opt-out list
+Logiciel du site plus mis à jour: Website software no longer updated
+Logo (PNG ou SVG, 2 Mo maximum): Logo (PNG or SVG, 2 MB maximum)
+Logo actuel: Current logo
+Logo trop lourd (2 Mo maximum).: Logo too large (2 MB maximum).
+Maintenant: Now
+Merci ! Votre licence est activée sur cet ordinateur.: Thank you! Your licence is activated on this computer.
+Merci, {nom} ! Votre licence est activée sur cet ordinateur.: Thank you, {nom}! Your licence is activated on this computer.
+Message d'erreur affiché: Error message shown
+Message d'erreur sur votre site: Error message on your site
+Messages pré-remplis, à relire puis copier. Rien n'est envoyé automatiquement.: Pre-filled messages, to read and then copy. Nothing is sent automatically.
+Mesures: Measurements
+Mise en page années 2000: 2000s layout
+Modifier les modèles: Edit the templates
+Modèles de messages: Message templates
+Moteur PDF: PDF engine
+Motif: Reason
+Motif (facultatif): Reason (optional)
+N'importe qui peut la racheter, y compris un concurrent.: Anyone can buy it, including a competitor.
+Navigation principale: Main navigation
+Ne plus jamais analyser ni contacter ce domaine (liste d'opposition): Never analyse or contact this domain again (opt-out list)
+Ni formulaire ni appel en un clic: No form, no one-tap call
+Nom: Name
+Nom de domaine bientôt expiré: Domain name expiring soon
+Nom de l'agence: Agency name
+Nom de l'analyse: Analysis name
+Nom ou ville: Name or city
+Nombre de sites analysés en même temps (1 à {n}): Number of sites analysed at the same time (1 to {n})
+Non analysé: Not analysed
+Non vérifié: Not checked
+Note Google: Google rating
+Notes: Notes
+Notes personnelles (enregistrées automatiquement): Personal notes (saved automatically)
+? Nous avons ouvert votre site comme le ferait un client, sur un ordinateur et sur un téléphone. Voici ce qu'il voit en arrivant sur votre page d'accueil (captures du {date}).
+: We opened your website the way a customer would, on a computer and on a phone. Here is what they see when they arrive on your home page (screenshots of {date}).
+? Nous avons ouvert votre site comme le ferait un client, sur un ordinateur et sur un téléphone. Voici ce qu'il voit en arrivant sur votre page d'accueil.
+: We opened your website the way a customer would, on a computer and on a phone. Here is what they see when they arrive on your home page.
+? 'Nous n''avons relevé aucun problème important sur votre page d''accueil. Un site se dégrade pourtant avec le temps : certificat de sécurité à renouveler, logiciel à mettre à jour, informations à tenir à jour.'
+: 'We found no major problem on your home page. A website does deteriorate over time, though: security certificate to renew, software to update, information to keep up to date.'
+Nouveaux / disparus: New / gone
+Nouvelle analyse: New analysis
+? 'Objet : le site internet de {entreprise}
+
+
+  Bonjour,
+
+
+  En consultant le site de {entreprise}, j''ai remarqué que {probleme_principal}.
+
+
+  C''est le genre de détail qui fait partir des visiteurs sans que l''on s''en rende compte. J''ai préparé un court diagnostic avec des captures d''écran : je peux vous l''envoyer et vous expliquer comment corriger cela.
+
+
+  Cela vous intéresse ?
+
+
+  Bien cordialement,
+
+  {agence}
+
+
+  Si vous ne souhaitez pas être recontacté, répondez simplement « non merci ».'
+: 'Subject: the {entreprise} website
+
+
+  Hello,
+
+
+  Looking at the {entreprise} website, I noticed that {probleme_principal}.
+
+
+  It''s the kind of detail that drives visitors away without anyone noticing. I''ve prepared a short report with screenshots: I can send it to you and explain how to fix this.
+
+
+  Would you be interested?
+
+
+  Kind regards,
+
+  {agence}
+
+
+  If you''d rather not be contacted again, simply reply « no thanks ».'
+Obsolète: Outdated
+Obsolètes: Outdated
+Ordinateur (1366 px): Computer (1366 px)
+Outil Google Maps (CSV): Google Maps tool (CSV)
+Outil Google Maps (Excel): Google Maps tool (Excel)
+Page blanche: Blank page
+Page blanche ou erreur PHP: Blank page or PHP error
+Page d'accueil introuvable: Home page not found
+Page d'accueil vide: Empty home page
+Page qui déborde sur téléphone: Page overflowing on phones
+Page {n} / {total}: Page {n} / {total}
+PageSpeed Insights: PageSpeed Insights
+'PageSpeed Insights ({strategie}) : score {note}/100 (seuil {seuil}) pour {url}': 'PageSpeed Insights ({strategie}): score {note}/100 (threshold {seuil}) for {url}'
+'PageSpeed a refusé l''analyse : {erreur}': 'PageSpeed refused the analysis: {erreur}'
+PageSpeed n'a pas pu mesurer la page: PageSpeed could not measure the page
+Pages: Pages
+Pages de résultats par ville (20 fiches par page): Result pages per city (20 listings per page)
+Par catégorie: By category
+Par problème: By problem
+Par statut commercial: By sales status
+Pas adapté au mobile: Not mobile-friendly
+Pas de HTTPS: No HTTPS
+Pas de description Google: No Google description
+Pas de description dans Google: No description on Google
+Pas de logo: No logo
+Pas de site: No website
+Pas de site (fiche Google Maps sans site web): No website (Google Maps listing without a website)
+Pas de site internet: No website
+Pas de site propre (page {page} seulement): No own website ({page} page only)
+Pas de titre: No title
+Pas de titre dans Google: No title on Google
+Pas intéressé: Not interested
+Pause: Pause
+Performance mobile (PageSpeed): Mobile performance (PageSpeed)
+'Playwright n''est pas installé : pip install playwright': 'Playwright is not installed: pip install playwright'
+'Plus de 20 avis et note d''au moins 4 : entreprise active': 'More than 20 reviews and a rating of at least 4: active business'
+'Plus de 20 avis et note d''au moins 4 : entreprise active, qui a sans doute les moyens d''investir': 'More than 20 reviews and a rating of at least 4: an active business that can probably afford to invest'
+Poids du scoring: Scoring weights
+? Points ajoutés au score quand le problème est détecté (score plafonné à 100). Un site est « Cassé » dès qu'un problème de la première liste est détecté, quels que soient ses points.
+: Points added to the score when the problem is found (score capped at 100). A site is « Broken » as soon as a problem from the first list is found, whatever its points.
+Pour améliorer ces points et garder votre site en bon état, contactez-nous, sans engagement.: To improve these points and keep your website in good shape, contact us, with no commitment.
+Pour garder votre site en bon état dans la durée, contactez-nous.: To keep your website in good shape over time, contact us.
+'Pour lui, votre entreprise semble avoir fermé : il se tourne vers un concurrent.': 'To them, your business seems to have closed: they turn to a competitor.'
+'Pourquoi c''est gênant :': 'Why it matters:'
+Premier contact: First contact
+Preuve: Evidence
+Preuves: Evidence
+Problème: Problem
+'Problème : {codes}': 'Problem: {codes}'
+Problèmes détectés: Problems found
+Problèmes principaux: Main problems
+Progression: Progress
+Prospect introuvable: Prospect not found
+'Prospection B2B : le rappel': 'B2B prospecting: a reminder'
+? 'Prospection B2B : parlez de l''activité professionnelle du destinataire et proposez-lui un moyen simple de refuser tout nouveau contact. Vous restez responsable de vos envois.'
+: 'B2B prospecting: talk about the recipient''s professional activity and give them a simple way to refuse any further contact. You remain responsible for your messages.'
+Prospects: Prospects
+Prospects jamais contactés supprimés après {mois} mois (réglable dans les Réglages): Prospects never contacted are deleted after {mois} months (adjustable in Settings)
+Prospects prioritaires: Priority prospects
+Python: Python
+Qu'est-ce qui a changé ?: What has changed?
+'Quota Google Places dépassé : réessayez plus tard ou augmentez le quota dans Google Cloud.': 'Google Places quota exceeded: try again later or raise the quota in Google Cloud.'
+'RDAP : réponse illisible': 'RDAP: unreadable answer'
+Rappel sur la prospection B2B: Reminder about B2B prospecting
+Rapports PDF des prospects cochés (ZIP): PDF reports of the ticked prospects (ZIP)
+Recherche: Search
+Recherche Google Places « {secteur} » ({villes}): Google Places search « {secteur} » ({villes})
+Recherche en cours auprès de Google…: Searching Google…
+Recherche secteur + ville: Trade + city search
+Recherche « secteur + ville »: « Trade + city » search
+Redirection suspecte: Suspicious redirect
+Relancer cette analyse chaque semaine: Rerun this analysis every week
+Relancée chaque semaine · prochaine analyse le: Rerun every week · next analysis on
+Reprendre: Resume
+'Requête refusée : elle ne vient pas de l''application.': 'Request refused: it does not come from the app.'
+'Requête refusée par Google : vérifiez le secteur et la ville saisis.': 'Request refused by Google: check the trade and city entered.'
+'Restez factuel : pas de chiffres ni de promesses de résultats.': 'Stay factual: no figures or promises of results.'
+Retirer: Remove
+Rien de visible pour l'instant, mais le certificat de sécurité du site expire{le}.: Nothing visible yet, but the site's security certificate expires{le}.
+Rien de visible pour l'instant, mais votre adresse web expire{le}.: Nothing visible yet, but your web address expires{le}.
+Rien de visible, mais le site utilise des composants anciens.: Nothing visible, but the site uses old components.
+Rien de visible, mais votre site tourne sur une ancienne version de Joomla{version}.: Nothing visible, but your site runs on an old version of Joomla{version}.
+Rien de visible, mais votre site tourne sur une ancienne version de WordPress{version}.: Nothing visible, but your site runs on an old version of WordPress{version}.
+Récapitulatif: Summary
+Récapitulatif de l'export: Export summary
+Réglages: Settings
+Réglages enregistrés. Les scores existants ont été recalculés.: Settings saved. Existing scores have been recalculated.
+Réparés: Fixed
+Résultats: Results
+Résultats CSV (Lot 2): CSV results (Lot 2)
+SMS: Text message
+Saisissez la clé de licence affichée après votre achat (page « Merci »).: Enter the licence key shown after your purchase (« Thank you » page).
+Sans renouvellement, le site et les e-mails s'arrêteront.: Without renewal, the website and emails will stop.
+Sans renouvellement, les visiteurs seront bloqués par un avertissement rouge.: Without renewal, visitors will be blocked by a red warning.
+Sans site: No website
+Score: Score
+Script d'appel: Call script
+Secteur: Trade
+Selon l'adresse tapée, le visiteur arrive sur une version marquée « Non sécurisé ».: Depending on the address typed, the visitor lands on a version marked « Not secure ».
+Seuls les prospects au statut « À contacter » sont concernés. Vérification une fois par jour.: Only prospects with the « To contact » status are concerned. Checked once a day.
+Signes de piratage: Signs of hacking
+Site: Website
+Site cassé (tableau 3.2): Broken site
+Site cassé ou obsolète, et fiche Google avec plus de 20 avis et une note d'au moins 4: Broken or outdated site, and a Google listing with more than 20 reviews and a rating of at least 4
+Site en maintenance / en construction: Site under maintenance / construction
+Site lent sur téléphone: Slow site on phones
+Site marqué « Non sécurisé »: Site marked « Not secure »
+Site non adapté aux téléphones: Site not designed for phones
+Site obsolète (tableau 3.3): Outdated site
+Site parfois marqué « Non sécurisé »: Site sometimes marked « Not secure »
+Site qui ne répond pas: Site not responding
+Site qui paraît abandonné: Site that looks abandoned
+Site responsive: Responsive site
+Site « en construction »: Site « under construction »
+Sites analysés: Sites analysed
+Sites devenus cassés depuis la dernière fois: Sites that have broken since last time
+Sites réparés: Fixed sites
+Source: Source
+Sous votre nom dans Google, un extrait pris au hasard s'affiche.: Under your name on Google, a random excerpt is shown.
+Spam caché (piratage): Hidden spam (hacking)
+Statut: Status
+Statut commercial: Sales status
+Statut commercial de {nom}: Sales status of {nom}
+Suivante →: Next →
+Suivi dans le temps: Tracking over time
+Supprimer: Delete
+Supprimer ce prospect: Delete this prospect
+Supprimer cette clé: Delete this key
+Supprimer le logo: Delete the logo
+Supprimer les prospects jamais contactés après (mois): Delete prospects never contacted after (months)
+Sur téléphone, la page met longtemps à s'afficher{duree}.: On phones, the page takes a long time to display{duree}.
+'Sur téléphone, la page s''affiche en tout petit : il faut zoomer pour lire.': 'On phones, the page displays very small: visitors have to zoom in to read.'
+'Sur téléphone, une partie de la page dépasse de l''écran : il faut la faire glisser de gauche à droite.': 'On phones, part of the page overflows the screen: visitors have to drag it left and right.'
+'Sur téléphone, votre site déborde de l''écran : il faut faire défiler de gauche à droite pour le lire.': 'On phones, your site overflows the screen: visitors have to scroll left and right to read it.'
+Sur téléphone, votre site est lent{detail}. Une partie des visiteurs part avant la fin du chargement.: On phones, your site is slow{detail}. Some visitors leave before it finishes loading.
+Sur un ordinateur: On a computer
+Sur un téléphone: On a phone
+? 'Sur votre site, on ne peut ni vous écrire par formulaire ni vous appeler d''un simple clic sur mobile : des clients renoncent à vous contacter.'
+: 'On your site, visitors can neither write to you with a form nor call you in one tap on mobile: some customers give up contacting you.'
+'Temps restant estimé :': 'Estimated time left:'
+Terminé: Finished
+Titulaire: Holder
+Tous: All
+Tout cocher: Tick all
+Toutes: All
+Toutes les entreprises de cette liste sont dans votre liste d'opposition.: Every business in this list is on your opt-out list.
+Trouver votre numéro ou votre adresse devient pénible, et le visiteur abandonne.: Finding your number or address becomes tedious, and the visitor gives up.
+? 'Trouvez des entreprises locales avec l''API officielle Google Places, à partir de votre propre clé. Seules les fiches qui ont un vrai site sont gardées : elles sont ensuite analysées comme un fichier importé.'
+: 'Find local businesses with the official Google Places API, using your own key. Only listings with a real website are kept: they are then analysed like an imported file.'
+Téléphone: Phone
+Téléphone (375 px): Phone (375 px)
+URL illisible: Unreadable URL
+URL renseignée: URL provided
+Un domaine qui refuse d'être contacté ? Ajoutez-le à la: A domain that refuses to be contacted? Add it to the
+Un message technique incompréhensible s'affiche à la place du contenu.: An incomprehensible technical message is shown instead of the content.
+Un tiers peut racheter votre adresse et l'utiliser à sa guise.: Someone else can buy your address and use it as they please.
+Une erreur inattendue s'est produite. Elle est notée dans le journal (page « À propos »).: An unexpected error occurred. It is recorded in the log (« About » page).
+Une page « domaine à vendre » à la place de votre site: A « domain for sale » page instead of your site
+Utilise Flash: Uses Flash
+'Variables disponibles :': 'Available variables:'
+Version: Version
+Ville: City
+Villes (une par ligne, {n} au plus): Cities (one per line, {n} at most)
+Vitesse du site non vérifiée.: Site speed not checked.
+Voir la fiche: View the record
+Voir les résultats: View the results
+'Vos données restent accessibles :': 'Your data remains available:'
+Vos visiteurs sont envoyés ailleurs: Your visitors are sent elsewhere
+'Votre adresse ne mène plus à votre site : elle n''est plus réservée à votre nom.': 'Your address no longer leads to your site: it is no longer registered in your name.'
+? 'Votre adresse web affiche une page publicitaire « domaine à vendre » au lieu de votre site : vos clients ne vous trouvent plus.'
+: 'Your web address shows a « domain for sale » advertising page instead of your site: your customers can no longer find you.'
+Votre adresse web est libre: Your web address is available to anyone
+'Votre adresse web n''est plus renouvelée{depuis} : le site et les e-mails peuvent s''arrêter du jour au lendemain.': 'Your web address is no longer renewed{depuis}: the website and emails can stop overnight.'
+Votre agence: Your agency
+Votre entreprise n'a pas encore de site internet.: Your business does not have a website yet.
+? 'Votre licence n''a pas pu être vérifiée depuis plus de {jours} jours : connectez-vous à Internet puis cliquez sur « Vérifier maintenant ».'
+: 'Your licence could not be checked for more than {jours} days: connect to the Internet, then click « Check now ».'
+? 'Votre licence n''a pas pu être vérifiée récemment. Connectez-vous à Internet : sans vérification, l''application se bloquera dans {n} jour.'
+: 'Your licence could not be checked recently. Connect to the Internet: without a check, the app will be blocked in {n} day.'
+? 'Votre licence n''a pas pu être vérifiée récemment. Connectez-vous à Internet : sans vérification, l''application se bloquera dans {n} jours.'
+: 'Your licence could not be checked recently. Connect to the Internet: without a check, the app will be blocked in {n} days.'
+Votre nom de domaine a expiré: Your domain name has expired
+? 'Votre nom de domaine a expiré le {date} : votre site et vos e-mails risquent de s''arrêter et le domaine peut être racheté par un tiers.'
+: 'Your domain name expired on {date}: your website and emails may stop and someone else can buy the domain.'
+? 'Votre nom de domaine expire le {date} (dans {jours} jour(s)) : sans renouvellement, votre site et vos e-mails s''arrêteront.'
+: 'Your domain name expires on {date} (in {jours} day(s)): without renewal, your website and emails will stop.'
+? 'Votre nom de domaine n''est plus enregistré : n''importe qui peut le racheter, et votre site comme vos e-mails ne fonctionnent plus.'
+: 'Your domain name is no longer registered: anyone can buy it, and your website and emails no longer work.'
+? 'Votre nom de domaine ne pointe plus vers aucun serveur : votre site n''existe plus aux yeux des internautes (domaine expiré ou mal configuré).'
+: 'Your domain name no longer points to any server: to Internet users, your site no longer exists (expired or misconfigured domain).'
+Votre page d'accueil est introuvable: Your home page cannot be found
+? 'Votre site affiche un message d''erreur technique à la place de son contenu : les visiteurs pensent que l''entreprise n''existe plus.'
+: 'Your site shows a technical error message instead of its content: visitors think the business no longer exists.'
+Votre site affiche une erreur: Your site shows an error
+'Votre site affiche une erreur serveur : les visiteurs voient une page cassée au lieu de votre vitrine.': 'Your site shows a server error: visitors see a broken page instead of your shop window.'
+'Votre site affiche « en construction » ou « en maintenance » : les visiteurs repartent sans trouver vos informations.': 'Your site shows « under construction » or « under maintenance »: visitors leave without finding your information.'
+? 'Votre site contient des publicités cachées pour des médicaments ou des casinos : c''est le signe d''un piratage, et Google peut vous déclasser ou afficher un avertissement.'
+: 'Your site contains hidden ads for medicines or casinos: it is a sign of hacking, and Google may push you down or show a warning.'
+? 'Votre site est construit avec une technique des années 2000 : il s''affiche mal sur les écrans actuels et se modifie difficilement.'
+: 'Your site is built with a 2000s technique: it displays badly on today''s screens and is hard to update.'
+Votre site est en bon état, avec 1 point à améliorer.: Your website is in good shape, with 1 point to improve.
+Votre site est en bon état, avec {n} points à améliorer.: Your website is in good shape, with {n} points to improve.
+Votre site est introuvable: Your site cannot be found
+'Votre site n''a pas de description pour Google : le moteur affiche un extrait au hasard sous votre nom.': 'Your site has no description for Google: the search engine shows a random excerpt under your name.'
+'Votre site n''a pas de titre : dans Google, il apparaît sans nom clair et attire moins de clics.': 'Your site has no title: on Google, it appears without a clear name and gets fewer clicks.'
+Votre site n'a pas encore été analysé.: Your website has not been analysed yet.
+'Votre site n''est pas adapté aux téléphones : sur mobile, le texte est minuscule et il faut zoomer.': 'Your site is not designed for phones: on mobile, the text is tiny and visitors have to zoom in.'
+? 'Votre site n''est pas sécurisé (pas de HTTPS) : les navigateurs affichent « Non sécurisé » à vos visiteurs et Google le pénalise.'
+: 'Your site is not secure (no HTTPS): browsers show « Not secure » to your visitors and Google penalises it.'
+Votre site ne présente pas de problème majeur.: Your website has no major problem.
+Votre site ne répond pas: Your site is not responding
+'Votre site ne répond pas : les visiteurs tombent sur une page d''erreur ou attendent indéfiniment.': 'Your site is not responding: visitors land on an error page or wait indefinitely.'
+Votre site présente 1 problème qui fait fuir vos visiteurs.: Your website has 1 problem that drives your visitors away.
+Votre site présente {n} problèmes qui font fuir vos visiteurs.: Your website has {n} problems that drive your visitors away.
+? 'Votre site s''ouvre sans cadenas (« Non sécurisé » dans le navigateur) alors qu''une version sécurisée existe : les visiteurs n''y sont pas redirigés.'
+: 'Your site opens without a padlock (« Not secure » in the browser) even though a secure version exists: visitors are not redirected to it.'
+Votre site sur ordinateur: Your site on a computer
+Votre site sur téléphone: Your site on a phone
+? 'Votre site tourne sur une version ancienne de {nom} ({version}) : elle n''est plus mise à jour et expose le site aux piratages.'
+: 'Your site runs on an old version of {nom} ({version}): it is no longer updated and exposes the site to hacking.'
+Votre site utilise {nom}, une technologie abandonnée que les navigateurs actuels n'affichent plus.: Your site uses {nom}, an abandoned technology that current browsers no longer display.
+Vous perdez ce visiteur, et ce comportement est souvent dû à un piratage.: You lose that visitor, and this behaviour is often caused by hacking.
+Vérifier maintenant: Check now
+WordPress périmé: Outdated WordPress
+'[votre agence]': '[your agency]'
+abandon après {n} essais ({erreur}): gave up after {n} attempts ({erreur})
+analyseur non lancé: analyser not run
+'analyseur {nom} : {detail}': 'analyser {nom}: {detail}'
+'année la plus récente du pied de page : {annee}': 'most recent year in the footer: {annee}'
+appel à l'API impossible ({erreur}): API call failed ({erreur})
+application locale, vos données restent sur cet ordinateur: local app, your data stays on this computer
+aucune connexion HTTPS possible sur {hote}:443 ({erreur}): no HTTPS connection possible on {hote}:443 ({erreur})
+balise <meta name="description"> absente ou vide: <meta name=“description”> tag missing or empty
+balise <title> absente ou vide: <title> tag missing or empty
+catégorie: category
+chaque semaine: every week
+cliquez pour le choisir: click to choose it
+'clé API illisible (fichier cle.secret remplacé ?) : ressaisissez-la dans les Réglages': 'unreadable API key (cle.secret file replaced?): enter it again in Settings'
+colonne url vide: empty url column
+connexion impossible ({erreur}): connection failed ({erreur})
+consultez et exportez vos résultats: browse and export your results
+contenu de {contenu} px pour un écran de {ecran} px: content {contenu} px wide for a {ecran} px screen
+date d'expiration introuvable: expiry date not found
+'date la plus récente trouvée sur la page : {date}': 'most recent date found on the page: {date}'
+domaine introuvable: domain not found
+délai dépassé ({erreur}): timed out ({erreur})
+erreur inconnue: unknown error
+? 'htmx (licence Zero-Clause BSD), FastAPI, SQLModel, Playwright/Chromium, httpx, openpyxl, WeasyPrint. Les données restent sur cet ordinateur : l''application n''envoie rien ailleurs qu''aux sites analysés, aux API Google dont vous avez fourni la clé et au serveur de licences (clé de licence et identifiant anonyme de l''ordinateur).'
+: 'htmx (Zero-Clause BSD licence), FastAPI, SQLModel, Playwright/Chromium, httpx, openpyxl, WeasyPrint. Data stays on this computer: the app sends nothing anywhere except to the analysed sites, to the Google APIs whose key you provided and to the licence server (licence key and anonymous computer identifier).'
+inconnu: unknown
+jQuery périmé: Outdated jQuery
+la page d'accueil de votre site s'affiche vide: your website's home page displays empty
+la page de tarification: the pricing page
+le bas de votre site affiche encore « ©{annee} »: the bottom of your site still shows « ©{annee} »
+le certificat de sécurité de votre site expire bientôt: your website's security certificate expires soon
+le nom de domaine de votre site a expiré: your website's domain name has expired
+les dernières actualités de votre site sont anciennes: the latest news on your site is old
+les navigateurs affichent un avertissement de sécurité à l'ouverture de votre site: browsers show a security warning when your site opens
+liste d'opposition: opt-out list
+mise en page en tableaux: table-based layout
+'mots de spam trouvés dans le code de la page : {mots}': 'spam words found in the page code: {mots}'
+'ni <form> ni lien tel: sur l''accueil': 'no <form> and no tel: link on the home page'
+'ni <form> ni lien tel: sur l''accueil ni sur {url}': 'no <form> and no tel: link on the home page or on {url}'
+ni l'expiration ni le parking n'ont pu être vérifiés: neither expiry nor parking could be checked
+non: 'no'
+non vérifié: not checked
+non vérifié (page d'accueil injoignable): not checked (home page unreachable)
+on ne peut ni vous écrire ni vous appeler d'un simple clic depuis votre site: people can neither write to you nor call you in one tap from your site
+ou: or
+oui: 'yes'
+page d'erreur HTTP {code}: HTTP {code} error page
+'page inaccessible dans le navigateur : {erreurs}': 'page unreachable in the browser: {erreurs}'
+'par défaut : {n}': 'default: {n}'
+pas d'URL: no URL
+pas de balise <meta name="viewport"> dans la page: no <meta name=“viewport”> tag in the page
+pas de clé API PageSpeed Insights (config.yaml ou PAGESPEED_API_KEY): no PageSpeed Insights API key (config.yaml or PAGESPEED_API_KEY)
+pas de date d'expiration: no expiry date
+pas un nom de domaine public: not a public domain name
+'performance : {raison}': 'performance: {raison}'
+problème: problem
+pts: pts
+recherche: search
+'redirection vers un service de parking : {chaine}': 'redirect to a parking service: {chaine}'
+robots.txt interdit l'analyse: robots.txt forbids the analysis
+réponse PageSpeed illisible: unreadable PageSpeed answer
+'résolution DNS de {hote} impossible : {erreur}': 'DNS resolution of {hote} failed: {erreur}'
+salon-lea.fr: jane-salon.com
+sans vrai site: without a real website
+site injoignable: site unreachable
+sites analysés ({pourcentage} %): sites analysed ({pourcentage} %)
+statut: status
+tableaux imbriqués (mise en page des années 2000): nested tables (2000s layout)
+'texte affiché : « {texte} »': 'text shown: « {texte} »'
+'texte affiché : « {texte} » ({n} caractères visibles)': 'text shown: « {texte} » ({n} visible characters)'
+tous les prospects: all prospects
+un tableau sans en-têtes contient {part} du texte de la page: a table without headers contains {part} of the page text
+une partie de votre site utilise Flash, qui ne s'affiche plus: part of your site uses Flash, which no longer displays
+'url illisible : {url}': 'unreadable url: {url}'
+votre adresse web affiche une page « domaine à vendre »: your web address shows a « domain for sale » page
+votre adresse web ne mène plus à aucun site: your web address no longer leads to any website
+votre entreprise: your business
+votre entreprise n'a pas encore de site internet: your business does not have a website yet
+votre nom de domaine expire bientôt: your domain name expires soon
+votre nom de domaine n'est plus réservé à votre nom: your domain name is no longer registered in your name
+votre page d'accueil affiche « page introuvable »: your home page shows « page not found »
+votre site affiche un message d'erreur technique: your site shows a technical error message
+votre site affiche une page d'erreur au lieu de l'accueil: your site shows an error page instead of the home page
+votre site affiche « en construction »: your site shows « under construction »
+votre site contient des liens publicitaires cachés, signe d'un piratage: your site contains hidden advertising links, a sign of hacking
+votre site déborde de l'écran sur téléphone: your site overflows the screen on phones
+votre site envoie les visiteurs vers un autre site: your site sends visitors to another site
+votre site est construit avec une technique des années 2000: your site is built with a 2000s technique
+votre site est lent à s'afficher sur téléphone: your site is slow to load on phones
+votre site est signalé « Non sécurisé » par les navigateurs: browsers flag your site as « Not secure »
+votre site n'a pas de description pour Google: your site has no description for Google
+votre site n'a pas de titre pour Google: your site has no title for Google
+votre site n'est pas adapté aux téléphones: your site is not designed for phones
+votre site ne répond plus: your site no longer responds
+votre site pourrait être modernisé: your site could be modernised
+votre site s'ouvre parfois dans une version marquée « Non sécurisé »: your site sometimes opens in a version marked « Not secure »
+votre site tourne sur une ancienne version de Joomla: your site runs on an old version of Joomla
+votre site tourne sur une ancienne version de WordPress: your site runs on an old version of WordPress
+votre site utilise des composants techniques périmés: your site uses outdated technical components
+votre ville: your city
+'whois : pas de date d''expiration dans la réponse': 'whois: no expiry date in the answer'
+www.mon-agence.fr: www.my-agency.com
+'{agence}': '{agence}'
+'{date} à {heure}': '{date} at {heure}'
+'{domaine} : date d''expiration {date} ({source})': '{domaine}: expiry date {date} ({source})'
+'{domaine} : inconnu du registre ({source})': '{domaine}: unknown to the registry ({source})'
+'{domaine} ajouté à la liste d''opposition ; {n} prospect(s) supprimé(s).': '{domaine} added to the opt-out list; {n} prospect(s) deleted.'
+'{domaine} ajouté à la liste d''opposition.': '{domaine} added to the opt-out list.'
+'{entreprise}': '{entreprise}'
+'{fichier} n''est pas un export de résultats de « chasseur scan » (colonnes codes, score, etat attendues)': '{fichier} is not a « chasseur scan » results export (expected columns: codes, score, etat)'
+'{hote} : certificat expiré le {date}': '{hote}: certificate expired on {date}'
+'{hote} : certificat valide jusqu''au {date} ({jours} j), émis par {emetteur}': '{hote}: certificate valid until {date} ({jours} d), issued by {emetteur}'
+'{nom} détecté dans le code de la page': '{nom} detected in the page code'
+'{nom} {version} détecté (version minimale conseillée : {minimum})': '{nom} {version} detected (minimum recommended version: {minimum})'
+'{n} ({fiches} fiches au plus)': '{n} ({fiches} listings at most)'
+'{n} analyse': '{n} analysis'
+'{n} analyses': '{n} analyses'
+'{n} avis': '{n} reviews'
+'{n} caractères': '{n} characters'
+'{n} caractères de texte visibles (seuil : {seuil}) sur {url}': '{n} visible text characters (threshold: {seuil}) on {url}'
+'{n} doublon retiré (même site).': '{n} duplicate removed (same site).'
+'{n} doublons retirés (même site).': '{n} duplicates removed (same site).'
+'{n} entreprise écartée : domaine dans votre': '{n} business excluded: domain in your'
+'{n} entreprises écartées : domaine dans votre': '{n} businesses excluded: domain in your'
+'{n} première ligne': First {n} row
+'{n} premières lignes': First {n} rows
+'{n} prospect': '{n} prospect'
+'{n} prospects': '{n} prospects'
+'{n} site sans changement de catégorie.': '{n} site with no change of category.'
+'{n} sites sans changement de catégorie.': '{n} sites with no change of category.'
+'{preuve} : la page finale est en HTTP, sans redirection vers HTTPS': '{preuve}: the final page is HTTP, with no redirect to HTTPS'
+'{probleme_principal}': '{probleme_principal}'
+? '{requetes} requête(s) effectuée(s) ; {n} fiche(s) écartée(s) (sans site, simple page Facebook, Planity… ou établissement fermé).'
+: '{requetes} request(s) made; {n} listing(s) excluded (no website, mere Facebook or booking page… or business closed).'
+'{source}, le {date}': '{source}, on {date}'
+'{url} : ressource de parking « {texte} »': '{url}: parking resource « {texte} »'
+'{url} : texte « {texte} »': '{url}: text « {texte} »'
+'{url} essai {n}/{total} : {erreur}': '{url} attempt {n}/{total}: {erreur}'
+'{ville}': '{ville}'
+« {nom} » a été supprimé et son domaine ne sera plus jamais analysé.: « {nom} » has been deleted and its domain will never be analysed again.
+« {nom} » a été supprimé.: « {nom} » has been deleted.
+« {saisie} » n'est pas un nom de domaine valide (ex. salon-lea.fr).: « {saisie} » is not a valid domain name (e.g. jane-salon.com).
+À contacter: To contact
+À côté de votre adresse, le navigateur affiche « Non sécurisé » (pas de cadenas).: Next to your address, the browser shows « Not secure » (no padlock).
+À la place de certaines animations ou galeries, le visiteur voit un cadre vide.: Instead of some animations or galleries, the visitor sees an empty frame.
+À propos: About
+À revérifier: To recheck
+échec de l'analyseur {nom}: analyser {nom} failed
+'échec de la négociation TLS : {raison}': 'TLS negotiation failed: {raison}'
+› Comparaison: › Comparison
+← Précédente: ← Previous
+⚠ Licence inactive: ⚠ Licence inactive
+✔ Licence active: ✔ Licence active

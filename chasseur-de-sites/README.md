@@ -145,6 +145,14 @@ fiche Google avec plus de 20 avis et une note d'au moins 4. **Prospects priorita
 
 ---
 
+## Langue / Language
+
+L'application, les rapports PDF, les exports et les modèles de messages existent en français et en anglais
+(« Site Hunter »). Par défaut, c'est la langue de l'ordinateur ; elle se change dans **Réglages → Langue**
+(ou avec la variable `CHASSEUR_LANGUE=fr` / `en`). En anglais, la recherche Google Places n'est plus limitée
+à la France. Traductions : `chasseur/langues/en.yaml` (texte français → texte anglais), complétude vérifiée par
+`tests/test_langues.py`. La ligne de commande reste en français.
+
 ## 7. Ligne de commande
 
 ```bash

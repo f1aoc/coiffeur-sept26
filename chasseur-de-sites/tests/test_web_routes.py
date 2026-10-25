@@ -163,7 +163,7 @@ def test_statut_modifiable_sur_place(web):
     attendre_fin(web, scan_id)
     p = prospect_par_nom(web, "Salon Cassé")
     r = web.post(f"/prospects/{p.id}/statut", data={"statut": "Intéressé"})
-    assert r.status_code == 200 and "<option selected>Intéressé</option>" in r.text and "Enregistré" in r.text
+    assert r.status_code == 200 and '<option value="Intéressé" selected>Intéressé</option>' in r.text and "Enregistré" in r.text
     assert 'hx-swap-oob' not in r.text
     assert "Salon Cassé" in web.get("/resultats?statut=Intéressé").text
     assert web.post(f"/prospects/{p.id}/statut", data={"statut": "Vendu"}).status_code == 400

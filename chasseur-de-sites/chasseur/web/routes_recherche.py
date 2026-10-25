@@ -12,6 +12,7 @@ from chasseur.db import reglages
 from chasseur.db.secret import ErreurSecret
 from chasseur.sources import places
 from chasseur.web.routes_analyses import FORMAT_PLACES, apercu_import
+from chasseur.langue import _
 
 routeur = APIRouter()
 VILLES_MAX = 20
@@ -45,7 +46,7 @@ async def page(request: Request):
 async def estimation(request: Request, secteur: str = Form(""), villes: str = Form(""), pages: int = Form(3)):
     liste = _villes(villes)
     if not secteur.strip() or not liste:
-        return _page(request, "_estimation.html", erreur="Indiquez un secteur et au moins une ville.")
+        return _page(request, "_estimation.html", erreur=_("Indiquez un secteur et au moins une ville."))
     config = request.app.state.gestionnaire.config().places
     return _page(
         request, "_estimation.html", secteur=secteur.strip(), villes=liste, pages=pages,
@@ -57,7 +58,7 @@ async def estimation(request: Request, secteur: str = Form(""), villes: str = Fo
 async def lancer(request: Request, secteur: str = Form(""), villes: str = Form(""), pages: int = Form(3)):
     liste = _villes(villes)
     if not secteur.strip() or not liste:
-        return _page(request, "_apercu.html", erreur="Indiquez un secteur et au moins une ville.")
+        return _page(request, "_apercu.html", erreur=_("Indiquez un secteur et au moins une ville."))
     config = request.app.state.gestionnaire.config().places
     try:
         resultat = await places.rechercher(_cle(request), secteur.strip(), liste, config, pages)
@@ -67,7 +68,7 @@ async def lancer(request: Request, secteur: str = Form(""), villes: str = Form("
     if not resultat.prospects:
         return _page(
             request, "_apercu.html",
-            erreur=f"Aucune fiche avec un site trouvée ({ecartees} fiche(s) sans site, avec une simple page tierce ou fermée).",
+            erreur=_("Aucune fiche avec un site trouvée ({n} fiche(s) sans site, avec une simple page tierce ou fermée).").format(n=ecartees),
         )
     # Liste enregistrée comme un import : même aperçu, même lancement, même traçabilité
     stockage = request.app.state.stockage
@@ -78,11 +79,9 @@ async def lancer(request: Request, secteur: str = Form(""), villes: str = Form("
         for p in resultat.prospects:
             ecrivain.writerow([p.nom, p.url, p.telephone, p.adresse, p.ville, p.categorie,
                                "" if p.note_google is None else p.note_google, "" if p.nb_avis is None else p.nb_avis, p.lien_maps])
-    source = f"Recherche Google Places « {secteur.strip()} » ({', '.join(liste)})"
-    info = (
-        f"{resultat.requetes} requête(s) effectuée(s) ; {ecartees} fiche(s) écartée(s) "
-        "(sans site, simple page Facebook, Planity… ou établissement fermé)."
-    )
+    source = _("Recherche Google Places « {secteur} » ({villes})").format(secteur=secteur.strip(), villes=", ".join(liste))
+    info = _("{requetes} requête(s) effectuée(s) ; {n} fiche(s) écartée(s) "
+             "(sans site, simple page Facebook, Planity… ou établissement fermé).").format(requetes=resultat.requetes, n=ecartees)
     return apercu_import(
         request, jeton, f"{secteur.strip()} - {', '.join(liste)}.csv", FORMAT_PLACES, resultat.prospects,
         source=source, info=info,

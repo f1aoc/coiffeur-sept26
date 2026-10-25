@@ -20,6 +20,7 @@ from chasseur.controles import CONTROLES, libelle
 from chasseur.db import depot
 from chasseur.db.moteur import Stockage
 from chasseur.db.tables import STATUTS_COMMERCIAUX, ProspectDB, heure_locale
+from chasseur.langue import _, langue_courante
 from chasseur.modeles import Prospect, Resultat
 from chasseur.scoring import statut_controles
 
@@ -41,8 +42,26 @@ COULEURS = {  # (fond, texte)
 
 def _statut_lisible(statut: str) -> str:
     if statut.startswith("KO : "):
-        return "Problème : " + ", ".join(libelle(code) for code in statut[5:].split(", "))
-    return {"OK": "OK", "non vérifié": "Non vérifié", "n/a": "—"}.get(statut, statut)
+        return _("Problème : {codes}").format(codes=", ".join(libelle(code) for code in statut[5:].split(", ")))
+    return {"OK": "OK", "non vérifié": _("Non vérifié"), "n/a": "—"}.get(statut, statut)
+
+
+def _probleme(valeur) -> bool:
+    return str(valeur or "").startswith(_("Problème"))
+
+
+COLONNES_TRADUITES = {"Catégorie", "Statut"}  # valeurs enregistrées en français, affichées dans la langue courante
+
+
+def _ligne_affichee(ligne: dict) -> dict:
+    """Ligne d'export dans la langue courante : en-têtes et valeurs traduits."""
+    return {_(cle): (_(v) if cle in COLONNES_TRADUITES and isinstance(v, str) else v) for cle, v in ligne.items()}
+
+
+def _format_date(heure: bool) -> str:
+    if langue_courante() == "fr":
+        return "%d/%m/%Y %H:%M" if heure else "%d/%m/%Y"
+    return "%Y-%m-%d %H:%M" if heure else "%Y-%m-%d"
 
 
 def lignes(stockage: Stockage, session: Session, filtres: depot.Filtres) -> list[dict]:
@@ -72,10 +91,10 @@ def lignes(stockage: Stockage, session: Session, filtres: depot.Filtres) -> list
             "Activité": p.categorie,
             "Note Google": p.note_google,
             "Avis Google": p.nb_avis,
-            "Bonus commercial": "oui" if a_bonus(p.note_google, p.nb_avis) else "non",
-            "Analysé le": analyse_le.strftime("%d/%m/%Y %H:%M") if analyse_le else "",
+            "Bonus commercial": _("oui") if a_bonus(p.note_google, p.nb_avis) else _("non"),
+            "Analysé le": analyse_le.strftime(_format_date(True)) if analyse_le else "",
             "Source": p.source,
-            "Collecté le": heure_locale(p.collecte_le).strftime("%d/%m/%Y") if p.collecte_le else "",
+            "Collecté le": heure_locale(p.collecte_le).strftime(_format_date(False)) if p.collecte_le else "",
             "Analyse": noms_scans.get(p.scan_id, ""),
             "Capture ordinateur": captures[p.id].get("bureau", ""),
             "Capture téléphone": captures[p.id].get("mobile", ""),
@@ -88,10 +107,10 @@ def lignes(stockage: Stockage, session: Session, filtres: depot.Filtres) -> list
 
 def exporter_csv(stockage: Stockage, session: Session, filtres: depot.Filtres) -> bytes:
     tampon = io.StringIO(newline="")
-    ecrivain = csv.DictWriter(tampon, fieldnames=COLONNES, delimiter=";")
+    ecrivain = csv.DictWriter(tampon, fieldnames=[_(c) for c in COLONNES], delimiter=";")
     ecrivain.writeheader()
     for ligne in lignes(stockage, session, filtres):
-        ecrivain.writerow({k: ("" if v is None else v) for k, v in ligne.items()})
+        ecrivain.writerow({k: ("" if v is None else v) for k, v in _ligne_affichee(ligne).items()})
     return ("﻿" + tampon.getvalue()).encode("utf-8")  # BOM : ouverture directe dans Excel
 
 
@@ -103,8 +122,8 @@ def exporter_excel(stockage: Stockage, session: Session, filtres: depot.Filtres,
     donnees = lignes(stockage, session, filtres)
     classeur = Workbook()
     feuille = classeur.active
-    feuille.title = "Prospects"
-    feuille.append(COLONNES)
+    feuille.title = _("Prospects")
+    feuille.append([_(c) for c in COLONNES])
     entete = PatternFill("solid", fgColor="1F2A3A")
     for cellule in feuille[1]:
         cellule.font = Font(bold=True, color="FFFFFF")
@@ -118,7 +137,8 @@ def exporter_excel(stockage: Stockage, session: Session, filtres: depot.Filtres,
     premiere_col_controle = len(COLONNES_FIXES) + 1
     derniere_col_controle = len(COLONNES_FIXES) + len(CONTROLES_EXPORTES)
     for ligne in donnees:
-        feuille.append([ligne[c] for c in COLONNES])
+        affichee = _ligne_affichee(ligne)
+        feuille.append([affichee[_(c)] for c in COLONNES])
         rang = feuille.max_row
         if ligne["Catégorie"] in remplissages:
             fond, police = remplissages[ligne["Catégorie"]]
@@ -126,7 +146,7 @@ def exporter_excel(stockage: Stockage, session: Session, filtres: depot.Filtres,
             cellule.fill, cellule.font = fond, police
         for col in range(premiere_col_controle, derniere_col_controle + 1):
             cellule = feuille.cell(rang, col)
-            if str(cellule.value or "").startswith("Problème"):
+            if _probleme(cellule.value):
                 cellule.font = probleme
     feuille.freeze_panes = "B2"  # en-têtes et colonne « Nom » figés
     feuille.auto_filter.ref = f"A1:{get_column_letter(len(COLONNES))}{max(1, feuille.max_row)}"
@@ -137,19 +157,20 @@ def exporter_excel(stockage: Stockage, session: Session, filtres: depot.Filtres,
         feuille.column_dimensions[get_column_letter(i)].width = largeurs.get(nom, 22)
 
     # Onglet récapitulatif
-    recap = classeur.create_sheet("Récapitulatif")
+    recap = classeur.create_sheet(_("Récapitulatif"))
     gras = Font(bold=True)
-    recap.append(["Récapitulatif de l'export"])
+    recap.append([_("Récapitulatif de l'export")])
     recap["A1"].font = Font(bold=True, size=14)
-    recap.append([f"Généré le {datetime.now():%d/%m/%Y à %H:%M} · {len(donnees)} prospect(s)" + (f" · {description}" if description else "")])
+    recap.append([_("Généré le {date} · {n} prospect(s)").format(date=datetime.now().strftime(_format_date(True)), n=len(donnees))
+                  + (f" · {description}" if description else "")])
     recap.append([])
 
     def tableau(titre: str, compte: list[tuple[str, int]], couleurs: bool = False):
-        recap.append([titre, "Prospects"])
+        recap.append([titre, _("Prospects")])
         for cellule in recap[recap.max_row]:
             cellule.font = gras
         for nom, n in compte:
-            recap.append([nom, n])
+            recap.append([_(nom), n])
             if couleurs and nom in remplissages:
                 fond, police = remplissages[nom]
                 recap.cell(recap.max_row, 1).fill, recap.cell(recap.max_row, 1).font = fond, police
@@ -157,11 +178,11 @@ def exporter_excel(stockage: Stockage, session: Session, filtres: depot.Filtres,
 
     par_etat = Counter(l["Catégorie"] for l in donnees)
     ordre = ORDRE_ETATS + sorted(set(par_etat) - set(ORDRE_ETATS))
-    tableau("Par catégorie", [(e, par_etat[e]) for e in ordre if par_etat[e]], couleurs=True)
-    par_probleme = Counter(c.libelle for l in donnees for c in CONTROLES_EXPORTES if l[c.libelle].startswith("Problème"))
-    tableau("Par problème", par_probleme.most_common())
+    tableau(_("Par catégorie"), [(e, par_etat[e]) for e in ordre if par_etat[e]], couleurs=True)
+    par_probleme = Counter(c.libelle for l in donnees for c in CONTROLES_EXPORTES if _probleme(l[c.libelle]))
+    tableau(_("Par problème"), par_probleme.most_common())
     par_statut = Counter(l["Statut"] for l in donnees)
-    tableau("Par statut commercial", [(s, par_statut[s]) for s in STATUTS_COMMERCIAUX if par_statut[s]])
+    tableau(_("Par statut commercial"), [(s, par_statut[s]) for s in STATUTS_COMMERCIAUX if par_statut[s]])
     recap.column_dimensions["A"].width = 44
     recap.column_dimensions["B"].width = 12
 

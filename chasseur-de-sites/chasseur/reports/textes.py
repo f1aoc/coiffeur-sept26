@@ -20,6 +20,9 @@ from dataclasses import dataclass
 from datetime import datetime
 from urllib.parse import urlsplit
 
+from chasseur.langue import _, nombre
+from chasseur.langue import date_longue as date_lisible
+
 
 @dataclass(frozen=True)
 class Texte:
@@ -224,17 +227,13 @@ TEXTES: dict[str, Texte] = {
     ),
 }
 
-MOIS = ("janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre")
-
-
 def date_longue(iso: str) -> str:
-    """« 2026-08-12 » → « 12 août 2026 » ; texte vide si la date est illisible."""
+    """« 2026-08-12 » → « 12 août 2026 » (« August 12, 2026 » en anglais) ; texte vide si la date est illisible."""
     try:
         d = datetime.strptime(iso[:10], "%Y-%m-%d")
     except (TypeError, ValueError):
         return ""
-    jour = "1er" if d.day == 1 else str(d.day)
-    return f"{jour} {MOIS[d.month - 1]} {d.year}"
+    return date_lisible(d)
 
 
 def _variables(code: str, mesures: dict) -> dict[str, str]:
@@ -245,14 +244,15 @@ def _variables(code: str, mesures: dict) -> dict[str, str]:
     date_expiration = date_domaine if code.startswith("DOMAINE") else date_ssl
     hote = urlsplit(m.get("navigateur_url_finale", "")).hostname or ""
     cle_version = "version_wordpress" if code.startswith("WORDPRESS") else "version_joomla"
+    derniere = date_longue(m.get("derniere_date", ""))
     return {
-        "depuis": f" depuis le {date_expiration}" if date_expiration else "",
-        "le": f" le {date_expiration}" if date_expiration else " prochainement",
-        "annee": f" {m['annee_copyright']}" if m.get("annee_copyright") else "",
+        "depuis": _(" depuis le {date}").format(date=date_expiration) if date_expiration else "",
+        "le": _(" le {date}").format(date=date_expiration) if date_expiration else _(" prochainement"),
+        "annee": f"\u00a0{m['annee_copyright']}" if m.get("annee_copyright") else "",
         "version": f" ({m[cle_version]})" if m.get(cle_version) else "",
-        "date": f" le {date_longue(m['derniere_date'])}" if date_longue(m.get("derniere_date", "")) else " ancienne",
+        "date": _(" le {date}").format(date=derniere) if derniere else _(" ancienne"),
         "hote": f" ({hote})" if hote else "",
-        "duree": f" (environ {m['perf_lcp_s'].replace('.', ',')} secondes)" if m.get("perf_lcp_s") else "",
+        "duree": _(" (environ {secondes} secondes)").format(secondes=nombre(m["perf_lcp_s"])) if m.get("perf_lcp_s") else "",
     }
 
 
@@ -261,9 +261,9 @@ def _remplir(modele: str, variables: dict[str, str]) -> str:
 
 
 def texte(code: str, mesures: dict | None = None) -> Texte | None:
-    """Texte d'un problème, complété avec les mesures de l'analyse (None si le code n'a pas de texte)."""
+    """Texte d'un problème dans la langue courante, complété avec les mesures (None si le code n'a pas de texte)."""
     modele = TEXTES.get(code)
     if modele is None:
         return None
     v = _variables(code, mesures or {})
-    return Texte(*(_remplir(champ, v) for champ in (modele.titre, modele.visiteur, modele.impact, modele.phrase)))
+    return Texte(*(_remplir(_(champ), v) for champ in (modele.titre, modele.visiteur, modele.impact, modele.phrase)))

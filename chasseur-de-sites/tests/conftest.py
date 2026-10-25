@@ -61,6 +61,7 @@ def sans_cle_pagespeed(monkeypatch, tmp_path):
     monkeypatch.setenv("CHASSEUR_DONNEES", str(tmp_path / "donnees-par-defaut"))
     # Licence non contrôlée, sauf dans les tests de licence (qui créent leur propre objet Licence)
     monkeypatch.setenv("CHASSEUR_SANS_LICENCE", "1")
+    monkeypatch.setenv("CHASSEUR_LANGUE", "fr")  # textes de référence des tests, quelle que soit la langue du poste
 
 
 @pytest.fixture

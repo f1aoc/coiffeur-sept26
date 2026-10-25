@@ -24,6 +24,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from chasseur.modeles import Prospect
+from chasseur.langue import _
 
 FORMAT_GENERIQUE = "CSV / Excel générique"
 FORMAT_MAPS_CSV = "Outil Google Maps (CSV)"
@@ -36,15 +37,15 @@ class ErreurImport(ValueError):
 
 
 SYNONYMES = {
-    "nom": {"nom", "name", "entreprise", "raison sociale", "societe", "commerce"},
-    "url": {"url", "site", "site web", "site internet", "website", "web"},
-    "telephone": {"telephone", "tel", "phone", "portable", "numero"},
-    "adresse": {"adresse", "address", "adresse postale"},
-    "categorie": {"categorie", "category", "activite", "secteur", "metier"},
-    "ville": {"ville", "city", "commune", "localite"},
-    "note_google": {"note", "rating", "note google", "note moyenne"},
-    "nb_avis": {"avis", "reviews", "nombre d avis", "nb avis", "nombre avis"},
-    "lien_maps": {"maps url", "google maps", "lien maps", "lien google maps"},
+    "nom": {"nom", "name", "entreprise", "raison sociale", "societe", "commerce", "business", "business name", "company", "company name"},
+    "url": {"url", "site", "site web", "site internet", "website", "web", "website address", "homepage"},
+    "telephone": {"telephone", "tel", "phone", "portable", "numero", "phone number", "telephone number", "mobile"},
+    "adresse": {"adresse", "address", "adresse postale", "street address", "full address"},
+    "categorie": {"categorie", "category", "activite", "secteur", "metier", "activity", "trade", "industry", "type"},
+    "ville": {"ville", "city", "commune", "localite", "town"},
+    "note_google": {"note", "rating", "note google", "note moyenne", "google rating"},
+    "nb_avis": {"avis", "reviews", "nombre d avis", "nb avis", "nombre avis", "google reviews", "review count", "number of reviews"},
+    "lien_maps": {"maps url", "google maps", "lien maps", "lien google maps", "google maps link", "maps link"},
 }
 
 
@@ -191,8 +192,8 @@ def _depuis_generique(entetes, lignes, nom_fichier: str) -> list[Prospect]:
     correspondance = _correspondance(entetes)
     if not correspondance:
         raise ErreurImport(
-            f"Aucune colonne reconnue dans {nom_fichier} (en-têtes lus : {entetes}). "
-            "Colonnes attendues : nom, url, téléphone, adresse, catégorie."
+            _("Aucune colonne reconnue dans {fichier} (en-têtes lus : {entetes}). "
+              "Colonnes attendues : nom, url, téléphone, adresse, catégorie.").format(fichier=nom_fichier, entetes=entetes)
         )
     prospects = []
     for numero, ligne in lignes:
@@ -231,9 +232,9 @@ def _depuis_maps(entetes, lignes, excel: bool) -> list[Prospect]:
         if s in ("real", "reel") or (excel and page and s not in ("aucun",) and not s.endswith("seulement")):
             p.url = page
         elif page:
-            p.remarque = f"Pas de site propre (page {page} seulement)"
+            p.remarque = _("Pas de site propre (page {page} seulement)").format(page=page)
         else:
-            p.remarque = "Pas de site (fiche Google Maps sans site web)"
+            p.remarque = _("Pas de site (fiche Google Maps sans site web)")
         prospects.append(p)
     return prospects
 

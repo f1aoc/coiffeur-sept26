@@ -12,6 +12,7 @@ from sqlmodel import Session
 
 from chasseur.db import reglages
 from chasseur.db.moteur import Stockage
+from chasseur.langue import _
 
 TAILLE_LOGO_MAX = 2 * 1024 * 1024
 COULEUR_DEFAUT = "#1f5fbf"
@@ -42,7 +43,7 @@ class Agence:
 
     @property
     def nom_affiche(self) -> str:
-        return self.nom or "[votre agence]"
+        return self.nom or _("[votre agence]")
 
     @property
     def coordonnees(self) -> list[str]:
@@ -55,6 +56,8 @@ def lire_agence(session: Session) -> Agence:
         valeur = reglages.lire(session, f"agence_{champ}", "")
         if valeur:
             setattr(a, champ, valeur)
+    if a.appel == APPEL_DEFAUT:
+        a.appel = _(APPEL_DEFAUT)  # texte par défaut dans la langue courante
     return a
 
 
@@ -64,19 +67,22 @@ def ecrire_agence(session: Session, **valeurs: str) -> Agence:
         if champ in valeurs:
             setattr(a, champ, (valeurs[champ] or "").strip())
     if not RE_COULEUR.match(a.couleur):
-        raise ErreurAgence("Couleur invalide : choisissez une couleur au format #1f5fbf.")
+        raise ErreurAgence(_("Couleur invalide : choisissez une couleur au format #1f5fbf."))
     if a.email and not RE_EMAIL.match(a.email):
-        raise ErreurAgence("Adresse e-mail de l'agence invalide.")
-    a.appel = a.appel or APPEL_DEFAUT
+        raise ErreurAgence(_("Adresse e-mail de l'agence invalide."))
+    if not a.appel or a.appel == _(APPEL_DEFAUT):
+        a.appel = APPEL_DEFAUT  # texte par défaut : affiché ensuite dans la langue de l'interface
     for champ in CHAMPS:
         reglages.ecrire(session, f"agence_{champ}", getattr(a, champ))
+    if a.appel == APPEL_DEFAUT:
+        a.appel = _(APPEL_DEFAUT)
     return a
 
 
 def _controler_logo(nom_fichier: str, contenu: bytes) -> str:
     """Renvoie l'extension (png ou svg) si le fichier est un logo acceptable."""
     if len(contenu) > TAILLE_LOGO_MAX:
-        raise ErreurAgence("Logo trop lourd (2 Mo maximum).")
+        raise ErreurAgence(_("Logo trop lourd (2 Mo maximum)."))
     extension = nom_fichier.rsplit(".", 1)[-1].lower() if "." in nom_fichier else ""
     if extension == "png":
         from PIL import Image
@@ -87,20 +93,20 @@ def _controler_logo(nom_fichier: str, contenu: bytes) -> str:
                     raise ValueError
                 image.verify()
         except Exception:
-            raise ErreurAgence("Ce fichier n'est pas une image PNG valide.") from None
+            raise ErreurAgence(_("Ce fichier n'est pas une image PNG valide.")) from None
         return "png"
     if extension == "svg":
         texte = contenu.decode("utf-8", errors="replace")
         if RE_SVG_DANGEREUX.search(texte):
-            raise ErreurAgence("Ce SVG contient du code (script, événements) : il est refusé par sécurité.")
+            raise ErreurAgence(_("Ce SVG contient du code (script, événements) : il est refusé par sécurité."))
         try:
             racine = ET.fromstring(contenu)
         except ET.ParseError:
-            raise ErreurAgence("Ce fichier n'est pas un SVG valide.") from None
+            raise ErreurAgence(_("Ce fichier n'est pas un SVG valide.")) from None
         if not racine.tag.endswith("svg"):
-            raise ErreurAgence("Ce fichier n'est pas un SVG valide.")
+            raise ErreurAgence(_("Ce fichier n'est pas un SVG valide."))
         return "svg"
-    raise ErreurAgence("Le logo doit être un fichier PNG ou SVG.")
+    raise ErreurAgence(_("Le logo doit être un fichier PNG ou SVG."))
 
 
 def enregistrer_logo(stockage: Stockage, session: Session, nom_fichier: str, contenu: bytes) -> str:

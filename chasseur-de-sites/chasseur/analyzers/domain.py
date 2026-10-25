@@ -14,6 +14,7 @@ from bs4 import BeautifulSoup
 from chasseur import urls
 from chasseur.analyzers.base import Analyseur
 from chasseur.config import Config
+from chasseur.langue import _, date_courte
 from chasseur.modeles import Prospect, Rapport
 from chasseur.signatures import Signatures, charger_signatures, hote_dans
 
@@ -62,7 +63,7 @@ def whois_expiration(domaine: str) -> InfoExpiration:
         if date.tzinfo is None:
             date = date.replace(tzinfo=timezone.utc)
         return InfoExpiration(expire_le=date, enregistre=True, source="whois")
-    raise ExpirationInconnue("whois : pas de date d'expiration dans la réponse")
+    raise ExpirationInconnue(_("whois : pas de date d'expiration dans la réponse"))
 
 
 class AnalyseurDomaine(Analyseur):
@@ -89,7 +90,7 @@ class AnalyseurDomaine(Analyseur):
             self._parking(prospect.url, client, rapport),
         )
         if not expiration_ok and not parking_ok:
-            rapport.non_verifies.setdefault("domaine", "ni l'expiration ni le parking n'ont pu être vérifiés")
+            rapport.non_verifies.setdefault("domaine", _("ni l'expiration ni le parking n'ont pu être vérifiés"))
         return rapport
 
     # --- Expiration -------------------------------------------------------
@@ -97,7 +98,7 @@ class AnalyseurDomaine(Analyseur):
     async def _expiration(self, racine: str, client: httpx.AsyncClient, rapport: Rapport) -> bool:
         cfg = self.config.domaine
         if not urls.domaine_enregistrable(racine):
-            rapport.non_verifies["domaine_expiration"] = "pas un nom de domaine public"
+            rapport.non_verifies["domaine_expiration"] = _("pas un nom de domaine public")
             return False
         erreurs: list[str] = []
         info: InfoExpiration | None = None
@@ -117,16 +118,17 @@ class AnalyseurDomaine(Analyseur):
                 except (ExpirationInconnue, asyncio.TimeoutError, OSError) as e:
                     erreurs.append(str(e) or f"whois : {type(e).__name__}")
         if not concluant:
-            rapport.non_verifies["domaine_expiration"] = " ; ".join(erreurs) or "date d'expiration introuvable"
+            rapport.non_verifies["domaine_expiration"] = " ; ".join(erreurs) or _("date d'expiration introuvable")
             return False
 
         if info.enregistre is False:
             rapport.append(
                 self.config.constat(
                     "DOMAINE_NON_ENREGISTRE",
-                    "Votre nom de domaine n'est plus enregistré : n'importe qui peut le racheter, "
-                    "et votre site comme vos e-mails ne fonctionnent plus.",
-                    f"{racine} : inconnu du registre ({info.source}{' : ' + info.detail if info.detail else ''})",
+                    _("Votre nom de domaine n'est plus enregistré : n'importe qui peut le racheter, "
+                      "et votre site comme vos e-mails ne fonctionnent plus."),
+                    _("{domaine} : inconnu du registre ({source})").format(
+                        domaine=racine, source=info.source + (" : " + info.detail if info.detail else "")),
                 )
             )
             return True
@@ -134,23 +136,23 @@ class AnalyseurDomaine(Analyseur):
         rapport.mesures["domaine_expire_le"] = info.expire_le.strftime("%Y-%m-%d")
         rapport.mesures["domaine_source"] = info.source
         jours = (info.expire_le - self._maintenant()).days
-        date = info.expire_le.strftime("%d/%m/%Y")
+        date = date_courte(info.expire_le)
         if jours < 0:
             rapport.append(
                 self.config.constat(
                     "DOMAINE_EXPIRE",
-                    f"Votre nom de domaine a expiré le {date} : votre site et vos e-mails risquent de "
-                    "s'arrêter et le domaine peut être racheté par un tiers.",
-                    f"{racine} : date d'expiration {date} ({info.source})",
+                    _("Votre nom de domaine a expiré le {date} : votre site et vos e-mails risquent de "
+                      "s'arrêter et le domaine peut être racheté par un tiers.").format(date=date),
+                    _("{domaine} : date d'expiration {date} ({source})").format(domaine=racine, date=date, source=info.source),
                 )
             )
         elif jours < cfg.alerte_jours:
             rapport.append(
                 self.config.constat(
                     "DOMAINE_EXPIRE_BIENTOT",
-                    f"Votre nom de domaine expire le {date} (dans {jours} jour(s)) : sans renouvellement, "
-                    "votre site et vos e-mails s'arrêteront.",
-                    f"{racine} : date d'expiration {date} ({info.source})",
+                    _("Votre nom de domaine expire le {date} (dans {jours} jour(s)) : sans renouvellement, "
+                      "votre site et vos e-mails s'arrêteront.").format(date=date, jours=jours),
+                    _("{domaine} : date d'expiration {date} ({source})").format(domaine=racine, date=date, source=info.source),
                 )
             )
         return True
@@ -174,13 +176,13 @@ class AnalyseurDomaine(Analyseur):
         try:
             donnees = r.json()
         except ValueError:
-            raise ExpirationInconnue("RDAP : réponse illisible") from None
+            raise ExpirationInconnue(_("RDAP : réponse illisible")) from None
         for evenement in donnees.get("events") or []:
             if str(evenement.get("eventAction", "")).lower() == "expiration":
                 date = _date_iso(str(evenement.get("eventDate", "")))
                 if date:
                     return InfoExpiration(expire_le=date, enregistre=True, source="rdap")
-        return InfoExpiration(enregistre=True, source="rdap", detail="pas de date d'expiration")
+        return InfoExpiration(enregistre=True, source="rdap", detail=_("pas de date d'expiration"))
 
     # --- Parking ----------------------------------------------------------
 
@@ -195,32 +197,32 @@ class AnalyseurDomaine(Analyseur):
             except httpx.HTTPError:
                 continue
         if reponse is None:
-            rapport.mesures["parking"] = "non vérifié (page d'accueil injoignable)"
+            rapport.mesures["parking"] = _("non vérifié (page d'accueil injoignable)")
             return False
 
         chaine = [str(r.url) for r in reponse.history] + [str(reponse.url)]
         for etape in chaine:
             h = urls.hote(etape) or ""
             if h and not urls.meme_site(h, hote_origine) and hote_dans(h, sig.parking_services):
-                rapport.append(self._constat_parking(f"redirection vers un service de parking : {' → '.join(chaine)}"))
+                rapport.append(self._constat_parking(_("redirection vers un service de parking : {chaine}").format(chaine=" → ".join(chaine))))
                 return True
 
         html = reponse.text[:TAILLE_HTML_MAX]
         for motif in sig.parking_motifs_html:
             if m := motif.search(html):
-                rapport.append(self._constat_parking(f"{reponse.url} : ressource de parking « {m[0][:80]} »"))
+                rapport.append(self._constat_parking(_("{url} : ressource de parking « {texte} »").format(url=reponse.url, texte=m[0][:80])))
                 return True
         texte = " ".join(BeautifulSoup(html, "html.parser").get_text(" ").split())
         for motif in sig.parking_phrases:
             if m := motif.search(texte):
-                rapport.append(self._constat_parking(f"{reponse.url} : texte « {m[0][:80]} »"))
+                rapport.append(self._constat_parking(_("{url} : texte « {texte} »").format(url=reponse.url, texte=m[0][:80])))
                 return True
         return True
 
     def _constat_parking(self, preuve: str):
         return self.config.constat(
             "DOMAINE_PARKING",
-            "Votre adresse web affiche une page publicitaire « domaine à vendre » au lieu de votre site : "
-            "vos clients ne vous trouvent plus.",
+            _("Votre adresse web affiche une page publicitaire « domaine à vendre » au lieu de votre site : "
+              "vos clients ne vous trouvent plus."),
             preuve,
         )

@@ -43,6 +43,7 @@ chasseur = "chasseur.cli:main"
 include = ["chasseur*"]
 
 [tool.setuptools.package-data]
+"chasseur" = ["langues/*.yaml"]
 "chasseur.web" = ["templates/*.html", "static/*"]
 "chasseur.reports" = ["templates/*.html"]
 

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% block titre %}Résultats{% endblock %}
+{% block titre %}{{ _("Résultats") }}{% endblock %}
 {% block contenu %}
-<h1>Résultats</h1>
+<h1>{{ _("Résultats") }}</h1>
 {% if message %}<p class="alerte alerte-succes" role="status">{{ message }}</p>{% endif %}
 
 <form class="filtres" method="get" action="/resultats"
@@ -9,66 +9,66 @@
       hx-trigger="change, input changed delay:400ms from:#q">
   <input type="hidden" name="tri" value="{{ f.tri }}">
   <input type="hidden" name="ordre" value="{{ f.ordre }}">
-  <label>Recherche <input type="search" id="q" name="q" value="{{ f.q }}" placeholder="Nom ou ville"></label>
-  <label>Analyse
+  <label>{{ _("Recherche") }} <input type="search" id="q" name="q" value="{{ f.q }}" placeholder="{{ _("Nom ou ville") }}"></label>
+  <label>{{ _("Analyse") }}
     <select name="scan">
-      <option value="">Toutes</option>
+      <option value="">{{ _("Toutes") }}</option>
       {% for a in analyses %}<option value="{{ a.id }}" {% if f.scan == a.id %}selected{% endif %}>{{ a.nom }}</option>{% endfor %}
     </select>
   </label>
-  <label>Catégorie
+  <label>{{ _("Catégorie") }}
     <select name="etat">
-      <option value="">Toutes</option>
-      {% for e in etats %}<option {% if f.etat == e %}selected{% endif %}>{{ e }}</option>{% endfor %}
+      <option value="">{{ _("Toutes") }}</option>
+      {% for e in etats %}<option value="{{ e }}" {% if f.etat == e %}selected{% endif %}>{{ _(e) }}</option>{% endfor %}
     </select>
   </label>
-  <label>Problème
+  <label>{{ _("Problème") }}
     <select name="probleme">
-      <option value="">Tous</option>
-      {% for c in CONTROLES if c.id not in ("url",) %}<option value="{{ c.id }}" {% if f.probleme == c.id %}selected{% endif %}>{{ c.libelle }}</option>{% endfor %}
+      <option value="">{{ _("Tous") }}</option>
+      {% for c in CONTROLES if c.id not in ("url",) %}<option value="{{ c.id }}" {% if f.probleme == c.id %}selected{% endif %}>{{ _(c.libelle) }}</option>{% endfor %}
     </select>
   </label>
-  <label>Statut
+  <label>{{ _("Statut") }}
     <select name="statut">
-      <option value="">Tous</option>
-      {% for s in STATUTS %}<option {% if f.statut == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+      <option value="">{{ _("Tous") }}</option>
+      {% for s in STATUTS %}<option value="{{ s }}" {% if f.statut == s %}selected{% endif %}>{{ _(s) }}</option>{% endfor %}
     </select>
   </label>
-  <label class="case-filtre" title="Site cassé ou obsolète, et fiche Google avec plus de 20 avis et une note d'au moins 4">
-    <input type="checkbox" name="prioritaires" value="1" {% if f.prioritaires %}checked{% endif %}> Prospects prioritaires</label>
-  <noscript><button class="bouton">Filtrer</button></noscript>
+  <label class="case-filtre" title="{{ _("Site cassé ou obsolète, et fiche Google avec plus de 20 avis et une note d'au moins 4") }}">
+    <input type="checkbox" name="prioritaires" value="1" {% if f.prioritaires %}checked{% endif %}> {{ _("Prospects prioritaires") }}</label>
+  <noscript><button class="bouton">{{ _("Filtrer") }}</button></noscript>
 </form>
 
 <div id="resultats">
   <form id="selection" method="post" action="/rapports.zip"></form>
   <div class="barre-actions">
-    <span class="discret">{{ r.total }} prospect{{ "s" if r.total > 1 }}</span>
+    <span class="discret">{{ pluriel(r.total, "{n} prospect", "{n} prospects") }}</span>
     {% if r.lignes %}
-    <a class="bouton" href="/export.xlsx?{{ requete_export }}" download>Exporter en Excel</a>
-    <a class="bouton" href="/export.csv?{{ requete_export }}" download>Exporter en CSV</a>
-    <button type="submit" form="selection" class="bouton">Rapports PDF des prospects cochés (ZIP)</button>
+    <a class="bouton" href="/export.xlsx?{{ requete_export }}" download>{{ _("Exporter en Excel") }}</a>
+    <a class="bouton" href="/export.csv?{{ requete_export }}" download>{{ _("Exporter en CSV") }}</a>
+    <button type="submit" form="selection" class="bouton">{{ _("Rapports PDF des prospects cochés (ZIP)") }}</button>
     {% endif %}
   </div>
   {% if not r.lignes %}
-  <p class="vide">Aucun prospect ne correspond à ces filtres.</p>
+  <p class="vide">{{ _("Aucun prospect ne correspond à ces filtres.") }}</p>
   {% else %}
   {% macro entete(colonne, titre) -%}
     <th aria-sort="{{ ('ascending' if f.ordre == 'asc' else 'descending') if f.tri == colonne else 'none' }}">
       <a href="{{ lien_tri(colonne) }}" hx-get="{{ lien_tri(colonne) }}" hx-target="#resultats" hx-select="#resultats"
-         hx-swap="outerHTML" hx-push-url="true">{{ titre }}{% if f.tri == colonne %} {{ "▲" if f.ordre == "asc" else "▼" }}{% endif %}</a>
+         hx-swap="outerHTML" hx-push-url="true">{{ _(titre) }}{% if f.tri == colonne %} {{ "▲" if f.ordre == "asc" else "▼" }}{% endif %}</a>
     </th>
   {%- endmacro %}
   <div class="tableau-defilant">
   <table class="tableau tableau-resultats">
     <thead>
       <tr>
-        <th class="col-choix"><input type="checkbox" id="tout-cocher" aria-label="Tout cocher"></th>
-        <th class="col-mini"><span class="masque-visuel">Capture</span></th>
+        <th class="col-choix"><input type="checkbox" id="tout-cocher" aria-label="{{ _("Tout cocher") }}"></th>
+        <th class="col-mini"><span class="masque-visuel">{{ _("Capture") }}</span></th>
         {{ entete("nom", "Nom") }}
         {{ entete("ville", "Ville") }}
         {{ entete("etat", "Catégorie") }}
         {{ entete("score", "Score") }}
-        <th>Problèmes principaux</th>
+        <th>{{ _("Problèmes principaux") }}</th>
         {{ entete("telephone", "Téléphone") }}
         {{ entete("note", "Note Google") }}
         {{ entete("statut", "Statut") }}
@@ -89,7 +89,7 @@
         <td><a href="/prospects/{{ p.id }}"><strong>{{ p.nom or p.url or "Sans nom" }}</strong></a>
           {% if p.categorie %}<br><span class="discret">{{ p.categorie }}</span>{% endif %}</td>
         <td>{{ p.ville }}</td>
-        <td><span class="etat etat-{{ p.etat|classe_etat }}">{{ p.etat or "En attente" }}</span></td>
+        <td><span class="etat etat-{{ p.etat|classe_etat }}">{{ _(p.etat or "En attente") }}</span></td>
         <td class="nombre"><strong>{{ p.score if p.analyse else "—" }}</strong></td>
         <td>
           <ul class="problemes">
@@ -98,7 +98,7 @@
         </td>
         <td class="sans-coupure">{% if p.telephone %}<a href="tel:{{ p.telephone|replace(' ', '') }}">{{ p.telephone }}</a>{% endif %}</td>
         <td class="sans-coupure">{% if p.note_google is not none %}{{ p.note_google }} ★{% if p.nb_avis is not none %} <span class="discret">({{ p.nb_avis }})</span>{% endif %}{% endif %}
-          {% if a_bonus(p.note_google, p.nb_avis) %}<br><span class="bonus" title="Plus de 20 avis et note d'au moins 4 : entreprise active">Bonus</span>{% endif %}</td>
+          {% if a_bonus(p.note_google, p.nb_avis) %}<br><span class="bonus" title="{{ _("Plus de 20 avis et note d'au moins 4 : entreprise active") }}">{{ _("Bonus") }}</span>{% endif %}</td>
         <td>{% include "_statut.html" %}</td>
       </tr>
     {% endfor %}
@@ -106,10 +106,10 @@
   </table>
   </div>
   {% if r.pages > 1 %}
-  <nav class="pagination" aria-label="Pages">
-    {% if r.page > 1 %}<a href="{{ lien(page=r.page - 1) }}" hx-get="{{ lien(page=r.page - 1) }}" hx-target="#resultats" hx-select="#resultats" hx-swap="outerHTML" hx-push-url="true">← Précédente</a>{% endif %}
-    <span>Page {{ r.page }} / {{ r.pages }}</span>
-    {% if r.page < r.pages %}<a href="{{ lien(page=r.page + 1) }}" hx-get="{{ lien(page=r.page + 1) }}" hx-target="#resultats" hx-select="#resultats" hx-swap="outerHTML" hx-push-url="true">Suivante →</a>{% endif %}
+  <nav class="pagination" aria-label="{{ _("Pages") }}">
+    {% if r.page > 1 %}<a href="{{ lien(page=r.page - 1) }}" hx-get="{{ lien(page=r.page - 1) }}" hx-target="#resultats" hx-select="#resultats" hx-swap="outerHTML" hx-push-url="true">{{ _("← Précédente") }}</a>{% endif %}
+    <span>{{ _("Page {n} / {total}").format(n=r.page, total=r.pages) }}</span>
+    {% if r.page < r.pages %}<a href="{{ lien(page=r.page + 1) }}" hx-get="{{ lien(page=r.page + 1) }}" hx-target="#resultats" hx-select="#resultats" hx-swap="outerHTML" hx-push-url="true">{{ _("Suivante →") }}</a>{% endif %}
   </nav>
   {% endif %}
   {% endif %}
