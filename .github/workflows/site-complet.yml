@@ -51,6 +51,11 @@ jobs:
             rm -f public/en/index.html
           fi
           test -f public/en/audit-express/thank-you.html && test -f public/en/terms.html
+          # Essai gratuit (/essai/) : publié seulement quand l'adresse du Worker et la clé Turnstile sont renseignées
+          if grep -q "A_REMPLACER" public/essai/index.html; then
+            echo "::warning::Page /essai/ non publiée : adresse du Worker ou clé Turnstile à renseigner"
+            rm -rf public/essai
+          fi
           gh release download bridgetoleads-latest --repo "${{ github.repository }}" --pattern BridgeToLeads-site.zip --dir /tmp
           unzip -q /tmp/BridgeToLeads-site.zip -d public/bridgetoleads
           test -f public/index.html && test -f public/bridgetoleads/index.html && test -f public/chasseur-de-sites/index.html && test -f public/audit-express/merci.html
