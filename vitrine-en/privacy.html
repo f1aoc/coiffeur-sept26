@@ -80,6 +80,7 @@
         <li><a href="#controller">Data controller</a></li>
         <li><a href="#purchase">Purchase</a></li>
         <li><a href="#licence">License</a></li>
+        <li><a href="#trial">BridgeToLeads free trial</a></li>
         <li><a href="#computer">What stays on your computer</a></li>
         <li><a href="#website">Website and cookies</a></li>
         <li><a href="#providers">Service providers</a></li>
@@ -119,8 +120,25 @@
       </ul>
     </section>
 
+    <section id="trial">
+      <h2>4. BridgeToLeads free trial</h2>
+      <p>When you request a trial on the <a href="trial/">Free trial</a> page, we use:</p>
+      <ul>
+        <li><b>your email address, the business type and the city you chose</b>, to send you the results (performance of your
+          request) and then to tell you about BridgeToLeads; the optional campaign code (“ref”) shows where you came from;</li>
+        <li><b>VORELIK news</b>: only if you ticked the box (consent), which you can withdraw at any time with the
+          “Unsubscribe” link in every email;</li>
+        <li><b>your IP address and your email address in hashed form</b> (irreversible fingerprint), only to prevent abuse:
+          1 trial per email address, 3 per IP address per day;</li>
+        <li><b>Cloudflare Turnstile</b>, an anti-robot check without advertising cookies, which analyses technical information
+          from your browser.</li>
+      </ul>
+      <p>The search is made on Google Maps (Google Places) with the business type and the city: your email address is not sent
+        to Google. Results are not kept after the email is sent.</p>
+    </section>
+
     <section id="computer">
-      <h2>4. What stays on your computer</h2>
+      <h2>5. What stays on your computer</h2>
       <p>The websites you audit, the reports and your settings are stored <b>only on your computer</b>. They are not sent to
         us. Your API keys (for example Google PageSpeed) also stay on your computer, and requests go directly from your
         computer to the service concerned, under its own terms.</p>
@@ -129,18 +147,21 @@
     </section>
 
     <section id="website">
-      <h2>5. Website and cookies</h2>
+      <h2>6. Website and cookies</h2>
       <p>The pages of vorelik.com set no cookies and use no audience measurement or advertising tools. Fonts are hosted on our
-        own site: displaying a page contacts no other service. The payment page, hosted by Stripe, uses its own cookies, needed
+        own site: displaying a page contacts no other service, except the <a href="trial/">Free trial</a> page, which loads the
+        Cloudflare Turnstile anti-robot check. The payment page, hosted by Stripe, uses its own cookies, needed
         for payment and fraud prevention. Details: <a href="cookies.html">cookie policy</a>.</p>
     </section>
 
     <section id="providers">
-      <h2>6. Service providers</h2>
+      <h2>7. Service providers</h2>
       <dl>
         <dt>Stripe</dt><dd>payment, receipts, license storage — Stripe Payments Europe, Ltd., Ireland
           (<a href="https://stripe.com/privacy">Stripe's policy</a>)</dd>
-        <dt>Cloudflare</dt><dd>license server, software storage and downloads — Cloudflare, Inc., United States</dd>
+        <dt>Cloudflare</dt><dd>license server, software storage and downloads, free trial server and Turnstile anti-robot check — Cloudflare, Inc., United States</dd>
+        <dt>Brevo</dt><dd>free trial emails, news and contact list — Sendinblue SAS (Brevo), Paris, France</dd>
+        <dt>Google</dt><dd>Google Maps search for the free trial (business type and city only) — Google LLC, United States</dd>
         <dt>GitHub</dt><dd>software builds — GitHub, Inc., United States</dd>
         <dt>Host</dt><dd>hosting of vorelik.com — o2switch, Clermont-Ferrand, France</dd>
       </dl>
@@ -149,16 +170,19 @@
     </section>
 
     <section id="retention">
-      <h2>7. Retention periods</h2>
+      <h2>8. Retention periods</h2>
       <ul>
         <li>Sales data and accounting records: 10 years (French Commercial Code, article L123-22).</li>
         <li>License key and computer identifiers: as long as the license exists; a released computer is removed from the list.</li>
         <li>Support emails: 3 years after the last exchange.</li>
+        <li>Free trial: hashed IP address, 48 hours; hashed email address (one-trial limit), 12 months; contact in Brevo,
+          3 years after your last exchange with us, or until you unsubscribe (your address is then only kept on a suppression
+          list, so that we never email you again).</li>
       </ul>
     </section>
 
     <section id="rights">
-      <h2>8. Your rights</h2>
+      <h2>9. Your rights</h2>
       <p>You can ask to access, correct, delete or port your data, restrict its processing or object to it, by writing to
         <a href="mailto:support@vorelik.com">support@vorelik.com</a> from the address used for the purchase. We reply within one
         month. Data the law requires us to keep (accounting) cannot be deleted before the end of its retention period.</p>

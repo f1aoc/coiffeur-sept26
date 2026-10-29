@@ -105,7 +105,7 @@ test("essai réussi : Google paginé, fiches sans site ou Facebook, triées par 
 
   const [contact] = vers("https://api.brevo.com/v3/contacts");
   assert.deepEqual(contact.corps.listIds, [7, 8]);
-  assert.deepEqual(contact.corps.attributes, { METIER: "coiffeur", VILLE: "L'Isle-sur-la-Sorgue", REF: "facebook-octobre", ACTUS_VORELIK: true });
+  assert.deepEqual(contact.corps.attributes, { METIER: "coiffeur", VILLE: "L'Isle-sur-la-Sorgue", REF: "facebook-octobre", LANGUE: "fr", ACTUS_VORELIK: true });
   assert.equal(contact.corps.updateEnabled, true);
 });
 
@@ -217,7 +217,7 @@ test("formulaire HTML classique (multipart) accepté", async () => {
 test("e-mail : contenu échappé (pas d'injection HTML)", () => {
   const { html, sujet, texte } = contenuEmail({
     metier: "coiffeur", ville: "Paris", analyses: 1, lien: "https://essai.test/desinscription?e=a&s=b",
-    prospects: [{ nom: '<script>alert(1)</script> & "Co"', adresse: "1 rue <b>", telephone: "01 02", note: 4.2, avis: 3, site: "Aucun", maps: "https://maps.google.com/?q=\"x\"" }],
+    prospects: [{ nom: '<script>alert(1)</script> & "Co"', adresse: "1 rue <b>", telephone: "01 02", note: 4.2, avis: 3, site: "aucun", maps: "https://maps.google.com/?q=\"x\"" }],
   });
   assert.ok(!html.includes("<script>alert"));
   assert.match(html, /&lt;script&gt;alert\(1\)&lt;\/script&gt; &amp; &quot;Co&quot;/);
@@ -272,7 +272,67 @@ test("diagnostic : variables et Brevo", async () => {
   const d = await r.json();
   assert.equal(d.variables.BREVO_API_KEY, "présente");
   assert.equal(d.brevo.liste_essai, "Essai BridgeToLeads");
-  assert.equal(d.brevo.attributs, "À CRÉER dans Brevo : REF, ACTUS_VORELIK");
+  assert.equal(d.brevo.attributs, "À CRÉER dans Brevo : REF, LANGUE, ACTUS_VORELIK");
   assert.equal(d.brevo.expediteur, "validé");
   assert.ok(!JSON.stringify(d).includes("xkeysib-test"));
+});
+
+// ------------------------------------------------------------------------------------------ version anglaise
+
+test("essai en anglais : Google sans région, e-mail et messages en anglais, contact LANGUE=en", async () => {
+  const { status, corps } = await envoyer({ langue: "en", metier: "hair salon", ville: "Austin TX", ref: "fb-us" });
+  assert.equal(status, 200);
+  assert.match(corps.message, /^Done! 10 businesses with no website are waiting in your inbox/);
+  const [g] = vers("https://places.googleapis.com/");
+  assert.equal(g.corps.textQuery, "hair salon Austin TX");
+  assert.equal(g.corps.languageCode, "en");
+  assert.equal(g.corps.regionCode, undefined);
+  const [mail] = vers("https://api.brevo.com/v3/smtp/email");
+  assert.equal(mail.corps.subject, "10 leads with no website: hair salon in Austin TX");
+  const html = mail.corps.htmlContent;
+  assert.match(html, /<html lang="en">/);
+  assert.match(html, /Google Maps data\./);
+  assert.match(html, /https:\/\/vorelik\.com\/en\/bridgetoleads\//);
+  assert.match(html, />Unsubscribe</);
+  assert.match(html, /Facebook only/);
+  assert.match(html, /4\.5&nbsp;★/);
+  assert.match(html, /reviews/);
+  assert.ok(!/Aucun site|Données Google|Se désinscrire|avis</.test(html));
+  assert.match(mail.corps.headers["List-Unsubscribe"], /&l=en>$/);
+  assert.match(mail.corps.textContent, /Discover BridgeToLeads: https:\/\/vorelik\.com\/en\/bridgetoleads\//);
+  const [contact] = vers("https://api.brevo.com/v3/contacts");
+  assert.equal(contact.corps.attributes.LANGUE, "en");
+  assert.equal(contact.corps.attributes.REF, "fb-us");
+});
+
+test("refus en anglais (e-mail déjà utilisé, champ manquant, langue dans l'adresse)", async () => {
+  await envoyer({ langue: "en" });
+  assert.match((await envoyer({ langue: "en" }, { ip: "8.8.8.8" })).corps.message, /^A trial has already been sent/);
+  assert.equal((await envoyer({ langue: "en", ville: "" })).corps.message, "Enter a city.");
+  const r = await worker.fetch(new Request("https://essai.test/essai?langue=en", {
+    method: "POST", headers: { Origin: "https://pirate.example" }, body: "{}" }), env);
+  assert.equal((await r.json()).message, "Form not allowed.");
+});
+
+test("aucun résultat en anglais", async () => {
+  pagesGoogle = [[fiche(1, { site: "https://real-site.com" })]];
+  const r = await envoyer({ langue: "en" });
+  assert.match(r.corps.message, /^No business without a website found/);
+});
+
+test("désinscription en anglais", async () => {
+  await envoyer({ langue: "en" });
+  const lien = new URL(vers("https://api.brevo.com/v3/smtp/email")[0].corps.headers["List-Unsubscribe"].slice(1, -1));
+  const page = await desinscription("GET", lien.search);
+  assert.match(page.texte, /Confirm unsubscribe/);
+  assert.match(page.texte, /<html lang="en">/);
+  const fait = await desinscription("POST", lien.search);
+  assert.match(fait.texte, /You are unsubscribed/);
+  assert.match((await desinscription("GET", "?e=a%40b.fr&s=faux&l=en")).texte, /Invalid link/);
+});
+
+test("langue inconnue : français par défaut", async () => {
+  const r = await envoyer({ langue: "de" });
+  assert.match(r.corps.message, /^C'est parti/);
+  assert.equal(vers("https://places.googleapis.com/")[0].corps.regionCode, "FR");
 });

@@ -1,4 +1,4 @@
-# Essai gratuit BridgeToLeads (vorelik.com/essai/)
+# Essai gratuit BridgeToLeads (vorelik.com/essai/ et vorelik.com/en/trial/)
 
 Le visiteur choisit un métier et une ville, et reçoit par e-mail les 10 commerces sans site web les plus établis.
 
@@ -73,13 +73,14 @@ Une clé à part, utilisée seulement par le serveur de l'essai. Vous pourrez la
    - `Essai BridgeToLeads`. Une fois créée, notez son **numéro (ID)**, affiché dans la liste ;
    - `Actualités VORELIK` : les personnes qui ont coché la case. Notez aussi son numéro.
 5. **Attributs** : menu **Contacts** → **Paramètres** (⚙) → **Attributs de contact** → **Ajouter un nouvel
-   attribut**, quatre fois :
+   attribut**, cinq fois :
 
    | Nom de l'attribut | Type |
    |---|---|
    | `METIER` | Texte |
    | `VILLE` | Texte |
    | `REF` | Texte |
+   | `LANGUE` | Texte (`fr` ou `en` : la langue de la page d'essai) |
    | `ACTUS_VORELIK` | Booléen (oui / non) |
 
 6. **Clé API** : menu du compte → **SMTP et API** → onglet **Clés API** → **Générer une nouvelle clé API**.
@@ -135,6 +136,16 @@ Une clé à part, utilisée seulement par le serveur de l'essai. Vous pourrez la
    - le lien « Se désinscrire ».
 3. **Liens de campagne** : ajoutez `?ref=…` à l'adresse, par exemple `https://vorelik.com/essai/?ref=facebook-novembre`.
    La ref est enregistrée avec le contact dans Brevo : vous saurez quelle campagne apporte le plus d'essais.
+
+## Version anglaise (vorelik.com/en/trial/)
+
+Même serveur, mêmes clés, mêmes listes et mêmes limites (1 essai par e-mail, 3 par adresse IP et par jour, plafond
+quotidien commun aux deux langues). La page anglaise envoie `langue=en` :
+
+- la recherche Google se fait en anglais, sans région : c'est la ville tapée qui décide (« Austin TX », « Leeds UK ») ;
+- l'e-mail, les messages et la page de désinscription sont en anglais, avec un lien vers la page de vente anglaise ;
+- le contact est enregistré dans Brevo avec `LANGUE` = `en`. Pour des actualités en anglais, filtrez la liste
+  « Actualités VORELIK » sur cet attribut.
 
 ## Bon à savoir
 
