@@ -149,3 +149,13 @@ def test_licence_en_anglais(anglais, tmp_path):
 
 def test_licence_en_francais(francais):
     assert lic.lien_achat() == lic.LIEN_ACHAT
+
+
+def test_metiers_proposes_dans_les_deux_langues():
+    import ast
+    arbre = ast.parse(open(os.path.join(DOSSIER, "bridgetoleads.pyw"), encoding="utf-8").read())
+    metiers = next(ast.literal_eval(n.value) for n in ast.walk(arbre)
+                   if isinstance(n, ast.Assign) and any(getattr(c, "id", "") == "OCCUPATIONS" for c in n.targets))
+    # Même ordre dans les deux langues : le métier choisi suit le changement de langue
+    assert len(metiers["fr"]) == len(metiers["en"]) == 30
+    assert metiers["fr"][-1] == "traiteur" and metiers["en"][-1] == "caterer"

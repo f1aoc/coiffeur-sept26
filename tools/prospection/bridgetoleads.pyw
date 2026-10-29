@@ -66,7 +66,7 @@ OCCUPATIONS = {
         "plombier", "électricien", "serrurier", "menuisier", "maçon",
         "peintre en bâtiment", "couvreur", "paysagiste", "garage automobile",
         "carrosserie", "auto-école", "toiletteur", "ostéopathe", "kinésithérapeute",
-        "photographe", "cordonnier", "pressing", "tatoueur",
+        "photographe", "cordonnier", "pressing", "tatoueur", "traiteur",
     ],
     "en": [
         "hair salon", "barber shop", "beauty salon", "nail salon", "esthetician",
@@ -74,7 +74,7 @@ OCCUPATIONS = {
         "plumber", "electrician", "locksmith", "carpenter", "mason",
         "house painter", "roofer", "landscaper", "auto repair shop",
         "auto body shop", "driving school", "dog groomer", "chiropractor", "physical therapist",
-        "photographer", "shoe repair", "dry cleaner", "tattoo shop",
+        "photographer", "shoe repair", "dry cleaner", "tattoo shop", "caterer",
     ],
 }
 
