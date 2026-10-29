@@ -111,7 +111,7 @@ Une clé à part, utilisée seulement par le serveur de l'essai. Vous pourrez la
    | **Secret** | `TURNSTILE_SECRET` | la **Secret Key** de l'étape 2 |
    | **Secret** | `BREVO_API_KEY` | la clé `xkeysib-…` de l'étape 3 |
    | **Secret** | `DESINSCRIPTION_SECRET` | une longue phrase aléatoire de 40 caractères ou plus (ne la changez plus ensuite) |
-   | **Text** | `EXPEDITEUR` | `VORELIK <essai@vorelik.com>` |
+   | **Text** | `EXPEDITEUR` | `VORELIK <support@vorelik.com>` |
    | **Text** | `BREVO_LISTE_ESSAI` | le numéro de la liste « Essai BridgeToLeads » |
    | **Text** | `BREVO_LISTE_ACTUS` | le numéro de la liste « Actualités VORELIK » |
    | **Text** | `ORIGINE_SITE` | `https://vorelik.com,https://www.vorelik.com` |

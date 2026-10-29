@@ -449,6 +449,8 @@ async function diagnostic(env) {
     }
   }
   const ok = !Object.entries(variables).some(([v, x]) => x === "ABSENTE" && !["BREVO_LISTE_ACTUS", "PLAFOND_JOUR"].includes(v))
-    && Boolean(env.ESSAIS) && resultat.brevo?.ok !== false;
+    && Boolean(env.ESSAIS) && resultat.brevo?.ok !== false
+    && (!resultat.brevo || ["validé", undefined].includes(resultat.brevo.expediteur))
+    && (!resultat.brevo || ["ok", undefined].includes(resultat.brevo.attributs));
   return [200, { ok, ...resultat }];
 }
