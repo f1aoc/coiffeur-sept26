@@ -1,6 +1,7 @@
 # Essai gratuit BridgeToLeads (vorelik.com/essai/ et vorelik.com/en/trial/)
 
-Le visiteur choisit un métier et une ville, et reçoit par e-mail les 10 commerces sans site web les plus établis.
+Le visiteur choisit un métier et une ville, et reçoit par e-mail les 10 commerces sans site web les plus établis (ou
+n'ayant qu'une page Facebook, Instagram, Yelp, Planity… : même liste que le logiciel BridgeToLeads).
 
 - **La page** est `vitrine/essai/index.html`. Elle est publiée avec le site dès que l'adresse du Worker et la clé
   Turnstile y sont renseignées. D'ici là, la fabrication du site la retire, avec un avertissement.

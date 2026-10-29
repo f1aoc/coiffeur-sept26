@@ -12,7 +12,7 @@
  *
  * Déroulé d'un essai : Turnstile → limites (1 essai par e-mail, 3 par adresse IP et par jour, plafond quotidien
  * total) → Google Places (New) Text Search « métier ville », jusqu'à 3 pages de 20 → fiches sans site (ou
- * avec une simple page Facebook), triées par nombre d'avis, 10 premières → e-mail Brevo → contact ajouté à la
+ * avec seulement une page Facebook, Instagram, Yelp, Planity… : même liste que le logiciel), triées par nombre d'avis, 10 premières → e-mail Brevo → contact ajouté à la
  * liste Brevo « Essai BridgeToLeads ». Un essai sans résultat n'envoie rien et ne consomme pas l'e-mail.
  *
  * Variables (Cloudflare → Worker → Settings → Variables and Secrets) :
@@ -92,7 +92,24 @@ const ESSAIS_PAR_IP = 3;
 const PLAFOND_DEFAUT = 100;
 const JOUR = 86400;
 const EMAIL = /^[^\s@<>"',;]{1,64}@[^\s@<>"',;]+\.[a-z]{2,}$/i;
-const FACEBOOK = ["facebook.com", "fb.com", "fb.me"];
+// Pages qui ne sont pas un vrai site du commerce (même liste que le logiciel, find_no_website.py) → nom affiché.
+// Un commerce qui n'a que l'une d'elles est un prospect : « Instagram seulement », « Yelp only »…
+const PAS_UN_SITE = {
+  "facebook.com": "Facebook", "fb.com": "Facebook", "fb.me": "Facebook", "instagram.com": "Instagram",
+  "tiktok.com": "TikTok", "linkedin.com": "LinkedIn", "twitter.com": "X", "x.com": "X", "youtube.com": "YouTube",
+  "linktr.ee": "Linktree", "wa.me": "WhatsApp", "sites.google.com": "Google Sites", "business.site": "Google Business",
+  "g.page": "Google Business", "planity.com": "Planity", "treatwell.fr": "Treatwell", "treatwell.com": "Treatwell",
+  "kiute.com": "Kiute", "booksy.com": "Booksy", "booksy.net": "Booksy", "fresha.com": "Fresha", "doctolib.fr": "Doctolib",
+  "pagesjaunes.fr": "PagesJaunes", "tripadvisor.fr": "Tripadvisor", "tripadvisor.com": "Tripadvisor",
+  "thefork.fr": "TheFork", "lafourchette.com": "TheFork", "ubereats.com": "Uber Eats", "deliveroo.fr": "Deliveroo",
+  "calendly.com": "Calendly", "yelp.com": "Yelp", "yelp.ca": "Yelp", "yelp.co.uk": "Yelp",
+  "yellowpages.com": "Yellow Pages", "yellowpages.ca": "Yellow Pages", "yell.com": "Yell", "nextdoor.com": "Nextdoor",
+  "bbb.org": "BBB", "angi.com": "Angi", "homeadvisor.com": "HomeAdvisor", "thumbtack.com": "Thumbtack",
+  "houzz.com": "Houzz", "square.site": "Square", "squareup.com": "Square", "vagaro.com": "Vagaro",
+  "styleseat.com": "StyleSeat", "schedulicity.com": "Schedulicity", "mindbodyonline.com": "Mindbody",
+  "opentable.com": "OpenTable", "doordash.com": "DoorDash", "grubhub.com": "Grubhub", "toasttab.com": "Toast",
+  "setmore.com": "Setmore",
+};
 
 // Valeur de pause entre deux pages Google (le jeton de page suivante met un instant à devenir valable).
 export const reglages = { pauseMs: 1500 };
@@ -295,25 +312,28 @@ async function rechercher(requete, env, langue = "fr") {
 
 function hote(adresse) {
   try {
-    return new URL(adresse).hostname.toLowerCase().replace(/^(www|m|web|business)\./, "");
+    return new URL(adresse).hostname.toLowerCase().replace(/^(www|m|web)\./, "");
   } catch {
     return "";
   }
 }
 
-export function pageFacebook(adresse) {
+/** Nom de la page (« Instagram », « Yelp »…) si l'adresse n'est pas un vrai site du commerce, sinon null. */
+export function pageNonSite(adresse) {
   const h = hote(adresse);
-  return FACEBOOK.some((d) => h === d || h.endsWith("." + d));
+  const domaine = Object.keys(PAS_UN_SITE).find((d) => h === d || h.endsWith("." + d));
+  return domaine ? PAS_UN_SITE[domaine] : null;
 }
 
-/** Fiches ouvertes sans site (ou avec une simple page Facebook), sans doublon, triées par nombre d'avis. */
+/** Fiches ouvertes sans site (ou avec seulement une page de réseau social, d'annuaire ou de réservation),
+ *  sans doublon, triées par nombre d'avis. */
 export function selectionner(fiches) {
   const vues = new Set();
   return fiches
     .filter((p) => {
       if (vues.has(p.id)) return false;
       vues.add(p.id);
-      return (p.businessStatus || "OPERATIONAL") === "OPERATIONAL" && (!p.websiteUri || pageFacebook(p.websiteUri));
+      return (p.businessStatus || "OPERATIONAL") === "OPERATIONAL" && (!p.websiteUri || pageNonSite(p.websiteUri) !== null);
     })
     .map((p) => ({
       nom: p.displayName?.text || "",
@@ -321,7 +341,7 @@ export function selectionner(fiches) {
       telephone: p.nationalPhoneNumber || p.internationalPhoneNumber || "",
       note: typeof p.rating === "number" ? p.rating : null,
       avis: p.userRatingCount || 0,
-      site: p.websiteUri ? "facebook" : "aucun",
+      site: p.websiteUri ? pageNonSite(p.websiteUri) : "aucun", // « aucun » ou nom de la page
       maps: p.googleMapsUri || "",
     }))
     .sort((a, b) => b.avis - a.avis)
@@ -350,10 +370,11 @@ const echapper = (t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp
 // Textes de l'e-mail, dans la langue de la page
 const EMAIL_TEXTES = {
   fr: {
-    lang: "fr", sur: "Essai gratuit BridgeToLeads", aucun: "Aucun site", facebook: "Facebook seulement",
+    lang: "fr", sur: "Essai gratuit BridgeToLeads", aucun: "Aucun site", seulement: (page) => `${page} seulement`,
     nombre: (x) => String(x).replace(".", ","), avis: "avis", voir: "Voir",
     titre: (n, m, v) => `Vos ${n} ${pluriel(n, "prospect", "prospects")} : « ${m} » à ${v}`,
-    intro: (a, n) => `Bonjour,<br>Voici les commerces <b>sans site web</b> (ou avec une simple page Facebook) trouvés sur `
+    intro: (a, n) => `Bonjour,<br>Voici les commerces <b>sans site web</b> (ou avec seulement une page Facebook, Instagram, d'annuaire ou de `
+      + `réservation) trouvés sur `
       + `Google Maps, les plus établis en premier : ${a} ${pluriel(a, "fiche analysée", "fiches analysées")}, `
       + `${n} ${pluriel(n, "retenue", "retenues")}.`,
     colonnes: ["Commerce", "Téléphone", "Note", "Maps"],
@@ -369,10 +390,11 @@ const EMAIL_TEXTES = {
     enTete: (m, v) => `Essai gratuit BridgeToLeads — « ${m} » à ${v}`,
   },
   en: {
-    lang: "en", sur: "BridgeToLeads free trial", aucun: "No website", facebook: "Facebook only",
+    lang: "en", sur: "BridgeToLeads free trial", aucun: "No website", seulement: (page) => `${page} only`,
     nombre: (x) => String(x), avis: "reviews", voir: "View",
     titre: (n, m, v) => `Your ${n} ${pluriel(n, "lead", "leads")}: “${m}” in ${v}`,
-    intro: (a, n) => `Hello,<br>Here are the businesses <b>with no website</b> (or just a Facebook page) found on Google Maps, `
+    intro: (a, n) => `Hello,<br>Here are the businesses <b>with no website</b> (or just a social media, directory or booking page) found `
+      + `on Google Maps, `
       + `most established first: ${a} ${pluriel(a, "listing", "listings")} checked, ${n} selected.`,
     colonnes: ["Business", "Phone", "Rating", "Maps"],
     donnees: "Google Maps data.",
@@ -395,7 +417,7 @@ export function contenuEmail({ metier, ville, prospects, analyses, lien, langue 
   const lignes = prospects.map((p, i) => `
         <tr style="background:${i % 2 ? "#FFFFFF" : "#FAF7FF"}">
           <td style="${td}"><div style="font-weight:700;color:#1E1B4B">${echapper(p.nom)}</div>
-            <div style="margin-top:3px;font-size:12px;font-weight:700;color:${p.site === "aucun" ? "#DB2777" : "#6D28D9"}">${p.site === "aucun" ? T.aucun : T.facebook}</div>
+            <div style="margin-top:3px;font-size:12px;font-weight:700;color:${p.site === "aucun" ? "#DB2777" : "#6D28D9"}">${echapper(p.site === "aucun" ? T.aucun : T.seulement(p.site))}</div>
             <div style="margin-top:3px;font-size:12px;color:#6B6893">${echapper(p.adresse)}</div></td>
           <td style="${td};white-space:nowrap">${p.telephone ? `<a href="tel:${echapper(p.telephone.replace(/[^\d+]/g, ""))}" style="color:#1E1B4B;text-decoration:none">${echapper(p.telephone)}</a>` : "—"}</td>
           <td style="${td};white-space:nowrap">${p.note === null ? "" : `${echapper(T.nombre(p.note))}&nbsp;★<br>`}<span style="font-size:12px;color:#6B6893">${p.avis}&nbsp;${T.avis}</span></td>
@@ -433,7 +455,7 @@ export function contenuEmail({ metier, ville, prospects, analyses, lien, langue 
   </div>
 </body></html>`;
   const texte = [T.enTete(metier, ville), "",
-    ...prospects.map((p, i) => `${i + 1}. ${p.nom} — ${p.site === "aucun" ? T.aucun : T.facebook} — ${p.telephone || T.sansTel}`
+    ...prospects.map((p, i) => `${i + 1}. ${p.nom} — ${p.site === "aucun" ? T.aucun : T.seulement(p.site)} — ${p.telephone || T.sansTel}`
       + ` — ${p.adresse} — ${p.note === null ? T.sansNote : T.nombre(p.note) + " ★"} (${p.avis} ${T.avis})${p.maps ? " — " + p.maps : ""}`),
     "", T.donnees, "", `${T.decouvrir} ${page}`, "", `${T.desinscrireTexte} ${lien}`].join("\n");
   return { sujet: T.sujet(n, metier, ville), html, texte };

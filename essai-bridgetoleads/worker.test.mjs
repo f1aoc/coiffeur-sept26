@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { beforeEach, test } from "node:test";
 
-import worker, { contenuEmail, pageFacebook, reglages, selectionner } from "./worker.js";
+import worker, { contenuEmail, pageNonSite, reglages, selectionner } from "./worker.js";
 
 reglages.pauseMs = 0;
 const SITE = "https://vorelik.com";
@@ -96,10 +96,11 @@ test("essai réussi : Google paginé, fiches sans site ou Facebook, triées par 
   assert.match(html, /https:\/\/vorelik\.com\/bridgetoleads\//);
   assert.match(html, /Se désinscrire/);
   assert.match(mail.corps.headers["List-Unsubscribe"], /^<https:\/\/essai\.test\/desinscription\?e=jean%40exemple\.fr&s=[0-9a-f]{32}>$/);
-  // Ordre : plus d'avis d'abord ; Instagram (site réel), fermée et sites réels exclus
+  // Ordre : plus d'avis d'abord ; Instagram seulement = prospect ; fermée et sites réels exclus
   const noms = [...html.matchAll(/<div style="font-weight:700;color:#1E1B4B">([^<]+)</g)].map((m) => m[1]);
-  assert.deepEqual(noms.slice(0, 3), ["Salon 30", "Salon 32", "Salon 18"]);
-  assert.ok(!noms.includes("Salon 31") && !noms.includes("Salon 33") && !noms.includes("Salon 3"));
+  assert.deepEqual(noms.slice(0, 4), ["Salon 33", "Salon 30", "Salon 32", "Salon 18"]);
+  assert.ok(!noms.includes("Salon 31") && !noms.includes("Salon 3"));
+  assert.match(html, /Instagram seulement/);
   assert.equal(noms.length, 10);
   assert.match(html, /Facebook seulement/);
 
@@ -227,12 +228,17 @@ test("e-mail : contenu échappé (pas d'injection HTML)", () => {
   assert.match(texte, /Données Google Maps/);
 });
 
-test("pages Facebook reconnues", () => {
-  assert.ok(pageFacebook("https://www.facebook.com/salon"));
-  assert.ok(pageFacebook("http://m.facebook.com/x"));
-  assert.ok(pageFacebook("https://fb.me/x"));
-  assert.ok(!pageFacebook("https://facebook.com.pirate.fr/"));
-  assert.ok(!pageFacebook("https://instagram.com/x"));
+test("pages qui ne sont pas un vrai site (réseaux, annuaires, réservation)", () => {
+  assert.equal(pageNonSite("https://www.facebook.com/salon"), "Facebook");
+  assert.equal(pageNonSite("http://m.facebook.com/x"), "Facebook");
+  assert.equal(pageNonSite("https://fb.me/x"), "Facebook");
+  assert.equal(pageNonSite("https://instagram.com/x"), "Instagram");
+  assert.equal(pageNonSite("https://www.yelp.com/biz/joes"), "Yelp");
+  assert.equal(pageNonSite("https://joes-barber.square.site/"), "Square");
+  assert.equal(pageNonSite("https://www.planity.com/salon-lea"), "Planity");
+  assert.equal(pageNonSite("https://monsalon.business.site/"), "Google Business");
+  assert.equal(pageNonSite("https://facebook.com.pirate.fr/"), null);
+  assert.equal(pageNonSite("https://salon-lea.fr/"), null);
   assert.equal(selectionner([fiche(1), fiche(1)]).length, 1);
 });
 
@@ -335,4 +341,10 @@ test("langue inconnue : français par défaut", async () => {
   const r = await envoyer({ langue: "de" });
   assert.match(r.corps.message, /^C'est parti/);
   assert.equal(vers("https://places.googleapis.com/")[0].corps.regionCode, "FR");
+});
+
+test("e-mail : nom de la page dans les deux langues", () => {
+  const p = { nom: "Joe", adresse: "Austin", telephone: "", note: 4.1, avis: 9, site: "Yelp", maps: "" };
+  assert.match(contenuEmail({ metier: "x", ville: "y", analyses: 1, lien: "l", prospects: [p], langue: "en" }).html, /Yelp only/);
+  assert.match(contenuEmail({ metier: "x", ville: "y", analyses: 1, lien: "l", prospects: [p] }).html, /Yelp seulement/);
 });
