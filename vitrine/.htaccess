@@ -22,6 +22,8 @@ DirectoryIndex index.html
 # (?session_id=… des pages Merci, ?ref=… de l'essai gratuit) sont conservés.
 <IfModule mod_rewrite.c>
   RewriteEngine On
+  # Repris du .htaccess d'origine d'o2switch/cPanel : hérite des règles des dossiers parents (certificat SSL…)
+  RewriteOptions inherit
   RewriteCond %{HTTPS} !=on
   RewriteCond %{HTTP:X-Forwarded-Proto} !=https
   RewriteRule ^ https://www.vorelik.com%{REQUEST_URI} [R=301,L]
