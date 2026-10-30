@@ -156,5 +156,9 @@ quotidien commun aux deux langues). La page anglaise envoie `langue=en` :
   « Essai site vorelik ». Vos logiciels n'en dépendent pas.
 - **Désinscription** : le lien de l'e-mail ouvre une page avec un bouton de confirmation. Les messageries qui
   « visitent » les liens ne désinscrivent donc personne par erreur. L'adresse est ensuite bloquée dans Brevo.
+- **Journal des domaines** : l'adresse du Worker suivie de `/domaines` liste, par langue, les domaines des « sites »
+  trouvés par les essais, regroupés (ex. `12 × glossgenius.com`). Un domaine partagé par plusieurs commerces est sans
+  doute une plateforme de réservation ou un annuaire : à ajouter à `PAS_UN_SITE` (serveur) et à `NOT_A_REAL_SITE`
+  (logiciel). Aucune donnée de visiteur n'y figure.
 - **Tests automatiques** (pour les développeurs) : `node --test essai-bridgetoleads/worker.test.mjs`. Google, Brevo
   et Turnstile y sont simulés.

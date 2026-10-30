@@ -9,6 +9,8 @@
  *   POST /desinscription  bouton de cette page, ou désinscription « en un clic » des messageries (List-Unsubscribe-Post)
  *                        → bloque l'adresse dans Brevo
  *   GET  /diagnostic      contrôle de la configuration (variables, clé Brevo, liste, mémoire KV), sans appel Google
+ *   GET  /domaines        domaines des « sites » trouvés par les essais (comptés par langue), pour repérer les
+ *                        plateformes de réservation ou annuaires à ajouter à PAS_UN_SITE (aucune donnée de visiteur)
  *
  * Déroulé d'un essai : Turnstile → limites (1 essai par e-mail, 3 par adresse IP et par jour, plafond quotidien
  * total) → Google Places (New) Text Search « métier ville », jusqu'à 3 pages de 20 → fiches sans site (ou
@@ -129,6 +131,8 @@ export default {
       let statut, corps;
       if (request.method === "POST" && url.pathname === "/essai") {
         [statut, corps] = await essai(request, env);
+      } else if (request.method === "GET" && url.pathname === "/domaines") {
+        [statut, corps] = [200, await domainesVus(env)];
       } else if (request.method === "GET" && url.pathname === "/diagnostic") {
         [statut, corps] = await diagnostic(env);
       } else if (url.pathname === "/") {
@@ -239,6 +243,11 @@ async function essai(request, env) {
   await compter(env, cleIp, Number(essaisIp || 0) + 1, 2 * JOUR);
   await compter(env, cleJour, Number(essaisJour || 0) + 1, 2 * JOUR);
 
+  try {
+    await noterDomaines(fiches, langue, env);
+  } catch (e) {
+    console.error("journal des domaines", e.message); // simple statistique : ne bloque jamais l'essai
+  }
   const prospects = selectionner(fiches);
   if (!prospects.length) {
     return [200, { ok: true, trouves: 0, message: MESSAGES[langue].aucun(metier, ville, fiches.length) }];
@@ -346,6 +355,50 @@ export function selectionner(fiches) {
     }))
     .sort((a, b) => b.avis - a.avis)
     .slice(0, RETENUS);
+}
+
+// ------------------------------------------------------------------------------------- journal des domaines
+
+const MAX_DOMAINES = 300;
+
+/** Domaine principal : salon.glossgenius.com → glossgenius.com ; shop.example.co.uk → example.co.uk. */
+export function domainePrincipal(adresse) {
+  const parties = hote(adresse).split(".").filter(Boolean);
+  if (parties.length <= 2) return parties.join(".");
+  const deuxNiveaux = /^(co|com|org|net|gov|ac)$/.test(parties.at(-2)) && parties.at(-1).length === 2;
+  return parties.slice(deuxNiveaux ? -3 : -2).join(".");
+}
+
+/** Compte, par langue, les domaines des sites trouvés (sites reconnus comme « pas un vrai site » compris). */
+export async function noterDomaines(fiches, langue, env) {
+  const cle = `domaines:${langue}`;
+  const journal = JSON.parse((await env.ESSAIS.get(cle)) || '{"essais":0,"fiches":0,"sans_site":0,"domaines":{}}');
+  journal.essais += 1;
+  journal.fiches += fiches.length;
+  for (const p of fiches) {
+    if (!p.websiteUri) { journal.sans_site += 1; continue; }
+    const d = domainePrincipal(p.websiteUri);
+    if (d) journal.domaines[d] = (journal.domaines[d] || 0) + 1;
+  }
+  // On garde les domaines les plus fréquents (les plateformes) : les sites isolés comptent 1 et sortent en premier.
+  journal.domaines = Object.fromEntries(Object.entries(journal.domaines).sort((a, b) => b[1] - a[1]).slice(0, MAX_DOMAINES));
+  await env.ESSAIS.put(cle, JSON.stringify(journal));
+}
+
+async function domainesVus(env) {
+  if (!env.ESSAIS) return { erreur: "mémoire KV absente" };
+  const resultat = {};
+  for (const langue of ["fr", "en"]) {
+    const j = JSON.parse((await env.ESSAIS.get(`domaines:${langue}`)) || '{"essais":0,"fiches":0,"sans_site":0,"domaines":{}}');
+    resultat[langue] = {
+      essais: j.essais, fiches: j.fiches, sans_site: j.sans_site,
+      // plusieurs commerces sur le même domaine = sans doute une plateforme ; « connu » = déjà dans PAS_UN_SITE
+      domaines: Object.entries(j.domaines).filter(([, n]) => n >= 2).slice(0, 100)
+        .map(([d, n]) => `${n} × ${d}${pageNonSite(`https://${d}/`) ? " (connu)" : ""}`),
+      domaines_vus_une_fois: Object.values(j.domaines).filter((n) => n === 1).length,
+    };
+  }
+  return resultat;
 }
 
 // ---------------------------------------------------------------------------------------------------- Brevo

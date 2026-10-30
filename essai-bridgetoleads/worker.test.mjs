@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { beforeEach, test } from "node:test";
 
-import worker, { contenuEmail, pageNonSite, reglages, selectionner } from "./worker.js";
+import worker, { contenuEmail, domainePrincipal, pageNonSite, reglages, selectionner } from "./worker.js";
 
 reglages.pauseMs = 0;
 const SITE = "https://vorelik.com";
@@ -347,4 +347,21 @@ test("e-mail : nom de la page dans les deux langues", () => {
   const p = { nom: "Joe", adresse: "Austin", telephone: "", note: 4.1, avis: 9, site: "Yelp", maps: "" };
   assert.match(contenuEmail({ metier: "x", ville: "y", analyses: 1, lien: "l", prospects: [p], langue: "en" }).html, /Yelp only/);
   assert.match(contenuEmail({ metier: "x", ville: "y", analyses: 1, lien: "l", prospects: [p] }).html, /Yelp seulement/);
+});
+
+test("journal des domaines : plateformes comptées par langue, visible sur /domaines", async () => {
+  pagesGoogle = [[fiche(1, { site: "https://salon-a.glossgenius.com/" }), fiche(2, { site: "https://salon-b.glossgenius.com/book" }),
+    fiche(3, { site: "https://www.yelp.com/biz/x" }), fiche(4, { site: "https://www.yelp.com/biz/y" }),
+    fiche(5, { site: "https://joes-salon.com/" }), fiche(6)]];
+  await envoyer({ langue: "en" });
+  await envoyer({ langue: "en", email: "b@exemple.fr" });
+  const r = await worker.fetch(new Request("https://essai.test/domaines"), env);
+  const d = await r.json();
+  assert.equal(d.en.essais, 2);
+  assert.equal(d.en.fiches, 12);
+  assert.equal(d.en.sans_site, 2);
+  assert.deepEqual(d.en.domaines, ["4 × glossgenius.com", "4 × yelp.com (connu)", "2 × joes-salon.com"]);
+  assert.equal(d.fr.essais, 0);
+  assert.equal(domainePrincipal("https://shop.example.co.uk/x"), "example.co.uk");
+  assert.equal(domainePrincipal("https://www.salon.fr"), "salon.fr");
 });
