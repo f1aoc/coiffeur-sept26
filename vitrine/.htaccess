@@ -1,0 +1,68 @@
+# vorelik.com — réglages du serveur web (o2switch, Apache)
+# Ce fichier est à la racine du site. Il est invisible par défaut dans le gestionnaire de fichiers de cPanel :
+# Paramètres (en haut à droite) → cocher « Afficher les fichiers cachés (dotfiles) ».
+
+# ---------- Pages d'erreur ----------
+# Page introuvable humoristique (la version anglaise est réglée dans en/.htaccess)
+ErrorDocument 404 /404.html
+# Dossier ou fichier interdit (403) : même page, plutôt que la page grise du serveur
+ErrorDocument 403 /404.html
+
+# ---------- Sécurité de base ----------
+# Pas de liste des fichiers quand un dossier n'a pas de page index.html
+Options -Indexes
+DirectoryIndex index.html
+# Les notes internes (README.md…) ne sont pas publiques
+<FilesMatch "\.(md|yml|yaml|py|sh)$">
+  Require all denied
+</FilesMatch>
+
+# ---------- Adresse unique : https://www.vorelik.com ----------
+# Toujours en HTTPS, toujours avec www (comme les liens de paiement Stripe). Les paramètres de l'adresse
+# (?session_id=… des pages Merci, ?ref=… de l'essai gratuit) sont conservés.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+  RewriteRule ^ https://www.vorelik.com%{REQUEST_URI} [R=301,L]
+  RewriteCond %{HTTP_HOST} ^vorelik\.com$ [NC]
+  RewriteRule ^ https://www.vorelik.com%{REQUEST_URI} [R=301,L]
+</IfModule>
+
+# ---------- En-têtes de sécurité ----------
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+</IfModule>
+
+# ---------- Types de fichiers ----------
+AddType font/woff2 .woff2
+AddDefaultCharset utf-8
+
+# ---------- Compression (pages plus rapides) ----------
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript application/javascript application/json image/svg+xml
+</IfModule>
+
+# ---------- Cache du navigateur ----------
+# Pages HTML : toujours la dernière version (vos mises à jour se voient tout de suite).
+# Images et polices : gardées plus longtemps (chargement plus rapide pour les visiteurs qui reviennent).
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresDefault "access plus 1 hour"
+  ExpiresByType text/html "access plus 0 seconds"
+  ExpiresByType text/css "access plus 1 week"
+  ExpiresByType application/javascript "access plus 1 week"
+  ExpiresByType image/png "access plus 1 month"
+  ExpiresByType image/jpeg "access plus 1 month"
+  ExpiresByType image/svg+xml "access plus 1 month"
+  ExpiresByType image/x-icon "access plus 1 month"
+  ExpiresByType font/woff2 "access plus 1 year"
+</IfModule>
+<IfModule mod_headers.c>
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>

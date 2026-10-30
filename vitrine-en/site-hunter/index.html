@@ -253,6 +253,10 @@
     .drapeau svg { width: 28px; height: 18px; border-radius: 3px; box-shadow: 0 0 0 1px rgba(0, 0, 0, .15), 0 2px 6px rgba(0, 0, 0, .18); transition: transform .15s ease; }
     .drapeau:hover svg { transform: scale(1.12); }
     @media (max-width: 380px) { .nav-links, .links { gap: 10px; } .drapeau svg { width: 24px; height: 16px; } }
+    /* Logo VORELIK en haut à gauche (version lettres foncées pour les fonds clairs) */
+    .nav .logo-vorelik { display: inline-flex; align-items: center; flex: 0 0 auto; line-height: 0; }
+    .nav .logo-vorelik img { display: block; width: 170px; height: auto; }
+    @media (max-width: 620px) { .nav .logo-vorelik img { width: 128px; } }
   </style>
   <link rel="alternate" hreflang="fr" href="https://www.vorelik.com/chasseur-de-sites/">
   <link rel="alternate" hreflang="en" href="https://www.vorelik.com/en/site-hunter/">
@@ -260,7 +264,7 @@
 <body class="no-js">
   <nav class="nav" id="nav">
     <div class="wrap">
-      <a class="brand" href="#top"><img src="assets/icon.png" alt="">Site Hunter<small class="by">by VORELIK</small></a>
+      <a class="logo-vorelik" href="../"><img src="../../assets/vorelik-logo-sombre.png" width="240" height="80" alt="VORELIK"></a>
       <div class="nav-links">
         <a href="#how">How it works</a>
         <a href="#features">Features</a>

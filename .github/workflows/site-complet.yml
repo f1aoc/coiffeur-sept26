@@ -33,12 +33,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p public/bridgetoleads public/chasseur-de-sites public/audit-express
-          cp -r vitrine/* public/
+          cp -r vitrine/. public/   # « /. » : copie aussi .htaccess (fichier caché)
           cp -r chasseur-de-sites/site/* public/chasseur-de-sites/
           cp -r audit-express/site/* public/audit-express/
           # Version anglaise (/en/) : chaque page de vente est publiée dès que son lien de paiement Stripe en dollars
           # est renseigné (A_REMPLACER sinon) ; l'accueil anglais seulement quand toutes ses pages le sont.
-          mkdir -p public/en && cp -r vitrine-en/* public/en/
+          mkdir -p public/en && cp -r vitrine-en/. public/en/
           retirees=0
           for page in public/en/*/index.html; do
             if grep -q "A_REMPLACER" "$page"; then
@@ -63,7 +63,7 @@ jobs:
           grep -q "buy.stripe.com" public/bridgetoleads/index.html || { echo "Page BridgeToLeads sans lien Stripe"; exit 1; }
           grep -q "buy.stripe.com" public/chasseur-de-sites/index.html || { echo "Page Chasseur de sites sans lien Stripe"; exit 1; }
           grep -q "buy.stripe.com" public/audit-express/index.html || { echo "Page Audit express sans lien Stripe"; exit 1; }
-          for f in cgv.html confidentialite.html cookies.html; do test -f "public/$f" || { echo "Page $f absente"; exit 1; }; done
+          for f in cgv.html confidentialite.html cookies.html 404.html .htaccess en/404.html en/.htaccess; do test -f "public/$f" || { echo "Fichier $f absent"; exit 1; }; done
           # Police hébergée sur le site au lieu de Google Fonts (aucune adresse IP de visiteur transmise à Google)
           python3 .github/scripts/polices_locales.py public
           # Téléchargements depuis Cloudflare R2 dès que les 9 fichiers y sont (sinon liens GitHub, avec un avertissement)
