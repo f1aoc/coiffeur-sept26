@@ -1,11 +1,17 @@
-"""Stories Facebook / Instagram VORELIK (anglais), 1080 × 1920.
+"""Stories Facebook / Instagram VORELIK (anglais et français), 1080 × 1920.
 Zone sûre : ni texte ni bouton dans les 260 px du haut (nom de la page) ni les 360 px du bas (barre de réponse)."""
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
-from facebook import BASE, CAPTURES, ICONES, LOGO, NOMS, fond  # noqa: E402
+from facebook import A, BASE, CAPTURES, ICONES, LOGO, NOMS, fond  # noqa: E402
 
-def story(couleur, titre, sous, bouton, etiquette=None, capture=None, icone=None, nom=None, liste=False):
+LISTE = {"en": (("btl", "BridgeToLeads", "Businesses with no website"), ("cds", "Site Hunter", "Broken or outdated websites"),
+                ("aex", "Audit Express", "Audits that win deals")),
+         "fr": (("btl", "BridgeToLeads", "Les commerces sans site web"), ("cds", "Chasseur de sites", "Les sites cassés ou dépassés"),
+                ("aex", "Audit express", "Un audit qui fait signer"))}
+CAPTURES_FR = {"btl": A / "bridgetoleads-apercu.jpg", "cds": A / "chasseur-apercu.jpg", "aex": A / "audit-express-apercu.jpg"}
+
+def story(couleur, titre, sous, bouton, etiquette=None, capture=None, icone=None, nom=None, liste=False, langue="en"):
     tete = (f'<div class="pastille" style="font-size:34px"><img src="{icone}" style="width:62px;height:62px">{nom}</div>' if icone
             else f'<img src="{LOGO}" style="width:330px;display:block">')
     milieu = ""
@@ -15,9 +21,8 @@ def story(couleur, titre, sous, bouton, etiquette=None, capture=None, icone=None
                   + "</div>")
     if liste:
         milieu = '<div class="liste">' + "".join(
-            f'<div><img src="{ICONES[k]}"><p><b>{NOMS[k]}</b><span>{t}</span></p></div>'
-            for k, t in (("btl", "Businesses with no website"), ("cds", "Broken or outdated websites"), ("aex", "Audits that win deals"))) + "</div>"
-    return f"""<!doctype html><html data-taille="1080x1920"><head><meta charset="utf-8">{BASE}<style>
+            f'<div><img src="{ICONES[k]}"><p><b>{n}</b><span>{t}</span></p></div>' for k, n, t in LISTE[langue]) + "</div>"
+    return f"""<!doctype html><html lang="{langue}" data-taille="1080x1920"><head><meta charset="utf-8">{BASE}<style>
   html, body {{ width: 1080px; height: 1920px; }}
   .zone {{ position: absolute; left: 70px; right: 70px; top: 270px; bottom: 380px; display: flex; flex-direction: column; gap: 34px; }}
   h1 {{ font-size: 96px; white-space: nowrap; line-height: 1.0; letter-spacing: -.035em; text-shadow: 0 6px 0 rgba(0,0,0,.3), 0 18px 40px rgba(0,0,0,.45); }}
@@ -57,7 +62,23 @@ STORIES = [
         sous="We email you the 10 most established businesses with no website.", bouton="Get my free leads",
         etiquette=("100% free", "#FDE68A", "#1E1B4B"), capture=CAPTURES["btl"], icone=ICONES["btl"], nom="Free trial")),
 ]
+STORIES_FR = [
+    ("vorelik-story-fr-1-presentation", dict(couleur="vorelik", titre='Trouvez vos<br><span class="jaune">prochains<br>clients.</span>',
+        sous="Trois logiciels simples qui trouvent les commerces qui ont besoin d'un site web.", bouton="vorelik.com", liste=True, langue="fr")),
+    ("vorelik-story-fr-2-bridgetoleads", dict(couleur="btl", titre='10 clients<br><span class="jaune">sans site web</span><br>en 2 minutes',
+        sous="Les commerces sans site web, directement depuis Google Maps.", bouton="Essai gratuit",
+        etiquette=("✖ Aucun site", "#DB2777", "#fff"), capture=CAPTURES_FR["btl"], icone=ICONES["btl"], nom="BridgeToLeads", langue="fr")),
+    ("vorelik-story-fr-3-chasseur-de-sites", dict(couleur="cds", titre='Leur site est<br><span class="jaune">cassé.</span><br>Refaites-le !',
+        sous="Sites cassés, expirés ou dépassés, preuves à l'appui.", bouton="vorelik.com",
+        etiquette=("⚠ Site cassé", "#DC2626", "#fff"), capture=CAPTURES_FR["cds"], icone=ICONES["cds"], nom="Chasseur de sites", langue="fr")),
+    ("vorelik-story-fr-4-audit-express", dict(couleur="aex", titre="L'audit qui<br><span class=\"jaune\">fait signer</span><br>en 1 minute",
+        sous="Une note de A à F et un rapport PDF à votre marque.", bouton="vorelik.com",
+        etiquette=("Note : C", "#DC2626", "#fff"), capture=CAPTURES_FR["aex"], icone=ICONES["aex"], nom="Audit express", langue="fr")),
+    ("vorelik-story-fr-5-essai-gratuit", dict(couleur="btl", titre='<span class="jaune">10 prospects</span><br>dans votre ville.<br><span class="jaune">Gratuit.</span>',
+        sous="Nous vous envoyons par e-mail les 10 commerces sans site web les plus établis.", bouton="Recevoir mes prospects",
+        etiquette=("100 % gratuit", "#FDE68A", "#1E1B4B"), capture=CAPTURES_FR["btl"], icone=ICONES["btl"], nom="Essai gratuit", langue="fr")),
+]
 sortie = Path(sys.argv[1])
-for nom, args in STORIES:
+for nom, args in STORIES + STORIES_FR:
     (sortie / f"{nom}.html").write_text(story(**args))
 print("ok")
