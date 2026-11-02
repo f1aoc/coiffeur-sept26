@@ -1,0 +1,87 @@
+VORELIK — Textes des publicités Meta (Facebook et Instagram)
+=============================================================
+Dans le Gestionnaire de publicités, pour chaque annonce : choisissez les 2 visuels (carré pour le fil, vertical pour
+stories et Reels), puis collez les champs ci-dessous. Gardez un « ref » différent par annonce pour comparer les
+résultats dans Brevo (attribut REF des contacts).
+
+Longueurs conseillées par Meta : texte principal ≈ 125 caractères avant le « … Voir plus », titre ≤ 40, description ≤ 30.
+
+
+═══════════════════════════════ FRANÇAIS (campagne France) ═══════════════════════════════
+
+ANNONCE FR 1 — « 10 prospects gratuits »
+Visuels : vorelik-pub-fr-1-essai-carre.png + vorelik-pub-fr-1-essai-vertical.png
+Texte principal :
+  🎁 Recevez gratuitement 10 commerces de votre ville qui n'ont pas de site web, avec leur téléphone.
+  Choisissez un métier (coiffeur, plombier, boulangerie…) et une ville : la liste arrive par e-mail en quelques secondes.
+  Sans carte bancaire. Rien à installer.
+Titre : 10 prospects gratuits dans votre ville
+Description : Résultat en quelques secondes
+Bouton : S'inscrire
+Lien : https://vorelik.com/essai/?ref=fb-ads-fr-1
+
+ANNONCE FR 2 — « Commerces sans site web »
+Visuels : vorelik-pub-fr-2-sans-site-carre.png + vorelik-pub-fr-2-sans-site-vertical.png
+Texte principal :
+  Dans votre ville, des commerces bien notés n'ont toujours pas de site web. 🔎
+  BridgeToLeads les trouve sur Google Maps, par métier et par ville, et les classe par nombre d'avis : les plus établis d'abord.
+  Testez gratuitement : 10 prospects reçus par e-mail.
+Titre : Trouvez les commerces sans site web
+Description : Gratuit, sans carte bancaire
+Bouton : En savoir plus
+Lien : https://vorelik.com/essai/?ref=fb-ads-fr-2
+
+ANNONCE FR 3 — « Le plus dur, c'est de trouver le client »
+Visuels : vorelik-pub-fr-3-trouver-client-carre.png + vorelik-pub-fr-3-trouver-client-vertical.png
+Texte principal :
+  Créer un site web, vous savez faire. Trouver le client, c'est une autre histoire. 😅
+  BridgeToLeads repère les commerces de votre ville qui n'ont pas de site, avec téléphone et adresse : de vrais prospects, prêts à appeler.
+  Essayez gratuitement, 10 prospects offerts.
+Titre : Vos prochains clients, sans chercher
+Description : 10 prospects offerts
+Bouton : S'inscrire
+Lien : https://vorelik.com/essai/?ref=fb-ads-fr-3
+
+
+═══════════════════════════════ ENGLISH (campagne États-Unis, Royaume-Uni, Canada) ═══════════════════════════════
+
+AD EN 1 — "10 free leads"
+Images: vorelik-pub-en-1-trial-carre.png + vorelik-pub-en-1-trial-vertical.png
+Primary text:
+  🎁 Get 10 local businesses with no website in your city, with phone numbers. Free.
+  Pick a business type (hair salon, plumber, roofer…) and a city: the list lands in your inbox within seconds.
+  No credit card. Nothing to install.
+Headline: 10 free leads in your city
+Description: Results in seconds
+Button: Sign up
+Link: https://vorelik.com/en/trial/?ref=fb-ads-en-1
+
+AD EN 2 — "Businesses with no website"
+Images: vorelik-pub-en-2-no-website-carre.png + vorelik-pub-en-2-no-website-vertical.png
+Primary text:
+  Plenty of well-reviewed local businesses still have no website. 🔎
+  BridgeToLeads finds them on Google Maps, by business type and city, and ranks them by number of reviews: the most established first.
+  Try it free: 10 leads straight to your inbox.
+Headline: Find businesses with no website
+Description: Free trial, no credit card
+Button: Learn more
+Link: https://vorelik.com/en/trial/?ref=fb-ads-en-2
+
+AD EN 3 — "The hard part is finding the client"
+Images: vorelik-pub-en-3-find-client-carre.png + vorelik-pub-en-3-find-client-vertical.png
+Primary text:
+  Building websites is the easy part. Finding the client is another story. 😅
+  BridgeToLeads spots local businesses in your city with no website, with phone and address: real leads, ready to call.
+  Try it free and get 10 leads.
+Headline: Your next clients, found for you
+Description: 10 free leads
+Button: Sign up
+Link: https://vorelik.com/en/trial/?ref=fb-ads-en-3
+
+
+═══════════════════════════════ RÈGLES À RESPECTER (politiques publicitaires de Meta) ═══════════════════════════════
+- Ne pas écrire « Facebook » ni « Instagram » dans les textes ou les images des annonces.
+- Ne pas interpeller sur une caractéristique personnelle (« Vous êtes au chômage ? », « Vous êtes endetté ? »…).
+  Parler du métier (« Créer un site web, vous savez faire ») est accepté.
+- Pas de promesse de résultat garanti (« Gagnez 5 000 € par mois ») : on promet des prospects, pas des contrats.
+- La page d'arrivée doit correspondre à l'annonce : ici, la page d'essai gratuit, en français ou en anglais.

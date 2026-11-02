@@ -78,7 +78,8 @@ STORIES_FR = [
         sous="Nous vous envoyons par e-mail les 10 commerces sans site web les plus établis.", bouton="Recevoir mes prospects",
         etiquette=("100 % gratuit", "#FDE68A", "#1E1B4B"), capture=CAPTURES_FR["btl"], icone=ICONES["btl"], nom="Essai gratuit", langue="fr")),
 ]
-sortie = Path(sys.argv[1])
-for nom, args in STORIES + STORIES_FR:
-    (sortie / f"{nom}.html").write_text(story(**args))
-print("ok")
+if __name__ == "__main__":
+    sortie = Path(sys.argv[1])
+    for nom, args in STORIES + STORIES_FR:
+        (sortie / f"{nom}.html").write_text(story(**args))
+    print("ok")

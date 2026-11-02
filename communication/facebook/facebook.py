@@ -160,11 +160,12 @@ def visuels_fr():
         "Choisissez un métier et une ville : nous vous envoyons les 10 commerces sans site web les plus établis.",
         "vorelik.com/essai →", ("100 % gratuit", "#FDE68A", "#1E1B4B"), CAPTURES_FR["btl"], ICONES["btl"], "Essai gratuit", langue="fr"), (1080, 1080)
 
-sortie = Path(sys.argv[1])
-for nom, html, (l, h) in list(visuels()) + list(visuels_fr()):
-    if INSTAGRAM:
-        if "post" not in nom:
-            continue
-        nom, h = nom.replace("facebook-post", "instagram-post"), HAUTEUR
-    (sortie / f"{nom}.html").write_text(html.replace("<html", f'<html data-taille="{l}x{h}"', 1))
-print("ok")
+if __name__ == "__main__":
+    sortie = Path(sys.argv[1])
+    for nom, html, (l, h) in list(visuels()) + list(visuels_fr()):
+        if INSTAGRAM:
+            if "post" not in nom:
+                continue
+            nom, h = nom.replace("facebook-post", "instagram-post"), HAUTEUR
+        (sortie / f"{nom}.html").write_text(html.replace("<html", f'<html data-taille="{l}x{h}"', 1))
+    print("ok")
