@@ -1,4 +1,4 @@
-"""Kit Facebook VORELIK (anglais) : couverture 1640 × 924 et visuels de publication 1080 × 1080."""
+"""Kit Facebook VORELIK : couverture 1640 × 924 (anglais) et visuels de publication 1080 × 1080 (anglais et français)."""
 import sys
 from pathlib import Path
 
@@ -59,7 +59,7 @@ def couverture():
     <div class="apps">{apps}</div><div class="site"><span class="aurora">vorelik.com/en</span> · Windows &amp; Mac · One-time payment</div></div>
 </body></html>"""
 
-def publication(cle, couleur, titre, sous, bouton, etiquette=None, capture=None, icone=None, nom=None, liste=False):
+def publication(cle, couleur, titre, sous, bouton, etiquette=None, capture=None, icone=None, nom=None, liste=False, langue="en"):
     tete = (f'<div class="pastille" style="position:absolute;left:60px;top:60px;font-size:30px"><img src="{icone}">{nom}</div>' if icone
             else f'<img src="{LOGO}" style="position:absolute;left:60px;top:58px;width:250px">')
     fen = f'<div class="fenetre" style="right:-120px;bottom:150px;width:640px;transform:rotate(-4deg)"><img src="{capture}"></div>' if capture else ""
@@ -78,14 +78,22 @@ def publication(cle, couleur, titre, sous, bouton, etiquette=None, capture=None,
      box-shadow: inset 0 0 0 1px rgba(255,255,255,.18); }}
   .liste img {{ width: 60px; height: 60px; border-radius: 15px; }}
   .liste b {{ display: block; font-size: 28px; }} .liste span {{ display: block; font-size: 19px; color: #C3CAE0; }}
-</style></head><body>{fond(couleur)}{fen}{eti}{tete}{LISTE if liste else ""}
+</style></head><body>{fond(couleur)}{fen}{eti}{tete}{LISTES[langue] if liste else ""}
   <h1>{titre}</h1><p class="sous">{sous}</p>
   <div class="bas"><span class="bouton">{bouton}</span></div>
   {'' if not icone else f'<img class="marque" src="{LOGO}" style="right:auto;left:60px;bottom:150px;width:0">'}
 </body></html>"""
 
-LISTE = '<div class="liste">' + "".join(f'<div><img src="{ICONES[k]}"><p><b>{NOMS[k]}</b><span>{t}</span></p></div>'
-    for k, t in (("btl", "Businesses with no website"), ("cds", "Broken or outdated websites"), ("aex", "Audits that win deals"))) + "</div>"
+def _liste(elements):
+    return '<div class="liste">' + "".join(f'<div><img src="{ICONES[k]}"><p><b>{n}</b><span>{t}</span></p></div>' for k, n, t in elements) + "</div>"
+
+LISTES = {
+    "en": _liste((("btl", "BridgeToLeads", "Businesses with no website"), ("cds", "Site Hunter", "Broken or outdated websites"),
+                  ("aex", "Audit Express", "Audits that win deals"))),
+    "fr": _liste((("btl", "BridgeToLeads", "Les commerces sans site web"), ("cds", "Chasseur de sites", "Les sites cassés ou dépassés"),
+                  ("aex", "Audit express", "Un audit qui fait signer"))),
+}
+CAPTURES_FR = {"btl": A / "bridgetoleads-apercu.jpg", "cds": A / "chasseur-apercu.jpg", "aex": A / "audit-express-apercu.jpg"}
 
 def visuels():
     yield "vorelik-facebook-couverture", couverture(), (1640, 924)
@@ -110,7 +118,29 @@ def visuels():
         "Pick a business type and a city: we email you the 10 most established businesses with no website.",
         "vorelik.com/en/trial →", ("100% free", "#FDE68A", "#1E1B4B"), CAPTURES["btl"], ICONES["btl"], "Free trial"), (1080, 1080)
 
+def visuels_fr():
+    yield "vorelik-facebook-post-fr-1-presentation", publication("intro", "vorelik",
+        'Créateurs de sites :<br>trouvez vos<br><span class="jaune">prochains clients.</span>',
+        "Trois logiciels simples qui trouvent les commerces qui ont besoin d'un site web, et vous aident à les convaincre.",
+        "vorelik.com →", liste=True, langue="fr"), (1080, 1080)
+    yield "vorelik-facebook-post-fr-2-bridgetoleads", publication("btl", "btl",
+        '10 clients<br><span class="jaune">sans site web</span><br>en 2 minutes',
+        "BridgeToLeads trouve sur Google Maps les commerces sans site web, prêts à appeler.",
+        "Essai gratuit →", ("✖ Aucun site", "#DB2777", "#fff"), CAPTURES_FR["btl"], ICONES["btl"], "BridgeToLeads", langue="fr"), (1080, 1080)
+    yield "vorelik-facebook-post-fr-3-chasseur-de-sites", publication("cds", "cds",
+        'Leur site est<br><span class="jaune">cassé.</span><br>Refaites-le !',
+        "Chasseur de sites repère les sites en panne, expirés ou dépassés, avec la preuve et un rapport PDF.",
+        "vorelik.com →", ("⚠ Site cassé", "#DC2626", "#fff"), CAPTURES_FR["cds"], ICONES["cds"], "Chasseur de sites", langue="fr"), (1080, 1080)
+    yield "vorelik-facebook-post-fr-4-audit-express", publication("aex", "aex",
+        "L'audit qui<br><span class=\"jaune\">fait signer</span><br>en 1 minute",
+        "Audit express note n'importe quel site de A à F et prépare un rapport PDF à votre marque.",
+        "vorelik.com →", ("Note : C", "#DC2626", "#fff"), CAPTURES_FR["aex"], ICONES["aex"], "Audit express", langue="fr"), (1080, 1080)
+    yield "vorelik-facebook-post-fr-5-essai-gratuit", publication("trial", "btl",
+        '<span class="jaune">10 prospects</span><br>dans votre ville.<br><span class="jaune">Gratuit.</span>',
+        "Choisissez un métier et une ville : nous vous envoyons les 10 commerces sans site web les plus établis.",
+        "vorelik.com/essai →", ("100 % gratuit", "#FDE68A", "#1E1B4B"), CAPTURES_FR["btl"], ICONES["btl"], "Essai gratuit", langue="fr"), (1080, 1080)
+
 sortie = Path(sys.argv[1])
-for nom, html, (l, h) in visuels():
+for nom, html, (l, h) in list(visuels()) + list(visuels_fr()):
     (sortie / f"{nom}.html").write_text(html.replace("<html>", f'<html data-taille="{l}x{h}">', 1))
 print("ok")
