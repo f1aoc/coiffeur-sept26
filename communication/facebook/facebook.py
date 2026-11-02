@@ -13,6 +13,9 @@ CAPTURES = {"btl": EN / "bridgetoleads/assets/app-screenshot.png", "cds": EN / "
 NOMS = {"btl": "BridgeToLeads", "cds": "Site Hunter", "aex": "Audit Express"}
 FONDS = {"btl": ("#7C3AED", "#EC4899", "#F97316"), "cds": ("#1F5FBF", "#0EA5E9", "#F97316"),
          "aex": ("#059669", "#0E7490", "#F97316"), "vorelik": ("#7C3AED", "#EC4899", "#0EA5E9")}
+# Publications : 1080 × 1080 pour Facebook ; « python3 facebook.py DOSSIER instagram » → 1080 × 1350 pour Instagram
+INSTAGRAM = len(sys.argv) > 2 and sys.argv[2] == "instagram"
+HAUTEUR = 1350 if INSTAGRAM else 1080
 BASE = f"""<link href="{POLICE}" rel="stylesheet"><style>
   * {{ box-sizing: border-box; margin: 0; }}
   body {{ position: relative; overflow: hidden; font-family: "Plus Jakarta Sans", sans-serif; color: #fff; background: #0A0F1F; }}
@@ -71,21 +74,25 @@ def couverture(langue="en"):
     <div class="apps">{apps}</div><div class="site">{T["pied"]}</div></div>
 </body></html>"""
 
-def publication(cle, couleur, titre, sous, bouton, etiquette=None, capture=None, icone=None, nom=None, liste=False, langue="en"):
+def publication(cle, couleur, titre, sous, bouton, etiquette=None, capture=None, icone=None, nom=None, liste=False, langue="en",
+                hauteur=None):
+    # 1080 × 1080 (Facebook) ou 1080 × 1350 (Instagram, portrait) : le surplus de hauteur aère le titre et le texte
+    hauteur = hauteur or HAUTEUR
+    plus = hauteur - 1080
     tete = (f'<div class="pastille" style="position:absolute;left:60px;top:60px;font-size:30px"><img src="{icone}">{nom}</div>' if icone
             else f'<img src="{LOGO}" style="position:absolute;left:60px;top:58px;width:250px">')
-    fen = f'<div class="fenetre" style="right:-120px;bottom:150px;width:640px;transform:rotate(-4deg)"><img src="{capture}"></div>' if capture else ""
-    eti = (f'<div class="etiquette" style="right:70px;bottom:120px;transform:rotate(5deg);background:{etiquette[1]};color:{etiquette[2]};font-size:44px">{etiquette[0]}</div>'
+    fen = f'<div class="fenetre" style="right:-120px;bottom:{150 + plus // 3}px;width:640px;transform:rotate(-4deg)"><img src="{capture}"></div>' if capture else ""
+    eti = (f'<div class="etiquette" style="right:70px;bottom:{120 + plus // 3}px;transform:rotate(5deg);background:{etiquette[1]};color:{etiquette[2]};font-size:44px">{etiquette[0]}</div>'
            if etiquette else "")
     return f"""<!doctype html><html><head><meta charset="utf-8">{BASE}<style>
-  html, body {{ width: 1080px; height: 1080px; }}
-  h1 {{ position: absolute; left: 60px; top: 170px; width: 960px; font-size: 92px; line-height: 1.02; letter-spacing: -.035em;
+  html, body {{ width: 1080px; height: {hauteur}px; }}
+  h1 {{ position: absolute; left: 60px; top: {170 + plus // 3}px; width: 960px; font-size: 92px; line-height: 1.02; letter-spacing: -.035em;
        text-shadow: 0 6px 0 rgba(0,0,0,.3), 0 18px 40px rgba(0,0,0,.45); }}
-  .sous {{ position: absolute; left: 60px; top: 520px; width: 470px; font-size: 30px; line-height: 1.35; color: #DDE2F2; font-weight: 600; }}
+  .sous {{ position: absolute; left: 60px; top: {520 + plus // 3}px; width: 470px; font-size: 30px; line-height: 1.35; color: #DDE2F2; font-weight: 600; }}
   .bas {{ position: absolute; left: 60px; bottom: 60px; display: flex; align-items: center; gap: 24px; }}
   .bouton {{ font-size: 30px; }}
   .marque {{ position: absolute; right: 60px; bottom: 58px; width: 200px; }}
-  .liste {{ position: absolute; right: 60px; top: 520px; width: 420px; display: flex; flex-direction: column; gap: 16px; }}
+  .liste {{ position: absolute; right: 60px; top: {520 + plus // 3}px; width: 420px; display: flex; flex-direction: column; gap: 16px; }}
   .liste div {{ display: flex; align-items: center; gap: 16px; background: rgba(255,255,255,.09); padding: 14px 18px 14px 14px; border-radius: 20px;
      box-shadow: inset 0 0 0 1px rgba(255,255,255,.18); }}
   .liste img {{ width: 60px; height: 60px; border-radius: 15px; }}
@@ -155,5 +162,9 @@ def visuels_fr():
 
 sortie = Path(sys.argv[1])
 for nom, html, (l, h) in list(visuels()) + list(visuels_fr()):
+    if INSTAGRAM:
+        if "post" not in nom:
+            continue
+        nom, h = nom.replace("facebook-post", "instagram-post"), HAUTEUR
     (sortie / f"{nom}.html").write_text(html.replace("<html", f'<html data-taille="{l}x{h}"', 1))
 print("ok")
