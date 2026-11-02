@@ -35,10 +35,22 @@ def fond(c):
             f'radial-gradient(60% 60% at 100% 0%, {c2}cc, transparent 70%),radial-gradient(45% 45% at 100% 100%, {c3}88, transparent 70%)"></div>'
             '<div class="grille"></div>')
 
-def couverture():
-    apps = "".join(f'<div class="app"><img src="{ICONES[k]}"><div><b>{NOMS[k]}</b><span>{t}</span></div></div>'
-                   for k, t in (("btl", "Businesses with no website"), ("cds", "Broken or outdated websites"), ("aex", "Audits that win deals")))
-    return f"""<!doctype html><html><head><meta charset="utf-8">{BASE}<style>
+COUVERTURE = {
+    "en": dict(apps=(("btl", "BridgeToLeads", "Businesses with no website"), ("cds", "Site Hunter", "Broken or outdated websites"),
+                     ("aex", "Audit Express", "Audits that win deals")),
+               titre='Software that finds<br><span class="aurora">your next clients.</span>',
+               pied='<span class="aurora">vorelik.com/en</span> · Windows &amp; Mac · One-time payment', captures=None),
+    "fr": dict(apps=(("btl", "BridgeToLeads", "Les commerces sans site web"), ("cds", "Chasseur de sites", "Les sites cassés ou dépassés"),
+                     ("aex", "Audit express", "Un audit qui fait signer")),
+               titre='Des logiciels qui trouvent<br><span class="aurora">vos prochains clients.</span>',
+               pied='<span class="aurora">vorelik.com</span> · Windows et Mac · Paiement unique', captures="fr"),
+}
+
+def couverture(langue="en"):
+    T = COUVERTURE[langue]
+    cap = CAPTURES if langue == "en" else {"btl": A / "bridgetoleads-apercu.jpg", "cds": A / "chasseur-apercu.jpg"}
+    apps = "".join(f'<div class="app"><img src="{ICONES[k]}"><div><b>{n}</b><span>{t}</span></div></div>' for k, n, t in T["apps"])
+    return f"""<!doctype html><html lang="{langue}"><head><meta charset="utf-8">{BASE}<style>
   html, body {{ width: 1640px; height: 924px; }}
   .f1 {{ left: -150px; top: 250px; width: 560px; transform: rotate(-7deg); opacity: .85; }}
   .f2 {{ right: -170px; top: 230px; width: 560px; transform: rotate(6deg); opacity: .85; }}
@@ -53,10 +65,10 @@ def couverture():
   .app b {{ display: block; font-size: 22px; }} .app span {{ display: block; font-size: 15px; color: #C3CAE0; }}
   .site {{ margin-top: 24px; font-size: 26px; font-weight: 800; }}
 </style></head><body>{fond("vorelik")}
-  <div class="fenetre f1"><img src="{CAPTURES['btl']}"></div><div class="fenetre f2"><img src="{CAPTURES['cds']}"></div>
+  <div class="fenetre f1"><img src="{cap['btl']}"></div><div class="fenetre f2"><img src="{cap['cds']}"></div>
   <div class="voile"></div>
-  <div class="zone"><img class="logo" src="{LOGO}"><h1>Software that finds<br><span class="aurora">your next clients.</span></h1>
-    <div class="apps">{apps}</div><div class="site"><span class="aurora">vorelik.com/en</span> · Windows &amp; Mac · One-time payment</div></div>
+  <div class="zone"><img class="logo" src="{LOGO}"><h1>{T["titre"]}</h1>
+    <div class="apps">{apps}</div><div class="site">{T["pied"]}</div></div>
 </body></html>"""
 
 def publication(cle, couleur, titre, sous, bouton, etiquette=None, capture=None, icone=None, nom=None, liste=False, langue="en"):
@@ -97,6 +109,7 @@ CAPTURES_FR = {"btl": A / "bridgetoleads-apercu.jpg", "cds": A / "chasseur-aperc
 
 def visuels():
     yield "vorelik-facebook-couverture", couverture(), (1640, 924)
+    yield "vorelik-facebook-couverture-fr", couverture("fr"), (1640, 924)
     yield "vorelik-facebook-post-1-presentation", publication("intro", "vorelik",
         'Web designers:<br>find your<br><span class="jaune">next clients.</span>',
         "Three simple apps that find local businesses needing a website, and help you win them over.",
@@ -142,5 +155,5 @@ def visuels_fr():
 
 sortie = Path(sys.argv[1])
 for nom, html, (l, h) in list(visuels()) + list(visuels_fr()):
-    (sortie / f"{nom}.html").write_text(html.replace("<html>", f'<html data-taille="{l}x{h}">', 1))
+    (sortie / f"{nom}.html").write_text(html.replace("<html", f'<html data-taille="{l}x{h}"', 1))
 print("ok")

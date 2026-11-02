@@ -1,6 +1,6 @@
 # Page Facebook VORELIK (anglais)
 
-- `vorelik-facebook-couverture.png` : photo de couverture 1640 × 924 (texte dans la zone centrale, visible sur
+- `vorelik-facebook-couverture.png` (anglais) et `vorelik-facebook-couverture-fr.png` (français) : photo de couverture 1640 × 924 (texte dans la zone centrale, visible sur
   ordinateur et téléphone).
 - `vorelik-facebook-profil.png` : photo de profil (le « V », affiché en rond).
 - `vorelik-facebook-post-1…5` (anglais) et `vorelik-facebook-post-fr-1…5` (français) : visuels de publication 1080 × 1080,
