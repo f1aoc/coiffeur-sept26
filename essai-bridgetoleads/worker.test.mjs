@@ -12,6 +12,7 @@ class FausseKV {
   constructor() { this.donnees = new Map(); }
   async get(cle) { return this.donnees.has(cle) ? this.donnees.get(cle) : null; }
   async put(cle, valeur) { this.donnees.set(cle, String(valeur)); }
+  async delete(cle) { this.donnees.delete(cle); }
 }
 
 function fiche(i, { site, avis = 10 * i, statut = "OPERATIONAL", nom = `Salon ${i}` } = {}) {
@@ -22,7 +23,7 @@ function fiche(i, { site, avis = 10 * i, statut = "OPERATIONAL", nom = `Salon ${
   };
 }
 
-let env, appels, pagesGoogle, turnstileOk, brevoEchec;
+let env, appels, pagesGoogle, turnstileOk, brevoEchec, googleEchec;
 beforeEach(() => {
   env = {
     GOOGLE_MAPS_API_KEY: "AIzaTest", BREVO_API_KEY: "xkeysib-test", TURNSTILE_SECRET: "secret-turnstile",
@@ -33,6 +34,7 @@ beforeEach(() => {
   appels = [];
   turnstileOk = true;
   brevoEchec = false;
+  googleEchec = false;
   // 2 pages : 20 fiches puis 5 ; sites réels, Facebook, aucun site, fermées
   pagesGoogle = [
     Array.from({ length: 20 }, (_, i) => fiche(i + 1, {
@@ -46,7 +48,16 @@ beforeEach(() => {
     const corps = init.body instanceof URLSearchParams ? Object.fromEntries(init.body) : init.body ? JSON.parse(init.body) : null;
     appels.push({ url: u, methode: init.method || "GET", corps, entetes: init.headers || {} });
     if (u.startsWith("https://challenges.cloudflare.com/")) return Response.json({ success: turnstileOk });
+    if (u.startsWith("https://cloudflare-dns.com/")) {
+      const q = new URL(u).searchParams;
+      const nom = q.get("name");
+      if (nom.startsWith("inexistant")) return Response.json({ Status: 3 });
+      if (nom.startsWith("sans-mx")) return Response.json({ Status: 0, Answer: [] });
+      if (nom.startsWith("panne")) return new Response("", { status: 503 });
+      return Response.json({ Status: 0, Answer: q.get("type") === "MX" ? [{ type: 15, data: `10 mx.${nom}.` }] : [{ type: 1, data: "1.2.3.4" }] });
+    }
     if (u.startsWith("https://places.googleapis.com/")) {
+      if (googleEchec) return Response.json({ error: { status: "PERMISSION_DENIED", message: "API key not valid" } }, { status: 403 });
       const page = corps.pageToken ? Number(corps.pageToken) : 0;
       const places = pagesGoogle[page] || [];
       return Response.json({ places, ...(page + 1 < pagesGoogle.length ? { nextPageToken: String(page + 1) } : {}) });
@@ -59,7 +70,8 @@ beforeEach(() => {
   };
 });
 
-async function envoyer(champs = {}, { ip = "1.2.3.4", origine = SITE } = {}) {
+/** Étape 1 seulement : le formulaire (contrôles, e-mail de confirmation). */
+async function demander(champs = {}, { ip = "1.2.3.4", origine = SITE } = {}) {
   const donnees = { metier: "coiffeur", ville: "L'Isle-sur-la-Sorgue", email: "Jean@Exemple.fr", "cf-turnstile-response": "jeton", ...champs };
   const r = await worker.fetch(new Request("https://essai.test/essai", {
     method: "POST",
@@ -70,14 +82,39 @@ async function envoyer(champs = {}, { ip = "1.2.3.4", origine = SITE } = {}) {
 }
 
 const vers = (debut) => appels.filter((a) => a.url.startsWith(debut));
+const avecEtiquette = (tag) => vers("https://api.brevo.com/v3/smtp/email").filter((a) => (a.corps.tags || []).includes(tag));
+const confirmations = () => avecEtiquette("essai-confirmation");
+const resultats = () => avecEtiquette("essai-bridgetoleads");
+const lienDeConfirmation = () => new URL(confirmations().at(-1).corps.textContent.match(/https:\/\/essai\.test\/confirmer\S+/)[0]);
+
+/** Étape 2 : clic sur le bouton de la page de confirmation (réponse JSON pour les tests). */
+async function confirmer(lien = lienDeConfirmation(), methode = "POST", json = true) {
+  const r = await worker.fetch(new Request(lien, { method: methode, headers: json ? { Accept: "application/json" } : {} }), env);
+  return { status: r.status, corps: json ? await r.json() : await r.text() };
+}
+
+/** Essai complet : formulaire, puis confirmation si l'e-mail de confirmation est parti. */
+async function envoyer(champs = {}, options = {}) {
+  const etape1 = await demander(champs, options);
+  if (!etape1.corps.confirmation) return etape1;
+  return confirmer();
+}
 
 test("essai réussi : Google paginé, fiches sans site ou Facebook, triées par avis, e-mail et contact Brevo", async () => {
-  const { status, corps, entetes } = await envoyer({ ref: "facebook-octobre", actus: true });
+  const etape1 = await demander({ ref: "facebook-octobre", actus: true });
+  assert.equal(etape1.status, 200);
+  assert.equal(etape1.corps.confirmation, true);
+  assert.match(etape1.corps.message, /Plus qu'une étape/);
+  assert.equal(etape1.entetes.get("Access-Control-Allow-Origin"), SITE);
+  // Avant le clic : ni Google, ni résultats, ni contact Brevo
+  assert.equal(vers("https://places.googleapis.com/").length, 0);
+  assert.equal(resultats().length, 0);
+  assert.equal(vers("https://api.brevo.com/v3/contacts").length, 0);
+  const { status, corps } = await confirmer();
   assert.equal(status, 200);
   assert.equal(corps.ok, true);
   assert.equal(corps.trouves, 10);
   assert.match(corps.message, /10 commerces sans site/);
-  assert.equal(entetes.get("Access-Control-Allow-Origin"), SITE);
 
   const google = vers("https://places.googleapis.com/");
   assert.equal(google.length, 2);
@@ -87,7 +124,7 @@ test("essai réussi : Google paginé, fiches sans site ou Facebook, triées par 
   assert.match(google[0].entetes["X-Goog-FieldMask"], /places\.websiteUri/);
   assert.equal(google[1].corps.pageToken, "1");
 
-  const [mail] = vers("https://api.brevo.com/v3/smtp/email");
+  const [mail] = resultats();
   assert.deepEqual(mail.corps.to, [{ email: "jean@exemple.fr" }]);
   assert.deepEqual(mail.corps.sender, { name: "VORELIK", email: "essai@vorelik.com" });
   assert.equal(mail.entetes["api-key"], "xkeysib-test");
@@ -163,7 +200,8 @@ test("aucun commerce sans site : pas d'e-mail, l'adresse reste utilisable, l'IP 
   assert.equal(r.status, 200);
   assert.equal(r.corps.trouves, 0);
   assert.match(r.corps.message, /pas été décompté/);
-  assert.equal(vers("https://api.brevo.com/").length, 0);
+  assert.equal(resultats().length, 0);
+  assert.equal(vers("https://api.brevo.com/v3/contacts").length, 0);
   pagesGoogle = [[fiche(2)]];
   assert.equal((await envoyer()).corps.trouves, 1);
   assert.equal([...env.ESSAIS.donnees.entries()].find(([k]) => k.startsWith("ip:"))[1], "2");
@@ -189,14 +227,16 @@ test("configuration incomplète : message d'indisponibilité, aucun appel", asyn
   assert.equal(appels.length, 0);
 });
 
-test("erreur Google : message clair, rien n'est compté", async () => {
-  globalThis.fetch = async (url) => String(url).includes("challenges")
-    ? Response.json({ success: true })
-    : Response.json({ error: { status: "PERMISSION_DENIED", message: "API key not valid" } }, { status: 403 });
-  const r = await envoyer();
+test("erreur Google : message clair, rien n'est compté, le même lien permet de réessayer", async () => {
+  googleEchec = true;
+  await demander();
+  const lien = lienDeConfirmation();
+  const r = await confirmer(lien);
   assert.equal(r.status, 502);
   assert.equal(r.corps.erreur, "google");
-  assert.equal(env.ESSAIS.donnees.size, 0);
+  assert.ok(![...env.ESSAIS.donnees.keys()].some((k) => k.startsWith("ip:") || k.startsWith("email:") || k.startsWith("jour:")));
+  googleEchec = false;
+  assert.equal((await confirmer(lien)).corps.trouves, 10);
 });
 
 test("e-mail refusé par Brevo : l'adresse n'est pas consommée", async () => {
@@ -204,7 +244,7 @@ test("e-mail refusé par Brevo : l'adresse n'est pas consommée", async () => {
   const r = await envoyer();
   assert.equal(r.status, 502);
   assert.equal(r.corps.erreur, "envoi");
-  assert.ok(![...env.ESSAIS.donnees.keys()].some((k) => k.startsWith("email:")));
+  assert.ok(![...env.ESSAIS.donnees.keys()].some((k) => k.startsWith("email:") || k.startsWith("attente:") || k.startsWith("renvoi:")));
 });
 
 test("formulaire HTML classique (multipart) accepté", async () => {
@@ -212,6 +252,7 @@ test("formulaire HTML classique (multipart) accepté", async () => {
   for (const [k, v] of Object.entries({ metier: "plombier", ville: "Avignon", email: "x@exemple.fr", actus: "on", "cf-turnstile-response": "j" })) f.append(k, v);
   const r = await worker.fetch(new Request("https://essai.test/essai", { method: "POST", headers: { Origin: SITE }, body: f }), env);
   assert.equal(r.status, 200);
+  assert.equal((await confirmer()).corps.trouves, 10);
   assert.deepEqual(vers("https://api.brevo.com/v3/contacts")[0].corps.listIds, [7, 8]);
 });
 
@@ -249,7 +290,7 @@ async function desinscription(methode, query) {
 
 test("désinscription : signature contrôlée, confirmation par bouton, adresse bloquée dans Brevo", async () => {
   await envoyer();
-  const lien = new URL(vers("https://api.brevo.com/v3/smtp/email")[0].corps.headers["List-Unsubscribe"].slice(1, -1));
+  const lien = new URL(resultats()[0].corps.headers["List-Unsubscribe"].slice(1, -1));
   appels = [];
   assert.equal((await desinscription("GET", "?e=jean%40exemple.fr&s=faux")).status, 400);
   const page = await desinscription("GET", lien.search);
@@ -293,7 +334,7 @@ test("essai en anglais : Google sans région, e-mail et messages en anglais, con
   assert.equal(g.corps.textQuery, "hair salon Austin TX");
   assert.equal(g.corps.languageCode, "en");
   assert.equal(g.corps.regionCode, undefined);
-  const [mail] = vers("https://api.brevo.com/v3/smtp/email");
+  const [mail] = resultats();
   assert.equal(mail.corps.subject, "10 leads with no website: hair salon in Austin TX");
   const html = mail.corps.htmlContent;
   assert.match(html, /<html lang="en">/);
@@ -328,7 +369,7 @@ test("aucun résultat en anglais", async () => {
 
 test("désinscription en anglais", async () => {
   await envoyer({ langue: "en" });
-  const lien = new URL(vers("https://api.brevo.com/v3/smtp/email")[0].corps.headers["List-Unsubscribe"].slice(1, -1));
+  const lien = new URL(resultats()[0].corps.headers["List-Unsubscribe"].slice(1, -1));
   const page = await desinscription("GET", lien.search);
   assert.match(page.texte, /Confirm unsubscribe/);
   assert.match(page.texte, /<html lang="en">/);
@@ -364,4 +405,85 @@ test("journal des domaines : plateformes comptées par langue, visible sur /doma
   assert.equal(d.fr.essais, 0);
   assert.equal(domainePrincipal("https://shop.example.co.uk/x"), "example.co.uk");
   assert.equal(domainePrincipal("https://www.salon.fr"), "salon.fr");
+});
+
+// ------------------------------------------------------------------------------- confirmation de l'adresse
+
+test("adresse jetable refusée, sans e-mail ni Google", async () => {
+  const r = await demander({ email: "test@yopmail.com" });
+  assert.equal(r.status, 400);
+  assert.equal(r.corps.erreur, "email_jetable");
+  assert.equal(vers("https://api.brevo.com/").length, 0);
+});
+
+test("domaine inexistant ou sans serveur de messagerie refusé ; panne du DNS : accepté", async () => {
+  assert.equal((await demander({ email: "a@inexistant-gmial.com" })).corps.erreur, "email_domaine");
+  assert.equal((await demander({ email: "a@sans-mx.fr" })).corps.erreur, "email_domaine");
+  assert.equal((await demander({ email: "a@panne.fr" })).corps.confirmation, true);
+  assert.equal(vers("https://places.googleapis.com/").length, 0);
+});
+
+test("e-mail de confirmation : lien à usage unique, valable 24 h, contenu échappé", async () => {
+  await demander({ metier: "<b>coiffeur</b>", ville: "Avignon" });
+  const [mail] = confirmations();
+  assert.deepEqual(mail.corps.to, [{ email: "jean@exemple.fr" }]);
+  assert.equal(mail.corps.subject, "Confirmez votre essai gratuit BridgeToLeads");
+  assert.match(mail.corps.htmlContent, /Recevoir mes 10 prospects/);
+  assert.match(mail.corps.htmlContent, /valable 24 heures/);
+  assert.ok(!mail.corps.htmlContent.includes("<b>coiffeur</b>"));
+  const cle = [...env.ESSAIS.donnees.keys()].find((k) => k.startsWith("attente:"));
+  assert.match(cle, /^attente:[0-9a-f]{32}$/);
+  assert.ok(!JSON.parse(env.ESSAIS.donnees.get(cle)).ip.includes("1.2.3.4")); // adresse IP chiffrée
+  const lien = lienDeConfirmation();
+  assert.equal((await confirmer(lien)).corps.trouves, 10);
+  const encore = await confirmer(lien);
+  assert.equal(encore.status, 410);
+  assert.equal(encore.corps.erreur, "expire");
+  assert.equal(vers("https://places.googleapis.com/").length, 2); // une seule recherche (2 pages)
+});
+
+test("ouvrir le lien (GET) affiche un bouton sans lancer de recherche", async () => {
+  await demander();
+  const page = await confirmer(lienDeConfirmation(), "GET", false);
+  assert.equal(page.status, 200);
+  assert.match(page.corps, /<form method="post">/);
+  assert.match(page.corps, /Recevoir mes 10 prospects/);
+  assert.equal(vers("https://places.googleapis.com/").length, 0);
+  const fin = await confirmer(lienDeConfirmation(), "POST", false);
+  assert.match(fin.corps, /C&#39;est envoyé/);
+  assert.match(fin.corps, /vorelik\.com\/bridgetoleads\//);
+});
+
+test("lien inconnu ou expiré : page claire, en anglais si besoin", async () => {
+  const fr = await confirmer(new URL("https://essai.test/confirmer?t=0123"), "GET", false);
+  assert.equal(fr.status, 410);
+  assert.match(fr.corps, /Lien expiré/);
+  assert.match(fr.corps, /vorelik\.com\/essai\//);
+  const en = await confirmer(new URL("https://essai.test/confirmer?t=0123&l=en"), "GET", false);
+  assert.match(en.corps, /Link expired/);
+  assert.match(en.corps, /vorelik\.com\/en\/trial\//);
+});
+
+test("pas de nouvel e-mail de confirmation à la même adresse avant 10 minutes", async () => {
+  await demander();
+  const r = await demander({}, { ip: "9.9.9.9" });
+  assert.equal(r.status, 429);
+  assert.equal(r.corps.erreur, "deja_envoye");
+  assert.equal(confirmations().length, 1);
+});
+
+test("5 e-mails de confirmation par adresse IP et par jour", async () => {
+  for (let i = 0; i < 5; i++) assert.equal((await demander({ email: `x${i}@exemple.fr` })).corps.confirmation, true);
+  assert.equal((await demander({ email: "x6@exemple.fr" })).corps.erreur, "limite_ip");
+});
+
+test("confirmation en anglais : e-mail et page en anglais", async () => {
+  const r = await demander({ langue: "en", email: "joe@example.com" });
+  assert.match(r.corps.message, /^One last step!/);
+  const [mail] = confirmations();
+  assert.equal(mail.corps.subject, "Confirm your BridgeToLeads free trial");
+  assert.match(mail.corps.textContent, /&l=en/);
+  const page = await confirmer(lienDeConfirmation(), "GET", false);
+  assert.match(page.corps, /Get my 10 leads/);
+  assert.match(page.corps, /<html lang="en">/);
 });

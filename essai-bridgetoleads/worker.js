@@ -3,7 +3,12 @@
  * (anglais : champ ou paramètre « langue=en » ; recherche Google sans région, e-mail et messages en anglais).
  *
  *   POST /essai          formulaire de la page : metier, ville, email, actus, ref, langue (fr|en), cf-turnstile-response
- *                        → { ok, trouves, message } ou { erreur, message } (message en français, à afficher tel quel)
+ *                        → contrôle de l'adresse, puis e-mail de confirmation : { ok, confirmation: true, message }
+ *                        ou { erreur, message } (message dans la langue de la page, à afficher tel quel)
+ *   GET  /confirmer       lien de l'e-mail de confirmation (?t=jeton) → page avec un bouton (les messageries qui ouvrent
+ *                        les liens pour les analyser ne lancent donc pas de recherche Google)
+ *   POST /confirmer       ce bouton → recherche Google, e-mail des résultats, contact Brevo → page de résultat
+ *                        (en JSON si la requête demande « Accept: application/json »)
  *   GET  /desinscription  lien de l'e-mail (?e=…&s=signature) → page avec un bouton de confirmation (les messageries
  *                        qui ouvrent les liens pour les analyser ne désinscrivent donc personne par erreur)
  *   POST /desinscription  bouton de cette page, ou désinscription « en un clic » des messageries (List-Unsubscribe-Post)
@@ -12,8 +17,9 @@
  *   GET  /domaines        domaines des « sites » trouvés par les essais (comptés par langue), pour repérer les
  *                        plateformes de réservation ou annuaires à ajouter à PAS_UN_SITE (aucune donnée de visiteur)
  *
- * Déroulé d'un essai : Turnstile → limites (1 essai par e-mail, 3 par adresse IP et par jour, plafond quotidien
- * total) → Google Places (New) Text Search « métier ville », jusqu'à 3 pages de 20 → fiches sans site (ou
+ * Déroulé d'un essai : Turnstile → adresse e-mail contrôlée (format, adresses jetables refusées, domaine qui reçoit
+ * des e-mails) → limites → e-mail de confirmation (lien valable 24 h, à usage unique) → clic → limites (1 essai par
+ * e-mail, 3 par adresse IP et par jour, plafond quotidien total) → Google Places (New) Text Search « métier ville », jusqu'à 3 pages de 20 → fiches sans site (ou
  * avec seulement une page Facebook, Instagram, Yelp, Planity… : même liste que le logiciel), triées par nombre d'avis, 10 premières → e-mail Brevo → contact ajouté à la
  * liste Brevo « Essai BridgeToLeads ». Un essai sans résultat n'envoie rien et ne consomme pas l'e-mail.
  *
@@ -49,6 +55,12 @@ const MESSAGES = {
     metier: "Indiquez un métier.",
     ville: "Indiquez une ville.",
     email: "Cette adresse e-mail ne semble pas valable.",
+    email_jetable: "Les adresses e-mail temporaires ne sont pas acceptées : indiquez votre adresse habituelle.",
+    email_domaine: "Ce domaine ne reçoit pas d'e-mails : vérifiez l'orthographe de votre adresse.",
+    deja_envoye: "Un e-mail de confirmation vient d'être envoyé à cette adresse : regardez dans votre boîte mail "
+      + "(et dans les indésirables). Vous pourrez en demander un nouveau dans 10 minutes.",
+    confirmer: (email) => `Plus qu'une étape ! Nous venons d'envoyer un e-mail à ${email} : cliquez sur le bouton qu'il `
+      + "contient pour lancer la recherche et recevoir vos 10 prospects. Pensez à regarder dans les indésirables.",
     turnstile: "La vérification anti-robot a échoué : rechargez la page et réessayez.",
     email_utilise: "Un essai a déjà été envoyé à cette adresse. Pour des recherches illimitées, découvrez BridgeToLeads.",
     limite_ip: "Vous avez atteint la limite de 3 essais par jour. Revenez demain !",
@@ -69,6 +81,12 @@ const MESSAGES = {
     metier: "Enter a business type.",
     ville: "Enter a city.",
     email: "This email address does not look valid.",
+    email_jetable: "Temporary email addresses are not accepted: please use your usual address.",
+    email_domaine: "This domain does not receive emails: check the spelling of your address.",
+    deja_envoye: "A confirmation email was just sent to this address: check your inbox (and your spam folder). "
+      + "You can request a new one in 10 minutes.",
+    confirmer: (email) => `One last step! We just sent an email to ${email}: click the button inside to start the search `
+      + "and get your 10 leads. Remember to check your spam folder.",
     turnstile: "The anti-robot check failed: reload the page and try again.",
     email_utilise: "A trial has already been sent to this address. For unlimited searches, discover BridgeToLeads.",
     limite_ip: "You have reached the limit of 3 trials per day. Come back tomorrow!",
@@ -82,6 +100,7 @@ const MESSAGES = {
       + `waiting in your inbox (${email}). Remember to check your spam folder.`,
   },
 };
+const PAGE_ESSAI = { fr: "https://vorelik.com/essai/", en: "https://vorelik.com/en/trial/" };
 const langueDe = (valeur) => (String(valeur || "").toLowerCase() === "en" ? "en" : "fr");
 const CHAMPS = [
   "places.id", "places.displayName", "places.formattedAddress", "places.nationalPhoneNumber",
@@ -94,6 +113,18 @@ const ESSAIS_PAR_IP = 3;
 const PLAFOND_DEFAUT = 100;
 const JOUR = 86400;
 const EMAIL = /^[^\s@<>"',;]{1,64}@[^\s@<>"',;]+\.[a-z]{2,}$/i;
+const DNS = "https://cloudflare-dns.com/dns-query"; // DNS de Cloudflare : le domaine peut-il recevoir des e-mails ?
+const CONFIRMATIONS_PAR_IP = 5; // e-mails de confirmation par adresse IP et par jour
+const RENVOI_S = 600; // pas de nouvel e-mail de confirmation à la même adresse avant 10 minutes
+// Adresses jetables (boîtes temporaires) : refusées
+const JETABLES = new Set([
+  "yopmail.com", "yopmail.fr", "yopmail.net", "mailinator.com", "guerrillamail.com", "guerrillamail.net", "sharklasers.com",
+  "grr.la", "10minutemail.com", "10minutemail.net", "temp-mail.org", "tempmail.com", "tempmail.net", "tempmailo.com",
+  "trashmail.com", "trashmail.fr", "jetable.org", "mailnesia.com", "getnada.com", "nada.email", "maildrop.cc",
+  "dispostable.com", "throwawaymail.com", "emailondeck.com", "mohmal.com", "minuteinbox.com", "fakeinbox.com",
+  "mailcatch.com", "spamgourmet.com", "mytemp.email", "tempr.email", "discard.email", "mintemail.com", "moakt.com",
+  "emailfake.com", "crazymailing.com", "burnermail.io", "inboxkitten.com", "tmail.ws", "trash-mail.com", "spambox.us",
+]);
 // Pages qui ne sont pas un vrai site du commerce (même liste que le logiciel, find_no_website.py) → nom affiché.
 // Un commerce qui n'a que l'une d'elles est un prospect : « Instagram seulement », « Yelp only »…
 const PAS_UN_SITE = {
@@ -128,6 +159,7 @@ export default {
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
     try {
       if (url.pathname === "/desinscription") return await desinscription(request, url, env);
+      if (url.pathname === "/confirmer") return await confirmer(request, url, env);
       let statut, corps;
       if (request.method === "POST" && url.pathname === "/essai") {
         [statut, corps] = await essai(request, env);
@@ -214,21 +246,140 @@ async function essai(request, env) {
     return non("turnstile", 403);
   }
 
+  const domaine = email.split("@")[1];
+  if (JETABLES.has(domaine)) return non("email_jetable");
+  if (!(await domaineRecoitEmails(domaine))) return non("email_domaine");
+
   const jour = new Date().toISOString().slice(0, 10);
-  const cleEmail = `email:${await empreinte(email)}`;
-  const cleIp = `ip:${jour}:${await empreinte(ip)}`;
+  const empEmail = await empreinte(email);
+  const empIp = await empreinte(ip);
+  const cleConf = `conf-ip:${jour}:${empIp}`;
+  const [dejaEmail, renvoi, essaisIp, essaisJour, confirmations] = await Promise.all([
+    env.ESSAIS.get(`email:${empEmail}`), env.ESSAIS.get(`renvoi:${empEmail}`), env.ESSAIS.get(`ip:${jour}:${empIp}`),
+    env.ESSAIS.get(`jour:${jour}`), env.ESSAIS.get(cleConf),
+  ]);
+  if (dejaEmail) return non("email_utilise", 429);
+  if (Number(essaisIp || 0) >= ESSAIS_PAR_IP || Number(confirmations || 0) >= CONFIRMATIONS_PAR_IP) return non("limite_ip", 429);
+  if (Number(essaisJour || 0) >= plafondDuJour(env)) return non("plafond", 429);
+  if (renvoi) return non("deja_envoye", 429);
+
+  // Demande en attente de confirmation (24 h, usage unique) : rien n'est envoyé à Google ni à la liste Brevo avant le clic
+  const jeton = [...crypto.getRandomValues(new Uint8Array(16))].map((o) => o.toString(16).padStart(2, "0")).join("");
+  await env.ESSAIS.put(`attente:${jeton}`, JSON.stringify({ metier, ville, email, ref, actus, langue, ip: empIp }),
+    { expirationTtl: JOUR });
+  const lien = `${new URL(request.url).origin}/confirmer?t=${jeton}${langue === "en" ? "&l=en" : ""}`;
+  try {
+    await envoyerConfirmation({ email, metier, ville, lien, langue }, env);
+  } catch (e) {
+    console.error("Brevo confirmation", e.message);
+    await env.ESSAIS.delete(`attente:${jeton}`);
+    return non("envoi", 502);
+  }
+  await env.ESSAIS.put(`renvoi:${empEmail}`, "1", { expirationTtl: RENVOI_S });
+  await compter(env, cleConf, Number(confirmations || 0) + 1, 2 * JOUR);
+  return [200, { ok: true, confirmation: true, message: MESSAGES[langue].confirmer(email) }];
+}
+
+const plafondDuJour = (env) => (Number(env.PLAFOND_JOUR) > 0 ? Number(env.PLAFOND_JOUR) : PLAFOND_DEFAUT);
+
+/** Le domaine accepte-t-il des e-mails (enregistrement MX, ou à défaut A) ? En cas de panne du DNS : oui. */
+export async function domaineRecoitEmails(domaine) {
+  const demander = async (type) => {
+    const r = await fetch(`${DNS}?name=${encodeURIComponent(domaine)}&type=${type}`, { headers: { Accept: "application/dns-json" } });
+    if (!r.ok) throw new Error(`DNS HTTP ${r.status}`);
+    return r.json();
+  };
+  try {
+    const mx = await demander("MX");
+    if (mx.Status === 3) return false; // domaine inexistant
+    if ((mx.Answer || []).some((a) => a.type === 15 && !/^0\s+\.$/.test(String(a.data).trim()))) return true;
+    const a = await demander("A");
+    return (a.Answer || []).some((x) => x.type === 1);
+  } catch (e) {
+    console.warn("DNS indisponible", e.message); // on ne bloque pas un visiteur pour une panne
+    return true;
+  }
+}
+
+// --------------------------------------------------------------------------------------------- confirmation
+
+const CONFIRMATION = {
+  fr: {
+    question: (email) => ["Confirmez votre essai", `Cliquez sur le bouton pour lancer la recherche Google Maps et recevoir vos `
+      + `10 prospects à l'adresse ${email}.`],
+    bouton: "Recevoir mes 10 prospects",
+    expire: ["Lien expiré", "Ce lien de confirmation n'est plus valable : il dure 24 heures et ne sert qu'une fois. "
+      + "Refaites une demande sur la page d'essai."],
+    envoye: "C'est envoyé !", aucun: "Aucun résultat", probleme: "Un problème est survenu", limite: "Essai indisponible",
+    decouvrir: "Découvrir BridgeToLeads", essai: "Retour à l'essai gratuit",
+  },
+  en: {
+    question: (email) => ["Confirm your trial", `Click the button to start the Google Maps search and get your 10 leads `
+      + `at ${email}.`],
+    bouton: "Get my 10 leads",
+    expire: ["Link expired", "This confirmation link is no longer valid: it lasts 24 hours and works only once. "
+      + "Please request a new one on the trial page."],
+    envoye: "Sent!", aucun: "No results", probleme: "Something went wrong", limite: "Trial unavailable",
+    decouvrir: "Discover BridgeToLeads", essai: "Back to the free trial",
+  },
+};
+const boutonPage = (contenu) => `<div style="margin:0 0 20px">${contenu}</div>`;
+const styleBouton = "display:inline-block;font:inherit;font-weight:700;color:#fff;background:#7C3AED;border:0;border-radius:999px;"
+  + "padding:13px 26px;cursor:pointer;text-decoration:none";
+
+async function confirmer(request, url, env) {
+  const langue = langueDe(url.searchParams.get("l"));
+  const C = CONFIRMATION[langue];
+  const enJson = (request.headers.get("Accept") || "").includes("application/json");
+  const jeton = (url.searchParams.get("t") || "").replace(/[^0-9a-f]/g, "").slice(0, 64);
+  const attente = jeton && env.ESSAIS ? await env.ESSAIS.get(`attente:${jeton}`) : null;
+  if (!attente) {
+    return enJson ? json(410, { erreur: "expire", message: C.expire[1] })
+      : pageHtml(...C.expire, 410, boutonPage(`<a href="${PAGE_ESSAI[langue]}" style="${styleBouton}">${C.essai}</a>`), langue);
+  }
+  const demande = JSON.parse(attente);
+  if (request.method === "GET") {
+    return pageHtml(...C.question(demande.email), 200,
+      boutonPage(`<form method="post"><button type="submit" style="${styleBouton}">${C.bouton}</button></form>`), langue);
+  }
+  if (request.method !== "POST") return new Response(null, { status: 405 });
+
+  let statut, corps;
+  try {
+    [statut, corps] = await lancerEssai(jeton, demande, env, url.origin);
+  } catch (e) {
+    console.error("confirmation", e && e.stack || e);
+    [statut, corps] = [500, { erreur: "interne", message: MESSAGES[demande.langue].interne }];
+  }
+  if (enJson) return json(statut, corps);
+  const titre = corps.trouves > 0 ? C.envoye : corps.ok ? C.aucun : ["limite_ip", "plafond", "email_utilise"].includes(corps.erreur)
+    ? C.limite : C.probleme;
+  const bouton = corps.trouves > 0 || corps.erreur === "email_utilise"
+    ? `<a href="${PAGE_BTL[demande.langue]}" style="${styleBouton}">${C.decouvrir}</a>`
+    : `<a href="${PAGE_ESSAI[demande.langue]}" style="${styleBouton}">${C.essai}</a>`;
+  return pageHtml(titre, corps.message, statut === 200 ? 200 : statut, boutonPage(bouton), demande.langue);
+}
+
+/** Essai confirmé : limites, Google Places, e-mail des résultats, contact Brevo. */
+async function lancerEssai(jeton, demande, env, origine) {
+  const { metier, ville, email, ref, actus, langue } = demande;
+  const non = refusEn(langue);
+  // Usage unique : la demande est retirée avant la recherche (un double clic ne lance pas deux recherches)
+  await env.ESSAIS.delete(`attente:${jeton}`);
+  const remettre = () => env.ESSAIS.put(`attente:${jeton}`, JSON.stringify(demande), { expirationTtl: JOUR });
+
+  const jour = new Date().toISOString().slice(0, 10);
+  const empEmail = await empreinte(email);
+  const cleEmail = `email:${empEmail}`;
+  const cleIp = `ip:${jour}:${demande.ip}`;
   const cleJour = `jour:${jour}`;
   const [dejaEmail, essaisIp, essaisJour] = await Promise.all([
     env.ESSAIS.get(cleEmail), env.ESSAIS.get(cleIp), env.ESSAIS.get(cleJour),
   ]);
-  if (dejaEmail) {
-    return non("email_utilise", 429);
-  }
-  if (Number(essaisIp || 0) >= ESSAIS_PAR_IP) {
-    return non("limite_ip", 429);
-  }
-  const plafond = Number(env.PLAFOND_JOUR) > 0 ? Number(env.PLAFOND_JOUR) : PLAFOND_DEFAUT;
-  if (Number(essaisJour || 0) >= plafond) {
+  if (dejaEmail) return non("email_utilise", 429);
+  if (Number(essaisIp || 0) >= ESSAIS_PAR_IP) return non("limite_ip", 429);
+  if (Number(essaisJour || 0) >= plafondDuJour(env)) {
+    await remettre(); // le lien resservira demain
     return non("plafond", 429);
   }
 
@@ -237,6 +388,7 @@ async function essai(request, env) {
     fiches = await rechercher(`${metier} ${ville}`, env, langue);
   } catch (e) {
     console.error("Google Places", e.message);
+    await remettre(); // le même lien permet de réessayer
     return non("google", 502);
   }
   // L'adresse IP compte dès qu'une recherche Google a été faite (c'est elle qui coûte).
@@ -250,14 +402,16 @@ async function essai(request, env) {
   }
   const prospects = selectionner(fiches);
   if (!prospects.length) {
+    await env.ESSAIS.delete(`renvoi:${empEmail}`); // nouvel essai possible tout de suite, avec une autre ville
     return [200, { ok: true, trouves: 0, message: MESSAGES[langue].aucun(metier, ville, fiches.length) }];
   }
 
-  const lien = await lienDesinscription(email, env, new URL(request.url).origin, langue);
+  const lien = await lienDesinscription(email, env, origine, langue);
   try {
     await envoyerEmail({ email, metier, ville, prospects, analyses: fiches.length, lien, langue }, env);
   } catch (e) {
     console.error("Brevo e-mail", e.message);
+    await remettre();
     return non("envoi", 502);
   }
   await env.ESSAIS.put(cleEmail, jour, { expirationTtl: 365 * JOUR });
@@ -530,6 +684,60 @@ async function envoyerEmail(donnees, env) {
   });
 }
 
+const CONFIRMATION_EMAIL = {
+  fr: {
+    sujet: "Confirmez votre essai gratuit BridgeToLeads", sur: "Essai gratuit BridgeToLeads", titre: "Plus qu'une étape",
+    texte: (m, v) => `Vous avez demandé un essai gratuit de BridgeToLeads : <b>« ${m} » à ${v}</b>. Cliquez sur le bouton `
+      + "pour lancer la recherche : vous recevrez vos 10 prospects quelques secondes plus tard.",
+    bouton: "Recevoir mes 10 prospects →",
+    note: "Ce lien est valable 24 heures. Si vous n'avez rien demandé, ignorez cet e-mail : vous ne recevrez rien d'autre.",
+    texteBrut: (m, v, l) => `Vous avez demandé un essai gratuit de BridgeToLeads : « ${m} » à ${v}.\n`
+      + `Pour lancer la recherche et recevoir vos 10 prospects, ouvrez ce lien : ${l}\n\n`
+      + "Ce lien est valable 24 heures. Si vous n'avez rien demandé, ignorez cet e-mail.",
+  },
+  en: {
+    sujet: "Confirm your BridgeToLeads free trial", sur: "BridgeToLeads free trial", titre: "One last step",
+    texte: (m, v) => `You requested a BridgeToLeads free trial: <b>“${m}” in ${v}</b>. Click the button to start the `
+      + "search: your 10 leads will arrive a few seconds later.",
+    bouton: "Get my 10 leads →",
+    note: "This link is valid for 24 hours. If you did not request anything, just ignore this email: you will not receive anything else.",
+    texteBrut: (m, v, l) => `You requested a BridgeToLeads free trial: “${m}” in ${v}.\n`
+      + `To start the search and get your 10 leads, open this link: ${l}\n\n`
+      + "This link is valid for 24 hours. If you did not request anything, just ignore this email.",
+  },
+};
+
+export function contenuConfirmation({ metier, ville, lien, langue = "fr" }) {
+  const T = CONFIRMATION_EMAIL[langueDe(langue)];
+  const html = `<!doctype html>
+<html lang="${langueDe(langue)}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${T.sujet}</title></head>
+<body style="margin:0;padding:0;background:#F6F3FF;font-family:Segoe UI,Helvetica,Arial,sans-serif;color:#1E1B4B">
+  <div style="max-width:560px;margin:0 auto;padding:24px 12px">
+    <div style="background:linear-gradient(120deg,#7C3AED,#EC4899 55%,#F97316);background-color:#7C3AED;border-radius:18px 18px 0 0;padding:24px;color:#FFFFFF">
+      <div style="font-size:13px;opacity:.9;letter-spacing:.08em;text-transform:uppercase">${T.sur}</div>
+      <h1 style="margin:8px 0 0;font-size:24px;line-height:1.25">${T.titre}</h1>
+    </div>
+    <div style="background:#FFFFFF;border-radius:0 0 18px 18px;padding:24px 22px 28px;text-align:center">
+      <p style="margin:0 0 22px;line-height:1.6;text-align:left">${T.texte(echapper(metier), echapper(ville))}</p>
+      <a href="${echapper(lien)}" style="display:inline-block;background:#7C3AED;color:#FFFFFF;text-decoration:none;font-weight:700;padding:15px 28px;border-radius:999px;font-size:16px">${T.bouton}</a>
+      <p style="margin:22px 0 0;font-size:12px;line-height:1.6;color:#6B6893;text-align:left">${T.note}</p>
+    </div>
+  </div>
+</body></html>`;
+  return { sujet: T.sujet, html, texte: T.texteBrut(metier, ville, lien) };
+}
+
+async function envoyerConfirmation(donnees, env) {
+  const { sujet, html, texte } = contenuConfirmation(donnees);
+  await brevo("/smtp/email", env, {
+    method: "POST",
+    body: JSON.stringify({
+      sender: expediteur(env), to: [{ email: donnees.email }], subject: sujet, htmlContent: html, textContent: texte,
+      tags: ["essai-confirmation"],
+    }),
+  });
+}
+
 async function ajouterContact({ email, metier, ville, ref, actus, langue = "fr" }, env) {
   const listes = [Number(env.BREVO_LISTE_ESSAI)];
   if (actus && Number(env.BREVO_LISTE_ACTUS)) listes.push(Number(env.BREVO_LISTE_ACTUS));
@@ -572,7 +780,7 @@ const DESINSCRIPTION = {
   },
 };
 
-function pageHtml(titre, texte, statut = 200, bouton = "", langue = "fr") {
+export function pageHtml(titre, texte, statut = 200, bouton = "", langue = "fr") {
   const D = DESINSCRIPTION[langue];
   return new Response(`<!doctype html><html lang="${langue}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex"><title>${echapper(titre)} — VORELIK</title></head>

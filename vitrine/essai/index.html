@@ -297,6 +297,9 @@
     .champ input:focus, .champ select:focus { border-color: var(--violet); }
     .champ .aide { color: var(--muted); font-size: .82rem; }
     .champ input[aria-invalid="true"] { border-color: var(--pink); }
+    .suggestion { font-size: .85rem; color: #92400E; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 10px; padding: 6px 10px; }
+    .suggestion[hidden] { display: none; }
+    .suggestion button { font: inherit; font-weight: 700; color: #6D28D9; background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
     .case { display: flex; gap: 10px; align-items: flex-start; font-size: .92rem; color: var(--muted); margin: 4px 0 18px; cursor: pointer; }
     .case input { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--violet); flex: 0 0 auto; }
     .turnstile { min-height: 65px; margin-bottom: 16px; }
@@ -367,7 +370,7 @@
 
         <form class="carte" id="essai" novalidate>
           <h2>Recevoir mes 10 prospects</h2>
-          <p class="sous-titre">Résultats envoyés en quelques secondes, par e-mail.</p>
+          <p class="sous-titre">Confirmez votre adresse e-mail, puis recevez vos résultats en quelques secondes.</p>
           <div class="champ">
             <label for="metier">Métier</label>
             <select id="metier" name="metier_liste" required>
@@ -415,7 +418,8 @@
           <div class="champ">
             <label for="email">Votre e-mail</label>
             <input id="email" name="email" type="email" maxlength="254" required placeholder="vous@exemple.fr" autocomplete="email">
-            <span class="aide">Un essai par adresse e-mail.</span>
+            <span class="aide">Un essai par adresse e-mail. Vous recevrez d'abord un e-mail de confirmation.</span>
+            <div class="suggestion" id="suggestion" hidden></div>
           </div>
           <label class="case"><input type="checkbox" name="actus" value="1"> <span>J'accepte de recevoir les actualités VORELIK (nouveaux logiciels, offres). Désinscription en un clic.</span></label>
           <input type="hidden" name="metier" id="metier-final">
@@ -467,6 +471,35 @@
       reponse.innerHTML = html;
     }
     const texte = (t) => String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    const SUGGESTION = "Vouliez-vous dire {} ?";
+
+    // Faute de frappe courante dans le domaine (gmial.com, hotmial.fr…) : suggestion cliquable, sans bloquer l'envoi
+    const DOMAINES = ["gmail.com", "hotmail.com", "hotmail.fr", "outlook.com", "outlook.fr", "live.com", "live.fr", "msn.com",
+      "yahoo.com", "yahoo.fr", "icloud.com", "me.com", "orange.fr", "wanadoo.fr", "free.fr", "sfr.fr", "laposte.net", "bbox.fr",
+      "neuf.fr", "aol.com", "protonmail.com", "proton.me", "gmx.fr", "gmx.com"];
+    const ecart = (a, b) => {
+      const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
+      for (let j = 1; j <= b.length; j++) d[0][j] = j;
+      for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      return d[a.length][b.length];
+    };
+    const zoneSuggestion = document.getElementById("suggestion");
+    function suggerer() {
+      const [nom, domaine] = form.email.value.trim().toLowerCase().split("@");
+      zoneSuggestion.hidden = true;
+      if (!nom || !domaine || DOMAINES.includes(domaine)) return;
+      const proche = DOMAINES.map((x) => [x, ecart(domaine, x)]).sort((a, b) => a[1] - b[1])[0];
+      if (proche[1] > 0 && proche[1] <= 2) {
+        const corrige = `${nom}@${proche[0]}`;
+        zoneSuggestion.innerHTML = SUGGESTION.replace("{}", `<button type="button">${texte(corrige)}</button>`);
+        zoneSuggestion.querySelector("button").onclick = () => { form.email.value = corrige; zoneSuggestion.hidden = true; };
+        zoneSuggestion.hidden = false;
+      }
+    }
+    // Pendant la saisie (et non à la sortie du champ) : la suggestion ne décale pas le bouton au moment du clic
+    let attenteSuggestion;
+    form.email.addEventListener("input", () => { clearTimeout(attenteSuggestion); attenteSuggestion = setTimeout(suggerer, 500); });
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -485,11 +518,18 @@
         return dire("info", "Patientez un instant : la vérification anti-robot se termine, puis cliquez à nouveau.");
       }
       bouton.disabled = true;
-      bouton.textContent = "Recherche en cours… (environ 10 secondes)";
+      bouton.textContent = "Envoi de l'e-mail de confirmation…";
       dire("", "");
       try {
         const r = await fetch(SERVEUR_ESSAI.replace(/\/$/, "") + "/essai", { method: "POST", body: donnees });
         const d = await r.json().catch(() => ({}));
+        if (d.ok && d.confirmation) {
+          dire("ok", "📩 " + texte(d.message));
+          form.querySelectorAll("input, select").forEach((c) => (c.disabled = true));
+          bouton.textContent = "E-mail envoyé ✓";
+          zoneSuggestion.hidden = true;
+          return;
+        }
         if (d.ok && d.trouves > 0) {
           dire("ok", "✔ " + texte(d.message) + ' <br><a href="../bridgetoleads/">Découvrir BridgeToLeads →</a>');
           form.querySelectorAll("input, select").forEach((c) => (c.disabled = true));

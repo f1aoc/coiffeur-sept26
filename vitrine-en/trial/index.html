@@ -297,6 +297,9 @@
     .champ input:focus, .champ select:focus { border-color: var(--violet); }
     .champ .aide { color: var(--muted); font-size: .82rem; }
     .champ input[aria-invalid="true"] { border-color: var(--pink); }
+    .suggestion { font-size: .85rem; color: #92400E; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 10px; padding: 6px 10px; }
+    .suggestion[hidden] { display: none; }
+    .suggestion button { font: inherit; font-weight: 700; color: #6D28D9; background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
     .case { display: flex; gap: 10px; align-items: flex-start; font-size: .92rem; color: var(--muted); margin: 4px 0 18px; cursor: pointer; }
     .case input { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--violet); flex: 0 0 auto; }
     .turnstile { min-height: 65px; margin-bottom: 16px; }
@@ -367,7 +370,7 @@
 
         <form class="carte" id="essai" novalidate>
           <h2>Get my 10 leads</h2>
-          <p class="sous-titre">Results sent by email within seconds.</p>
+          <p class="sous-titre">Confirm your email address, then get your results within seconds.</p>
           <div class="champ">
             <label for="metier">Business type</label>
             <select id="metier" name="metier_liste" required>
@@ -415,7 +418,8 @@
           <div class="champ">
             <label for="email">Your email</label>
             <input id="email" name="email" type="email" maxlength="254" required placeholder="you@example.com" autocomplete="email">
-            <span class="aide">One trial per email address.</span>
+            <span class="aide">One trial per email address. You will first receive a confirmation email.</span>
+            <div class="suggestion" id="suggestion" hidden></div>
           </div>
           <label class="case"><input type="checkbox" name="actus" value="1"> <span>I agree to receive VORELIK news (new apps, offers). Unsubscribe in one click.</span></label>
           <input type="hidden" name="metier" id="metier-final">
@@ -468,6 +472,35 @@
       reponse.innerHTML = html;
     }
     const texte = (t) => String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    const SUGGESTION = "Did you mean {}?";
+
+    // Faute de frappe courante dans le domaine (gmial.com, hotmial.fr…) : suggestion cliquable, sans bloquer l'envoi
+    const DOMAINES = ["gmail.com", "hotmail.com", "hotmail.fr", "outlook.com", "outlook.fr", "live.com", "live.fr", "msn.com",
+      "yahoo.com", "yahoo.fr", "icloud.com", "me.com", "orange.fr", "wanadoo.fr", "free.fr", "sfr.fr", "laposte.net", "bbox.fr",
+      "neuf.fr", "aol.com", "protonmail.com", "proton.me", "gmx.fr", "gmx.com"];
+    const ecart = (a, b) => {
+      const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
+      for (let j = 1; j <= b.length; j++) d[0][j] = j;
+      for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      return d[a.length][b.length];
+    };
+    const zoneSuggestion = document.getElementById("suggestion");
+    function suggerer() {
+      const [nom, domaine] = form.email.value.trim().toLowerCase().split("@");
+      zoneSuggestion.hidden = true;
+      if (!nom || !domaine || DOMAINES.includes(domaine)) return;
+      const proche = DOMAINES.map((x) => [x, ecart(domaine, x)]).sort((a, b) => a[1] - b[1])[0];
+      if (proche[1] > 0 && proche[1] <= 2) {
+        const corrige = `${nom}@${proche[0]}`;
+        zoneSuggestion.innerHTML = SUGGESTION.replace("{}", `<button type="button">${texte(corrige)}</button>`);
+        zoneSuggestion.querySelector("button").onclick = () => { form.email.value = corrige; zoneSuggestion.hidden = true; };
+        zoneSuggestion.hidden = false;
+      }
+    }
+    // Pendant la saisie (et non à la sortie du champ) : la suggestion ne décale pas le bouton au moment du clic
+    let attenteSuggestion;
+    form.email.addEventListener("input", () => { clearTimeout(attenteSuggestion); attenteSuggestion = setTimeout(suggerer, 500); });
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -486,11 +519,18 @@
         return dire("info", "Please wait a moment: the anti-robot check is finishing, then click again.");
       }
       bouton.disabled = true;
-      bouton.textContent = "Searching… (about 10 seconds)";
+      bouton.textContent = "Sending the confirmation email…";
       dire("", "");
       try {
         const r = await fetch(SERVEUR_ESSAI.replace(/\/$/, "") + "/essai?langue=en", { method: "POST", body: donnees });
         const d = await r.json().catch(() => ({}));
+        if (d.ok && d.confirmation) {
+          dire("ok", "📩 " + texte(d.message));
+          form.querySelectorAll("input, select").forEach((c) => (c.disabled = true));
+          bouton.textContent = "Email sent ✓";
+          zoneSuggestion.hidden = true;
+          return;
+        }
         if (d.ok && d.trouves > 0) {
           dire("ok", "✔ " + texte(d.message) + ' <br><a href="../bridgetoleads/">Discover BridgeToLeads →</a>');
           form.querySelectorAll("input, select").forEach((c) => (c.disabled = true));

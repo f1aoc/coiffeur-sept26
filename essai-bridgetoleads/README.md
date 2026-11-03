@@ -148,6 +148,23 @@ quotidien commun aux deux langues). La page anglaise envoie `langue=en` :
 - le contact est enregistré dans Brevo avec `LANGUE` = `en`. Pour des actualités en anglais, filtrez la liste
   « Actualités VORELIK » sur cet attribut.
 
+## Confirmation de l'adresse e-mail
+
+Pour éviter les fausses adresses, l'essai se fait en deux temps :
+
+1. **Formulaire** : le serveur vérifie l'adresse (format, adresses jetables comme Yopmail refusées, domaine qui reçoit
+   vraiment des e-mails, contrôlé par le DNS de Cloudflare) puis envoie un **e-mail de confirmation**. Rien n'est encore
+   demandé à Google ni ajouté à Brevo. La page propose aussi une correction des fautes de frappe (« gmial.com » →
+   « gmail.com »).
+2. **Clic sur le bouton de l'e-mail** : une page s'ouvre avec un bouton « Recevoir mes 10 prospects » (les messageries
+   qui ouvrent les liens pour les analyser ne déclenchent donc rien). Ce clic lance la recherche Google, envoie les
+   résultats et ajoute le contact à Brevo.
+
+Le lien est valable 24 heures et ne sert qu'une fois. Limites : 5 e-mails de confirmation par adresse IP et par jour,
+pas de nouvel e-mail à la même adresse avant 10 minutes, puis les limites habituelles au moment du clic. Chaque essai
+envoie donc 2 e-mails : le quota gratuit de Brevo (300 par jour) suffit pour 150 essais par jour, au-delà du plafond
+`PLAFOND_JOUR` (100).
+
 ## Bon à savoir
 
 - **Un essai sans résultat** (aucun commerce sans site) n'envoie pas d'e-mail et ne consomme pas l'adresse e-mail.
