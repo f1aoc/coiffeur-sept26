@@ -172,6 +172,23 @@ Les produits, liens et clés du mode test **n'existent pas** en mode réel.
    `PRODUITS` (nouveaux `prod_…`), puis **Deploy**. **Gardez le même `LICENCE_SECRET`.**
 4. Envoyez-moi les deux nouveaux liens de paiement réels : je mets à jour les pages de vente.
 
+## Étape 9 (facultative) — Brevo : ranger les acheteurs de BridgeToLeads dans une liste
+
+Quand un client achète BridgeToLeads (seul ou dans le pack), la page « Merci » l'ajoute à la liste Brevo
+« Clients BridgeToLeads ». S'il était déjà inscrit (testeur de l'essai gratuit), il est simplement ajouté à cette
+liste, et l'automatisation de relance s'arrête pour lui (condition de sortie).
+
+1. **Brevo** → **Contacts** → **Listes** → **Créer une liste** « Clients BridgeToLeads » : notez son numéro.
+2. **Cloudflare** → worker **licences** → **Settings** → **Variables and Secrets** → **+ Add** :
+   | Type | Nom | Valeur |
+   |---|---|---|
+   | **Secret** | `BREVO_API_KEY` | la même clé API Brevo que celle de l'essai gratuit (à coller directement ici) |
+   | **Text** | `BREVO_LISTE_CLIENTS` | le numéro de la liste, par exemple `4` |
+3. Recollez le nouveau `worker.js`, puis **Deploy**.
+4. Contrôle : `/diagnostic` affiche `BREVO : acheteurs de BridgeToLeads ajoutés à la liste n° 4`.
+
+Si Brevo est en panne, le client reçoit quand même sa clé (il manquera seulement dans la liste).
+
 ## Support client
 
 - **Retrouver la clé d'un client** : Stripe → **Payments** → recherchez son adresse e-mail → ouvrez le

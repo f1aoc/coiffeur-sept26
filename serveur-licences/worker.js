@@ -27,6 +27,9 @@
  *   TELECHARGEMENTS    liaison R2 (Settings → Bindings → R2 bucket) : le compartiment qui contient les logiciels.
  *   ORIGINE_SITE       texte : adresse de votre site (ex. https://ptabountchikoff.fr), pour la page Merci ;
  *                      plusieurs adresses possibles, séparées par des virgules
+ *   BREVO_API_KEY      secret (facultatif) : clé API Brevo, pour ranger les acheteurs dans une liste Brevo
+ *   BREVO_LISTE_CLIENTS texte (facultatif) : numéro de la liste Brevo des acheteurs de BridgeToLeads (seul ou en pack).
+ *                      Sans ces deux variables, rien n'est envoyé à Brevo. Une erreur Brevo ne bloque jamais la page Merci.
  *
  * Erreur de configuration (variable absente, clé Stripe refusée) : réponse 500 { erreur, detail } qui dit
  * quoi corriger. Les logiciels traitent toute réponse 5xx comme « hors ligne » : les clients ne sont pas bloqués.
@@ -185,10 +188,34 @@ async function cle(sessionId, env) {
     "metadata[licence_cle]": licences.map((l) => l.cle).join(" , "),
     "metadata[produit]": licences.map((l) => l.produit).join(","),
   });
+  await ajouterClientBrevo(env, session.customer_details, licences);
   return [200, {
     cle: licences[0].cle, produit: licences[0].produit, licences,
     nom: session.customer_details?.name || "", email: session.customer_details?.email || "",
   }];
+}
+
+// --- Brevo : l'acheteur de BridgeToLeads rejoint la liste « Clients » (fin des e-mails de relance) ------
+
+const BREVO = "https://api.brevo.com/v3/contacts";
+const BREVO_PRODUIT = "bridgetoleads";
+
+async function ajouterClientBrevo(env, client, licences) {
+  const liste = Number(env.BREVO_LISTE_CLIENTS);
+  const email = String(client?.email || "").trim().toLowerCase();
+  if (!env.BREVO_API_KEY || !Number.isInteger(liste) || liste <= 0 || !email) return;
+  if (!licences.some((l) => l.produit === BREVO_PRODUIT)) return;
+  try {
+    // updateEnabled : le contact déjà inscrit (testeur de l'essai gratuit) est simplement ajouté à la liste.
+    await fetch(BREVO, {
+      method: "POST",
+      headers: { "api-key": env.BREVO_API_KEY, "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ email, listIds: [liste], updateEnabled: true }),
+      signal: AbortSignal.timeout(5000),
+    });
+  } catch {
+    // Brevo injoignable : le client reçoit quand même sa clé.
+  }
 }
 
 /** Configurations des logiciels achetés, sans doublon ; un pack donne chacun de ses logiciels. */
@@ -291,6 +318,11 @@ async function diagnostic(env) {
       : "ABSENTE ou JSON INVALIDE",
     ORIGINE_SITE: origines(env).length ? origines(env) : "non renseignée (toutes les adresses acceptées)",
     TELECHARGEMENTS: env.TELECHARGEMENTS ? "liaison R2 présente" : "ABSENTE (téléchargements impossibles)",
+    BREVO: !env.BREVO_API_KEY && !env.BREVO_LISTE_CLIENTS ? "non configuré (facultatif : acheteurs non envoyés à Brevo)"
+      : !env.BREVO_API_KEY ? "BREVO_API_KEY ABSENTE"
+      : !(Number.isInteger(Number(env.BREVO_LISTE_CLIENTS)) && Number(env.BREVO_LISTE_CLIENTS) > 0)
+        ? "BREVO_LISTE_CLIENTS ABSENTE ou INVALIDE (un numéro de liste, ex. 4)"
+        : `acheteurs de BridgeToLeads ajoutés à la liste n° ${Number(env.BREVO_LISTE_CLIENTS)}`,
   };
   if (env.TELECHARGEMENTS) {
     try {

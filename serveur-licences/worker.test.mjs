@@ -319,3 +319,56 @@ test("téléchargement depuis R2 : fichier servi en pièce jointe, noms suspects
   const diag = await appel("/diagnostic", undefined, env);
   assert.deepEqual(diag.corps.fichiers, ["AuditExpress-Windows.zip (0 Mo)", "BridgeToLeads.exe (0 Mo)"]);
 });
+
+// --- Brevo : acheteurs de BridgeToLeads ajoutés à la liste « Clients » ---------------------------------
+
+const ENV_BREVO = { ...ENV, BREVO_API_KEY: "xkeysib-faux", BREVO_LISTE_CLIENTS: "4" };
+
+function espionBrevo({ panne = false } = {}) {
+  const envois = [];
+  const fetchStripe = stripe.fetch;
+  globalThis.fetch = async (url, options = {}) => {
+    if (!String(url).startsWith("https://api.brevo.com/")) return fetchStripe(url, options);
+    if (panne) throw new TypeError("network error");
+    envois.push({ url: String(url), cle: options.headers["api-key"], corps: JSON.parse(options.body) });
+    return Response.json({ id: 1 }, { status: 201 });
+  };
+  return envois;
+}
+
+test("Brevo : l'acheteur de BridgeToLeads est ajouté à la liste Clients, contact existant mis à jour", async () => {
+  const envois = espionBrevo();
+  const { session } = stripe.payer({ produit: BTL, email: "Testeur@Exemple.fr" });
+  const r = await appel(`/cle?session_id=${session}`, undefined, ENV_BREVO);
+  assert.equal(r.status, 200);
+  assert.equal(envois.length, 1);
+  assert.equal(envois[0].url, "https://api.brevo.com/v3/contacts");
+  assert.equal(envois[0].cle, "xkeysib-faux");
+  assert.deepEqual(envois[0].corps, { email: "testeur@exemple.fr", listIds: [4], updateEnabled: true });
+});
+
+test("Brevo : pack (contient BridgeToLeads) ajouté ; Chasseur seul, ou sans configuration, rien n'est envoyé", async () => {
+  const envois = espionBrevo();
+  const env = { ...ENV_BREVO, PRODUITS: JSON.stringify({
+    ...JSON.parse(ENV.PRODUITS), prod_Pack: { pack: ["bridgetoleads", "chasseur-de-sites"] } }) };
+  await appel(`/cle?session_id=${stripe.payer({ produit: "prod_Pack" }).session}`, undefined, env);
+  assert.equal(envois.length, 1);
+  await appel(`/cle?session_id=${stripe.payer({ produit: CDS }).session}`, undefined, env);
+  assert.equal(envois.length, 1);
+  await appel(`/cle?session_id=${stripe.payer({ produit: BTL }).session}`); // ENV sans Brevo
+  await appel(`/cle?session_id=${stripe.payer({ produit: BTL }).session}`, undefined, { ...ENV_BREVO, BREVO_LISTE_CLIENTS: "abc" });
+  assert.equal(envois.length, 1);
+});
+
+test("Brevo en panne : la page Merci reçoit quand même la clé", async () => {
+  espionBrevo({ panne: true });
+  const r = await appel(`/cle?session_id=${stripe.payer({ produit: BTL }).session}`, undefined, ENV_BREVO);
+  assert.equal(r.status, 200);
+  assert.match(r.corps.cle, /^BTL-/);
+});
+
+test("diagnostic : état de la configuration Brevo", async () => {
+  assert.match((await appel("/diagnostic")).corps.BREVO, /non configuré/);
+  assert.match((await appel("/diagnostic", undefined, ENV_BREVO)).corps.BREVO, /liste n° 4/);
+  assert.match((await appel("/diagnostic", undefined, { ...ENV, BREVO_LISTE_CLIENTS: "4" })).corps.BREVO, /BREVO_API_KEY ABSENTE/);
+});
