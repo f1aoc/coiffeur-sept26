@@ -30,8 +30,7 @@ Copiez-les tels quels.
 Calendrier : e-mail 1 à J+1, e-mail 2 à J+3, e-mail 3 à J+7, e-mail 4 à J+14.
 
 **Code promo de l'e-mail 4** (facultatif) : Stripe → **Product catalog** → **Coupons** → **Create coupon**
-(20 %, *Once*), puis **Promotion codes** → code `ESSAI20`, et cochez **Limit to one use per customer**
-(*Limit this code to first-time order*). Sur le lien de paiement BridgeToLeads :
+(20 %, *Once*), puis **Promotion codes** → code `ESSAI20`. Sur le lien de paiement BridgeToLeads :
 **Edit** → cochez **Allow promotion codes**. Sans code, supprimez simplement le paragraphe de l'offre.
 
 ---
